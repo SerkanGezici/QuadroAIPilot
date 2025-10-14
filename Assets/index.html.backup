@@ -1,0 +1,4396 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuadroAI Pilot</title>
+    <style>
+        /* Modern AI Design System - Enhanced Performance Edition */
+        :root {
+            /* Modern light colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #f0f2f5;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-blur: 20px;
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --primary-color: #0066cc;
+            --accent-color: #0078d4;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-tertiary: #6c757d;
+            --feedback-color: #34C759;
+            --border-color: rgba(0, 0, 0, 0.06);
+            --window-border: rgba(0, 0, 0, 0.15);
+            
+            /* Typography Scale (8px grid) */
+            --font-size-xs: 12px;
+            --font-size-sm: 14px;
+            --font-size-base: 16px;
+            --font-size-lg: 20px;
+            --font-size-xl: 24px;
+            --font-size-2xl: 32px;
+            
+            /* Spacing Scale (8px grid) */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 16px;
+            --space-4: 24px;
+            --space-5: 32px;
+            --space-6: 48px;
+            --space-7: 64px;
+            
+            /* Line Heights */
+            --line-height-tight: 1.2;
+            --line-height-normal: 1.5;
+            --line-height-relaxed: 1.75;
+            
+            /* Font Weights */
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            
+            /* Performance Optimized Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Effects */
+            --glow-intensity: 0.2;
+            --accent-glow: 0 0 12px rgba(0, 120, 212, 0.3);
+            --animation-speed: 1;
+            --enable-animations: 1;
+            --transparency-level: 0.85;
+            
+            /* Shadows and elevations */
+            --elevation-1: 0 2px 4px rgba(0, 0, 0, 0.06);
+            --elevation-2: 0 4px 8px rgba(0, 0, 0, 0.08);
+            --elevation-3: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --elevation-4: 0 16px 32px rgba(0, 0, 0, 0.12);
+            
+            --glass-shadow: var(--elevation-2);
+            --hover-shadow: var(--elevation-3);
+            --subtle-shadow: var(--elevation-1);
+            --window-shadow: 0 0 0 3px var(--window-border), var(--elevation-4);
+            
+            /* Focus States */
+            --focus-ring: 0 0 0 3px rgba(0, 120, 212, 0.5);
+            --focus-ring-error: 0 0 0 3px rgba(220, 53, 69, 0.5);
+            --focus-ring-success: 0 0 0 3px rgba(52, 199, 89, 0.5);
+        }
+        
+        /* Clear theme transparency support */
+        body.theme-clear {
+            --bg-primary: rgba(255, 255, 255, 0.95);
+            --bg-secondary: rgba(248, 249, 250, 0.95);
+            --bg-tertiary: transparent;
+            --glass-bg: rgba(255, 255, 255, var(--transparency-level));
+            --glass-blur: 30px;
+            --window-border: rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Full transparency mode */
+        body.theme-clear.full-transparency {
+            background-color: transparent !important;
+        }
+        
+        body.theme-clear.full-transparency .ai-container {
+            background: rgba(255, 255, 255, var(--transparency-level)) !important;
+            backdrop-filter: blur(30px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+        }
+        
+        /* Dark background adaptation */
+        body.theme-clear.full-transparency.dark-bg {
+            --bg-primary: rgba(45, 45, 50, 0.95);
+            --bg-secondary: rgba(55, 55, 60, 0.95);
+            --glass-bg: rgba(30, 30, 35, var(--transparency-level));
+            --text-primary: #ffffff;
+            --text-secondary: #d1d1d1;
+            --text-tertiary: #a0a0a0;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --window-border: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* CRITICAL: Keep all text and interactive elements opaque */
+        h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea, select, label, div {
+            opacity: 1 !important;
+        }
+        
+        /* Ensure text stays visible */
+        * {
+            color: var(--text-primary);
+        }
+        
+        /* Window border effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 0 3px var(--window-border);
+            z-index: 9999;
+            border-radius: 12px;
+        }
+        
+        /* Global reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Performance optimizations */
+        @media (prefers-reduced-motion: no-preference) {
+            .will-animate {
+                will-change: transform, opacity;
+            }
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative;
+        } {
+            transition: none !important;
+            animation: none !important;
+        }
+        
+        body.no-glow {
+            --accent-glow: none;
+            --glow-intensity: 0;
+        }
+        
+        /* Glass panel mixin */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: var(--glass-shadow);
+            transition: all calc(0.3s * var(--animation-speed)) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-panel:hover {
+            box-shadow: var(--hover-shadow);
+            transform: translateY(-2px);
+        }
+        
+        /* Pill button style */
+        .pill-button {
+            border-radius: 999px;
+            background: linear-gradient(135deg, 
+                rgba(0, 120, 212, calc(0.1 + var(--glow-intensity) * 0.1)), 
+                rgba(0, 120, 212, calc(0.05 + var(--glow-intensity) * 0.05)));
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.1),
+                var(--subtle-shadow),
+                var(--accent-glow);
+            transition: all calc(0.3s * var(--animation-speed)) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .pill-button:hover {
+            transform: scale(1.05);
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.2),
+                var(--hover-shadow),
+                var(--accent-glow);
+        }
+        
+        .pill-button:active {
+            transform: scale(0.98);
+        }
+        
+        /* Ripple effect for clicks */
+        @keyframes ripple {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple calc(0.6s * var(--animation-speed)) ease-out;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            padding: 0;
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-color);
+            position: relative;
+        }
+        /* Main container with glass effect */
+        .ai-container {
+            height: calc(100vh - 16px);
+            padding: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+            border-radius: 16px;
+            margin: 8px;
+            box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        /* Header styles */
+        .ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 0 60px; /* Space for settings button */
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.5px;
+            opacity: 1 !important;
+        }
+
+        /* Main content layout */
+        .container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 8px;
+            min-height: 0;
+            overflow: hidden;
+        }
+        
+        .flex-grow-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            gap: 8px; /* Daha kompakt layout */
+            overflow: hidden;
+        }
+
+        /* Output areas with improved layout */
+        #outputArea {
+            flex: 1;
+            min-height: 200px; /* Azaltıldı */
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow-y: auto;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 1 !important;
+        }
+        
+        #feedbackArea {
+            height: 32px; /* Daha da azaltıldı */
+            background: var(--bg-secondary);
+            color: var(--feedback-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 6px 12px;
+            font-size: 12px;
+            overflow: hidden; /* Tek satır için scroll kaldırıldı */
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            opacity: 1 !important;
+        }
+        
+        /* Dikta alanı - 2 satırlık tasarım */
+        #txtCikti {
+            height: 48px; /* Azaltıldı ama hala 2 satır */
+            width: 100%;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px !important;
+            padding: 6px 12px;
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            resize: none;
+            margin-bottom: 0; /* Action bar ile arası kaldırıldı */
+            opacity: 1 !important;
+            transition: border-color var(--transition-fast), 
+                        box-shadow var(--transition-fast);
+            transform: translateZ(0); /* Hardware acceleration */
+        }
+        
+        #txtCikti:focus {
+            border-color: var(--primary-color);
+            box-shadow: var(--focus-ring);
+            outline: none;
+        }
+        
+        #txtCikti:hover {
+            border-color: var(--accent-color);
+        }
+
+        /* Modern button styles - Daha kompakt */
+        button {
+            padding: 4px 12px; /* Daha az dikey padding */
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: transform var(--transition-fast), 
+                        box-shadow var(--transition-fast),
+                        background-color var(--transition-base);
+            opacity: 1 !important;
+            box-shadow: var(--elevation-1);
+            text-transform: none;
+            letter-spacing: -0.01em;
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0); /* Hardware acceleration */
+            height: 26px; /* Sabit yükseklik */
+        }
+        
+        /* Button feedback animation */
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width var(--transition-base), height var(--transition-base);
+        }
+        
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: var(--accent-color);
+            transform: translateY(-2px) translateZ(0);
+            box-shadow: var(--elevation-3);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0) translateZ(0);
+            box-shadow: var(--elevation-1);
+        }
+        
+        button:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+        
+        button:disabled {
+            background: var(--text-tertiary);
+            cursor: not-allowed;
+            opacity: 0.6 !important;
+            box-shadow: none;
+        }
+
+        /* Textarea focus states - Moved to #txtCikti specific styles */
+        
+        textarea::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .icon {
+            font-size: 14px;
+            margin-right: 4px;
+        }
+
+        /* Utility classes */
+        .show {
+            display: flex !important;
+        }
+        
+        .hide {
+            display: none !important;
+        }
+        
+        /* Icon-only button styles - daha kompakt */
+        .icon-only {
+            min-width: 28px !important;
+            width: 28px !important;
+            height: 28px !important;
+            padding: 0 !important;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+        }
+        
+        .icon-only .icon {
+            margin: 0 !important;
+            font-size: 14px;
+        }
+        /* New unified action bar - daha dar tasarım */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            padding: 4px 8px; /* Üst/alt padding azaltıldı */
+            min-height: 32px; /* Minimum yükseklik azaltıldı */
+            background: var(--bg-primary);
+            border-radius: 10px;
+            box-shadow: var(--elevation-1);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .action-left, .action-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .action-left {
+            justify-content: flex-start;
+        }
+        
+        .action-center {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .action-right {
+            justify-content: flex-end;
+        }
+        
+        /* Primary action button (Dikte) - no longer needed as all buttons are styled the same */
+        .primary-action {
+            /* Inherits from button styles */
+        }
+        
+        /* Inline TTS controls */
+        .inline-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .inline-controls.show {
+            display: flex !important;
+        }
+        
+        /* Recording state */
+        #dikteButton.recording {
+            background: #dc3545 !important;
+            color: white;
+        }
+        
+        #dikteButton.recording:hover {
+            background: #c82333 !important;
+        }
+        
+        /* Execute button - inherits default button styles */
+        #executeButton {
+            min-width: 100px;
+        }
+        
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+        
+        /* TTS controls */
+        #ttsControls {
+            display: none;
+            opacity: 1 !important;
+        }
+        
+        #ttsControls.show {
+            display: flex !important;
+        }
+        
+        .tts-btn {
+            width: 28px !important;
+            height: 28px !important;
+            padding: 0 !important;
+            min-width: 28px !important;
+            border-radius: 6px !important;
+            font-size: 14px !important;
+        }
+        
+        /* Settings button */
+        #settingsButton {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            opacity: 1 !important;
+        }
+        
+        #settingsButton:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            z-index: 1000;
+        }
+        
+        #settingsButton:hover {
+            transform: rotate(45deg) scale(1.1);
+        }
+        
+        .tts-control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .tts-control-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 13px;
+            margin: 0;
+        }
+        
+        /* Apple style TTS status */
+        .tts-status {
+            font-size: 13px;
+            color: #007AFF;
+            white-space: nowrap;
+            flex-shrink: 0;
+            padding: 4px 12px;
+            background: rgba(0, 122, 255, 0.08);
+            border: none;
+            border-radius: 8px;
+            margin: 0;
+            font-weight: 500;
+            backdrop-filter: blur(20px);
+        }
+        
+        /* İnce progress bar */
+        .tts-progress {
+            background: rgba(255, 255, 255, 0.1);
+            height: 3px;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0;
+            flex: 1;
+            min-width: 100px;
+        }
+        
+        .tts-progress-bar {
+            background: linear-gradient(90deg, #0ea5e9, #0284c7);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 4px rgba(14, 165, 233, 0.5);
+        }
+        
+        .control-btn {
+            background: #444 !important;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: #555 !important;
+        }
+        
+        .control-btn.active {
+            background: #0078d4 !important;
+        }
+        /* Base styles */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Window border effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 0 3px var(--window-border);
+            z-index: 9999;
+            border-radius: 12px;
+        }
+        
+        /* Main container with proper spacing */
+        .ai-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        /* CRITICAL: Keep all text and interactive elements opaque */
+        h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea, select, label, div {
+            opacity: 1 !important;
+        }
+        
+        /* Ensure text colors are solid */
+        * {
+            color: var(--text-primary);
+        }
+        
+        /* Header section with centered title */
+        .ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+            padding: 0 60px; /* Space for settings button */
+        }
+        
+        .ai-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary) !important;
+            opacity: 1 !important;
+            text-align: center;
+            letter-spacing: -0.02em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        
+        .ai-indicator {
+            position: absolute;
+            left: 0;
+            font-size: 12px;
+            color: var(--feedback-color);
+            background: rgba(52, 199, 89, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            opacity: 1 !important;
+        }
+        
+        /* Main content container */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+            padding-bottom: 8px; /* Action bar için ekstra alan */
+        }
+        
+        /* Duplicate CSS tanımları kaldırıldı - yukarıdaki tanımlar kullanılacak */
+        
+        #txtCikti::placeholder {
+            color: var(--text-tertiary);
+            opacity: 1;
+        }
+        
+        /* Button styles */
+        button {
+            background: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 1 !important;
+            box-shadow: var(--subtle-shadow);
+        }
+        
+        button:hover:not(:disabled) {
+            background: var(--bg-secondary) !important;
+            border-color: var(--accent-color) !important;
+            transform: translateY(-1px);
+            box-shadow: var(--hover-shadow);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed;
+        }
+        
+        /* Icon buttons */
+        .icon-only {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        /* Primary button style */
+        button.primary {
+            background: var(--accent-color) !important;
+            color: white !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        button.primary:hover:not(:disabled) {
+            background: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+        
+        /* Select dropdown */
+        select {
+            background: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            opacity: 1 !important;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color) !important;
+        }
+        
+        /* Flex grow area */
+        .flex-grow-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+        
+        /* Center buttons */
+        .center-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        /* Button group */
+        .button-group {
+            margin: 12px 0;
+        }
+        
+        /* Loading States and Animations */
+        @keyframes pulse-gentle {
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.8;
+                transform: scale(0.98);
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fade-in {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        /* Button loading state */
+        button.loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+        
+        button.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        /* Success/Error feedback */
+        .feedback-message {
+            padding: var(--space-2) var(--space-3);
+            border-radius: 8px;
+            font-size: var(--font-size-sm);
+            animation: fade-in var(--transition-base) ease-out;
+            margin-bottom: var(--space-2);
+        }
+        
+        .feedback-success {
+            background-color: rgba(52, 199, 89, 0.1);
+            color: #34C759;
+            border: 1px solid rgba(52, 199, 89, 0.2);
+        }
+        
+        .feedback-error {
+            background-color: rgba(255, 59, 48, 0.1);
+            color: #FF3B30;
+            border: 1px solid rgba(255, 59, 48, 0.2);
+        }
+        
+        .feedback-info {
+            background-color: rgba(0, 122, 255, 0.1);
+            color: #007AFF;
+            border: 1px solid rgba(0, 122, 255, 0.2);
+        }
+        
+        /* Smooth transitions for all interactive elements */
+        button, input, textarea, select, a {
+            transition: border-color var(--transition-fast),
+                        box-shadow var(--transition-fast),
+                        background-color var(--transition-base),
+                        transform var(--transition-fast);
+        }
+        
+        /* Prevent layout shift */
+        button, input, textarea {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        
+        /* Command Palette Styles */
+        .command-palette {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            width: 90%;
+            max-width: 600px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--elevation-4);
+            padding: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-base),
+                        transform var(--transition-base),
+                        visibility var(--transition-base);
+            z-index: 10000;
+        }
+        
+        .command-palette.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .command-palette-input {
+            width: 100%;
+            padding: var(--space-4);
+            font-size: var(--font-size-lg);
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            outline: none;
+        }
+        
+        .command-palette-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .command-result {
+            padding: var(--space-3) var(--space-4);
+            cursor: pointer;
+            transition: background-color var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .command-result:hover,
+        .command-result.active {
+            background-color: var(--bg-secondary);
+        }
+        
+        .command-shortcut {
+            margin-left: auto;
+            font-size: var(--font-size-xs);
+            color: var(--text-tertiary);
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* Overlay for command palette */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-base),
+                        visibility var(--transition-base);
+            z-index: 9999;
+        }
+        
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Voice Indicator kaldırıldı - artık dikte butonu içinde */
+        
+        /* Sound wave animation - dikte butonu için */
+        .sound-wave {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            height: 16px;
+            margin-right: 6px;
+        }
+        
+        .sound-wave-bar {
+            width: 2px;
+            background: white;
+            border-radius: 999px;
+            transition: height var(--transition-fast);
+            opacity: 0.9;
+        }
+        
+        .sound-wave-bar:nth-child(1) { animation: wave 0.6s ease-in-out infinite; }
+        .sound-wave-bar:nth-child(2) { animation: wave 0.6s ease-in-out 0.1s infinite; }
+        .sound-wave-bar:nth-child(3) { animation: wave 0.6s ease-in-out 0.2s infinite; }
+        .sound-wave-bar:nth-child(4) { animation: wave 0.6s ease-in-out 0.3s infinite; }
+        .sound-wave-bar:nth-child(5) { animation: wave 0.6s ease-in-out 0.4s infinite; }
+        
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50% { height: 14px; }
+        }
+        
+        /* Recording button pulse */
+        #dikteButton.recording {
+            animation: recording-pulse 1.5s ease-in-out infinite;
+            background: #dc3545 !important;
+            color: white !important;
+            position: relative;
+            min-width: 140px;
+            padding: 6px 12px;
+        }
+        
+        #dikteButton.recording::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: var(--feedback-color);
+            border-radius: inherit;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation: recording-ripple 1.5s ease-out infinite;
+        }
+        
+        @keyframes recording-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes recording-ripple {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        /* Enhanced TTS status display */
+        .tts-status-display {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: var(--space-2) var(--space-3);
+            border-radius: 12px;
+            box-shadow: var(--elevation-2);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-base);
+        }
+        
+        .tts-status-display.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .tts-voice-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+        
+        /* AI thinking animation */
+        .ai-thinking {
+            display: flex;
+            gap: 4px;
+            padding: var(--space-2);
+        }
+        
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: thinking 1.4s ease-in-out infinite;
+        }
+        
+        .thinking-dot:nth-child(1) { animation-delay: 0s; }
+        .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes thinking {
+            0%, 60%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            30% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 16px;
+            box-shadow: var(--elevation-4);
+            padding: var(--space-5);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+            border: 1px solid var(--glass-border);
+        }
+
+        .modal.show {
+            display: block;
+            animation: modalFadeIn var(--transition-base) ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -45%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-4);
+        }
+
+        .modal-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: var(--font-size-xl);
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: var(--space-1);
+            transition: color var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-content {
+            margin-bottom: var(--space-4);
+        }
+
+        .modal-section {
+            margin-bottom: var(--space-4);
+        }
+
+        .modal-section-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+            color: var(--text-primary);
+            margin-bottom: var(--space-3);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2);
+            border-radius: 8px;
+            transition: background-color var(--transition-fast);
+        }
+
+        .category-item:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .category-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        .category-label {
+            cursor: pointer;
+            user-select: none;
+            font-size: var(--font-size-base);
+            color: var(--text-primary);
+        }
+
+        .custom-category-section {
+            background: var(--bg-secondary);
+            padding: var(--space-3);
+            border-radius: 12px;
+            margin-top: var(--space-3);
+        }
+
+        .custom-category-select {
+            width: 100%;
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            cursor: pointer;
+            transition: border-color var(--transition-fast);
+            margin-top: var(--space-2);
+        }
+
+        .custom-category-select:hover,
+        .custom-category-select:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-2);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .modal-btn {
+            padding: var(--space-2) var(--space-4);
+            border-radius: 8px;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: none;
+        }
+
+        .modal-btn-cancel {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-btn-cancel:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .modal-btn-save {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .modal-btn-save:hover {
+            background: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--elevation-2);
+        }
+
+        .overlay.show {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            animation: overlayFadeIn var(--transition-fast) ease-out;
+        }
+
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Widget Container Styles */
+        .widgets-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .widget {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: var(--elevation-1);
+            transition: all var(--transition-base);
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .widget:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--elevation-2);
+            border-color: var(--accent-color);
+        }
+        
+        .widget-icon {
+            font-size: 20px;
+            margin-bottom: 6px;
+            opacity: 0.8;
+        }
+        
+        .widget-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        
+        .widget-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* News Ticker Styles */
+        .news-ticker-container {
+            width: 100%;
+            overflow: hidden;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px 0;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .news-ticker {
+            display: flex;
+            white-space: nowrap;
+            will-change: transform;
+        }
+        
+        .news-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 30px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        
+        .news-item::before {
+            content: "📰";
+            margin-right: 8px;
+        }
+        
+        
+        /* Smooth continuous animation */
+        .news-ticker-container {
+            position: relative;
+        }
+        
+        .news-ticker-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, 
+                var(--glass-bg) 0%, 
+                transparent 10%, 
+                transparent 90%, 
+                var(--glass-bg) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Adjust textarea container - Duplicate removed */
+        
+        #txtCikti {
+            flex: 0 0 auto;
+            min-height: 48px;
+            max-height: 48px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .widgets-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            
+            .widget {
+                padding: 8px;
+                min-height: 60px;
+            }
+            
+            .widget-value {
+                font-size: 18px;
+            }
+            
+            .widget-icon {
+                font-size: 18px;
+            }
+            
+            .news-ticker {
+                animation-duration: 25s;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-height: 600px) {
+            .ai-container {
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            h1 {
+                font-size: 18px;
+            }
+            
+            #outputArea {
+                min-height: 120px;
+            }
+            
+            .widget {
+                min-height: 50px;
+                padding: 6px;
+            }
+            
+            .widget-value {
+                font-size: 16px;
+            }
+            
+            .widget-label {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Overlay for modals -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Voice Indicator kaldırıldı - artık dikte butonu içinde -->
+    
+    <!-- TTS Status Display -->
+    <div class="tts-status-display" id="ttsStatusDisplay">
+        <div class="tts-voice-icon">🔊</div>
+        <div class="tts-info">
+            <div class="tts-voice-name" id="ttsVoiceName">Edge Emel</div>
+            <div class="tts-progress" id="ttsProgress">
+                <div class="tts-progress-bar" id="ttsProgressBar"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Thinking Indicator -->
+    <div class="ai-thinking" id="aiThinking" style="display: none;">
+        <div class="thinking-dot"></div>
+        <div class="thinking-dot"></div>
+        <div class="thinking-dot"></div>
+    </div>
+    
+    <!-- Command Palette -->
+    <div class="command-palette" id="commandPalette">
+        <input type="text" 
+               class="command-palette-input" 
+               id="commandInput" 
+               placeholder="Komut ara... (örn: 'mail gönder', 'dosya ara', 'ayarlar')"
+               autocomplete="off">
+        <div class="command-palette-results" id="commandResults"></div>
+    </div>
+    
+    <!-- Modern AI Container -->
+    <div class="ai-container">
+        <!-- Header Section -->
+        <div class="ai-header">
+            <h1>QuadroAI Pilot</h1>
+            <button id="settingsButton" class="icon-only" onclick="openSettings()">
+                <span class="icon">⚙️</span>
+            </button>
+        </div>
+
+        <!-- Widgets Container -->
+        <div class="widgets-container">
+            <div class="widget" id="clockWidget">
+                <div class="widget-icon">🕐</div>
+                <div class="widget-value" id="clockValue">--:--</div>
+                <div class="widget-label" id="dateValue">--/--/----</div>
+            </div>
+            
+            <div class="widget" id="weatherWidget">
+                <div class="widget-icon">☀️</div>
+                <div class="widget-value" id="weatherValue">--°C</div>
+                <div class="widget-label" id="weatherLabel">Yükleniyor...</div>
+            </div>
+            
+            <div class="widget" id="meetingsWidget">
+                <div class="widget-icon">📅</div>
+                <div class="widget-value" id="meetingsValue">0</div>
+                <div class="widget-label">Bugünkü Toplantılar</div>
+            </div>
+            
+            <div class="widget" id="mailsWidget">
+                <div class="widget-icon">📧</div>
+                <div class="widget-value" id="mailsValue">0</div>
+                <div class="widget-label">Okunmamış Mail</div>
+            </div>
+        </div>
+        
+        <!-- News Ticker -->
+        <div class="news-ticker-container">
+            <div class="news-ticker" id="newsTicker">
+                <span class="news-item">Haberler yükleniyor...</span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Main content area -->
+            <div class="flex-grow-area">
+                <div id="outputArea"></div>
+                <div id="feedbackArea">Sistem durumu...</div>
+                <textarea id="txtCikti" placeholder="Komut yazın veya dikte kullanın..."></textarea>
+            </div>
+            
+            <!-- Unified action buttons bar -->
+            <div class="action-bar">
+                <!-- Sol: Çalıştır butonu -->
+                <div class="action-left">
+                    <button id="executeButton" onclick="executeCommand()" disabled>
+                        <span class="icon">▶️</span>
+                        <span>Çalıştır</span>
+                    </button>
+                </div>
+                
+                <!-- Orta: Dikte butonu -->
+                <div class="action-center">
+                    <button id="dikteButton" class="primary-action" onclick="toggleDikte()">
+                        <span class="icon" id="dikteIcon">🎙️</span>
+                        <span id="dikteText">Dikte</span>
+                    </button>
+                </div>
+                
+                <!-- Sağ: TTS kontrolleri -->
+                <div class="action-right">
+                    <div id="ttsControls" class="inline-controls">
+                        <span id="ttsStatus" style="margin-right: 10px; font-size: 14px; color: var(--text-primary);"></span>
+                        <button id="ttsPauseBtn" class="icon-only tts-btn" onclick="togglePauseTTS()" title="Duraklat/Devam">
+                            <span class="icon">⏸️</span>
+                        </button>
+                        <button class="icon-only tts-btn" onclick="stopTTS()" title="Durdur">
+                            <span class="icon">⏹️</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let debounceTimer;
+        let currentUtterance = null;
+        let selectedVoice = 'automatic'; // Varsayılan otomatik seçim
+        let edgeVoices = [];
+        let currentAudio = null; // Edge TTS audio elementi
+        let currentAudioUrl = null; // Edge TTS blob URL
+        let ttsIsPaused = false;
+        let isPlayingAudio = false; // Audio oynatma durumu
+        let lastAudioTime = 0; // Son audio zamanı
+        let isDictationActive = false; // Dikte durumu
+        
+        // Dikte Button State Functions
+        function showVoiceIndicator(text = 'Dinleniyor...') {
+            // Artık dikte butonunda gösteriliyor
+            updateDikteButtonState(true, text);
+        }
+        
+        function hideVoiceIndicator() {
+            // Dikte butonunu normal haline döndür
+            updateDikteButtonState(false);
+        }
+        
+        function updateDikteButtonState(isRecording, text = 'Dikte') {
+            console.log('[updateDikteButtonState] Çağrıldı, isRecording:', isRecording, 'text:', text);
+            const dikteBtn = document.getElementById('dikteButton');
+            
+            if (!dikteBtn) {
+                console.error('[updateDikteButtonState] Dikte butonu bulunamadı!');
+                return;
+            }
+            
+            if (isRecording) {
+                // Sound wave HTML'i oluştur
+                const soundWaveHTML = `
+                    <div class="sound-wave">
+                        <div class="sound-wave-bar"></div>
+                        <div class="sound-wave-bar"></div>
+                        <div class="sound-wave-bar"></div>
+                        <div class="sound-wave-bar"></div>
+                        <div class="sound-wave-bar"></div>
+                    </div>
+                `;
+                
+                // Butonu güncelle
+                dikteBtn.innerHTML = soundWaveHTML + `<span>${text}</span>`;
+                dikteBtn.classList.add('recording');
+                console.log('[updateDikteButtonState] Recording durumuna geçildi');
+            } else {
+                // Normal haline döndür
+                dikteBtn.innerHTML = `<span class="icon" id="dikteIcon">🎙️</span><span id="dikteText">Dikte</span>`;
+                dikteBtn.classList.remove('recording');
+                console.log('[updateDikteButtonState] Normal duruma döndürüldü');
+            }
+        }
+        
+        function showAIThinking() {
+            const thinking = document.getElementById('aiThinking');
+            thinking.style.display = 'flex';
+            thinking.style.position = 'fixed';
+            thinking.style.bottom = '20px';
+            thinking.style.left = '50%';
+            thinking.style.transform = 'translateX(-50%)';
+            thinking.style.background = 'var(--glass-bg)';
+            thinking.style.padding = 'var(--space-3)';
+            thinking.style.borderRadius = '999px';
+            thinking.style.backdropFilter = 'blur(20px)';
+            thinking.style.boxShadow = 'var(--elevation-2)';
+        }
+        
+        function hideAIThinking() {
+            const thinking = document.getElementById('aiThinking');
+            thinking.style.display = 'none';
+        }
+        
+        function showTTSStatus(voiceName = 'Edge Emel') {
+            const display = document.getElementById('ttsStatusDisplay');
+            const voiceNameEl = document.getElementById('ttsVoiceName');
+            voiceNameEl.textContent = voiceName;
+            display.classList.add('show');
+        }
+        
+        function hideTTSStatus() {
+            const display = document.getElementById('ttsStatusDisplay');
+            display.classList.remove('show');
+        }
+        
+        function updateTTSProgress(percent) {
+            const progressBar = document.getElementById('ttsProgressBar');
+            progressBar.style.width = percent + '%';
+        }
+        
+        // Dikte toggle fonksiyonu
+        function toggleDikte() {
+            console.log("[JavaScript] toggleDikte() çağrıldı, isDictationActive:", isDictationActive);
+            if (isDictationActive) {
+                // Dikteyi durdur
+                stopDikte();
+            } else {
+                // Dikteyi başlat
+                startDikte();
+            }
+        }
+        
+        // Dikteyi durdur
+        function stopDikte() {
+            console.log("[JavaScript] stopDikte() çağrıldı");
+            
+            // C#'a dikte durdurma mesajı gönder
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ action: 'stopDikte' }));
+                console.log("[JavaScript] stopDikte mesajı gönderildi");
+            }
+            
+            // Butonu normale döndür
+            updateDikteButtonState(false);
+            isDictationActive = false;
+            appendFeedback('🎙️ Dikte durduruldu');
+        }
+        
+        function startDikte() {
+            console.log("[JavaScript] startDikte() çağrıldı");
+            try {
+                // Dikte durumunu aktif yap
+                isDictationActive = true;
+                // Dikte butonunu recording durumuna al ve animasyonu başlat
+                updateDikteButtonState(true, 'Dinleniyor...');
+                
+                // ÇÖZÜM: Önce TTS'i durdur
+                if (window.speechSynthesis && window.speechSynthesis.speaking) {
+                    console.log("[JavaScript] TTS konuşuyor, durduruluyor...");
+                    window.speechSynthesis.cancel();
+                }
+                
+                // Mevcut C# audio stream varsa tamamen durdur
+                if (currentAudio) {
+                    console.log("[JavaScript] C# audio stream durduruluyor...");
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    currentAudio = null;
+                    
+                    // Blob URL varsa temizle
+                    if (currentAudioUrl && typeof currentAudioUrl === 'string' && !currentAudioUrl.includes('null')) {
+                        console.log("[JavaScript] Blob URL temizleniyor...");
+                        try {
+                            URL.revokeObjectURL(currentAudioUrl);
+                        } catch (e) {
+                            console.warn('[JavaScript] URL temizleme hatası:', e);
+                        }
+                        currentAudioUrl = null;
+                    }
+                    
+                    // TTS kontrol panelini gizle
+                    hideTTSControls();
+                }
+                
+                // C#'a da TTS durdurma mesajı gönder
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ action: 'stopTts' }));
+                    console.log("[JavaScript] stopTts mesajı gönderildi");
+                }
+                
+                // Textarea'ya odaklan
+                const textarea = document.getElementById('txtCikti');
+                textarea.focus();
+                textarea.click();
+                
+                // Koordinatları C#'a bildir (eski dosyadaki sistem - ekran koordinatı olarak, DPI ve çoklu monitör uyumlu)
+                const rect = textarea.getBoundingClientRect();
+                const scale = window.devicePixelRatio || 1;
+                const screenLeft = ((window.screenLeft !== undefined ? window.screenLeft : window.screenX) + rect.left) * scale;
+                const screenTop = ((window.screenTop !== undefined ? window.screenTop : window.screenY) + rect.top) * scale;
+                
+                if (window.chrome && window.chrome.webview) {
+                    // Önce koordinatları gönder
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'textareaPosition',
+                        left: screenLeft,
+                        top: screenTop,
+                        width: rect.width * scale,
+                        height: rect.height * scale
+                    }));
+                    console.log('[JavaScript] Textarea koordinatları gönderildi:', {
+                        left: screenLeft,
+                        top: screenTop,
+                        width: rect.width * scale,
+                        height: rect.height * scale
+                    });
+                    
+                    // Sonra dikte başlatma mesajı gönder
+                    window.chrome.webview.postMessage(JSON.stringify({ action: 'startDikte' }));
+                } else {
+                    console.error("[JavaScript] WebView bulunamadı!");
+                }
+            } catch (error) {
+                console.error("[JavaScript] startDikte hatası:", error);
+            }
+        }
+
+        // Edge Neural TTS ile konuşma
+        function speakText() {
+            const text = document.getElementById('txtCikti').value;
+            if (!text.trim()) return;
+            
+            // Mevcut konuşmayı durdur
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            
+            // Yeni konuşma oluştur
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            
+            // Seçili sesi kullan
+            if (selectedVoice) {
+                currentUtterance.voice = selectedVoice;
+            } else {
+                // Varsayılan olarak ilk Türkçe sesi kullan
+                const turkishVoice = edgeVoices.find(v => v.lang.includes('tr-TR'));
+                if (turkishVoice) {
+                    currentUtterance.voice = turkishVoice;
+                }
+            }
+            
+            // Konuşma ayarları
+            currentUtterance.rate = 1.0;  // Konuşma hızı
+            currentUtterance.pitch = 1.0; // Ses tonu
+            currentUtterance.volume = 1.0; // Ses seviyesi
+            
+            // Event listeners
+            currentUtterance.onstart = () => {
+                document.getElementById('speakButton').innerHTML = '<span class="icon">⏸️</span><span>Durdur</span>';
+                appendFeedback('Konuşma başladı...');
+                
+                // TTS başladığında dikte butonunun recording durumunu sıfırla
+                updateDikteButtonState(false);
+                isDictationActive = false;
+                console.log('[speakText] Dikte butonu normal duruma döndürüldü');
+            };
+            
+            currentUtterance.onend = () => {
+                document.getElementById('speakButton').innerHTML = '<span class="icon">🔊</span><span id="speakButtonText">Edge Sesi ile Seslendir</span>';
+                appendFeedback('Konuşma tamamlandı.');
+            };
+            
+            currentUtterance.onerror = (event) => {
+                console.error('TTS Hatası:', event);
+                appendFeedback('Konuşma hatası: ' + event.error);
+            };
+            
+            // Konuşmayı başlat
+            window.speechSynthesis.speak(currentUtterance);
+        }
+        
+        // TTS için metni al ve konuş
+        function speakWithEdgeVoice(text) {
+            console.log('[speakWithEdgeVoice] Fonksiyon çağrıldı:', text);
+            console.log('[speakWithEdgeVoice] Text type:', typeof text);
+            console.log('[speakWithEdgeVoice] Text length:', text ? text.length : 0);
+            
+            if (!text || !text.trim()) {
+                console.log('[speakWithEdgeVoice] Boş metin, çıkılıyor');
+                return;
+            }
+            
+            // Debug için mevcut durum kontrolü
+            console.log('[speakWithEdgeVoice] window.speechSynthesis mevcut mu?', !!window.speechSynthesis);
+            console.log('[speakWithEdgeVoice] Mevcut konuşma durumu:', window.speechSynthesis.speaking);
+            console.log('[speakWithEdgeVoice] Bekleyen konuşmalar:', window.speechSynthesis.pending);
+            console.log('[speakWithEdgeVoice] Duraklatılmış mı?:', window.speechSynthesis.paused);
+            
+            // WebView2 ses izinlerini kontrol et
+            console.log('[speakWithEdgeVoice] Document visibility:', document.visibilityState);
+            console.log('[speakWithEdgeVoice] Audio context state:', typeof AudioContext !== 'undefined' ? new AudioContext().state : 'undefined');
+            
+            // Mevcut konuşmayı durdur
+            if (window.speechSynthesis.speaking) {
+                console.log('[speakWithEdgeVoice] Mevcut konuşma durduruluyor');
+                window.speechSynthesis.cancel();
+            }
+            
+            // Tüm sesleri al ve kontrol et
+            const allVoices = window.speechSynthesis.getVoices();
+            console.log('[speakWithEdgeVoice] Toplam ses sayısı:', allVoices.length);
+            console.log('[speakWithEdgeVoice] Tüm sesler:', allVoices.map(v => ({name: v.name, lang: v.lang})));
+            
+            // Tüm Türkçe sesleri göster
+            const turkishVoices = allVoices.filter(v => v.lang.includes('tr-TR'));
+            console.log('[speakWithEdgeVoice] Türkçe sesler:', turkishVoices.map(v => v.name));
+            console.log(`[speakWithEdgeVoice] ${turkishVoices.length} Türkçe ses bulundu`);
+            
+            // Edge Neural sesleri için özel kontrol
+            let targetVoice = null;
+            const voiceNameToSearch = window.currentEdgeVoiceName || 'Emel'; // Varsayılan Emel
+            console.log('[speakWithEdgeVoice] Aranacak ses:', voiceNameToSearch);
+            
+            // Öncelikle Edge Neural seslerini ara
+            targetVoice = allVoices.find(voice => {
+                const voiceName = voice.name.toLowerCase();
+                const isEdgeNeural = voiceName.includes('neural') || voiceName.includes('online');
+                const isTurkish = voice.lang.includes('tr-TR');
+                const hasTargetName = voiceName.includes(voiceNameToSearch.toLowerCase());
+                
+                console.log(`[speakWithEdgeVoice] Ses kontrol: ${voice.name} - Neural: ${isEdgeNeural}, Turkish: ${isTurkish}, Target: ${hasTargetName}`);
+                
+                return isEdgeNeural && isTurkish && hasTargetName;
+            });
+            
+            // Edge Neural bulunamadıysa, sadece Emel'i ara (Tolga devre dışı)
+            if (!targetVoice) {
+                console.log('[speakWithEdgeVoice] Edge Neural Emel bulunamadı, Tolga devre dışı bırakıldı');
+                console.warn('[speakWithEdgeVoice] Edge Neural Emel sesi bulunamadı');
+                
+                // Hiçbir ses bulamadıysak hata mesajı ver
+                console.error('[speakWithEdgeVoice] Edge Emel sesi bulunamadı ve Tolga devre dışı!');
+                return; // Seslendirmeyi iptal et
+            }
+            
+            // Yeni konuşma oluştur
+            const utterance = new SpeechSynthesisUtterance(text);
+            console.log('[speakWithEdgeVoice] SpeechSynthesisUtterance oluşturuldu');
+            
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+                console.log('[speakWithEdgeVoice] Ses bulundu ve ayarlandı:', targetVoice.name);
+                
+                // Hangi ses tipinin kullanıldığını belirt
+                const voiceType = targetVoice.name.toLowerCase().includes('neural') ? 'Edge Neural' : 
+                                targetVoice.name.toLowerCase().includes('tolga') ? 'Windows Yerleşik' : 'Diğer';
+                console.log(`[speakWithEdgeVoice] ${voiceType} ses kullanılıyor: ${targetVoice.name}`);
+            } else {
+                console.warn('[speakWithEdgeVoice] Uygun ses bulunamadı!');
+                console.warn('[speakWithEdgeVoice] Uygun TTS sesi bulunamadı!');
+                
+                // Sesler henüz yüklenmemiş olabilir, tekrar dene
+                if (allVoices.length === 0) {
+                    console.log('[speakWithEdgeVoice] Sesler henüz yüklenmemiş, 500ms sonra tekrar deneniyor...');
+                    setTimeout(() => speakWithEdgeVoice(text), 500);
+                    return;
+                }
+            }
+            
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            utterance.lang = 'tr-TR'; // Dili açıkça belirt
+            
+            // Event listeners
+            utterance.onstart = () => {
+                console.log('[speakWithEdgeVoice] TTS başladı');
+                console.log(`[speakWithEdgeVoice] ${targetVoice ? targetVoice.name : 'Varsayılan ses'} ile konuşuyor...`);
+                appendFeedback('[INFO] Seslendirme başladı');
+                
+                // TTS başladığında dikte butonunun recording durumunu sıfırla
+                updateDikteButtonState(false);
+                isDictationActive = false;
+                console.log('[speakWithEdgeVoice] Dikte butonu normal duruma döndürüldü');
+            };
+            
+            utterance.onend = () => {
+                console.log('[speakWithEdgeVoice] TTS tamamlandı');
+                appendFeedback('[SUCCESS] Seslendirme tamamlandı');
+            };
+            
+            utterance.onerror = (event) => {
+                console.error('[speakWithEdgeVoice] TTS hatası:', event);
+                console.error('[speakWithEdgeVoice] Hata detayı:', {
+                    error: event.error,
+                    charIndex: event.charIndex,
+                    elapsedTime: event.elapsedTime,
+                    name: event.name
+                });
+                appendFeedback('TTS Hatası: ' + event.error);
+            };
+            
+            // Konuşmayı başlat
+            try {
+                console.log('[speakWithEdgeVoice] speechSynthesis.speak çağrılıyor...');
+                console.log('[speakWithEdgeVoice] Utterance text:', utterance.text);
+                console.log('[speakWithEdgeVoice] Utterance voice:', utterance.voice ? utterance.voice.name : 'null');
+                console.log('[speakWithEdgeVoice] Utterance lang:', utterance.lang);
+                console.log('[speakWithEdgeVoice] Utterance rate:', utterance.rate);
+                console.log('[speakWithEdgeVoice] Utterance pitch:', utterance.pitch);
+                console.log('[speakWithEdgeVoice] Utterance volume:', utterance.volume);
+                
+                window.speechSynthesis.speak(utterance);
+                console.log('[speakWithEdgeVoice] speechSynthesis.speak başarıyla çağrıldı');
+                
+                // Durumu kontrol et
+                setTimeout(() => {
+                    console.log('[speakWithEdgeVoice] 100ms sonra - Konuşma durumu:', window.speechSynthesis.speaking);
+                    console.log('[speakWithEdgeVoice] 100ms sonra - Bekleyen:', window.speechSynthesis.pending);
+                    console.log('[speakWithEdgeVoice] 100ms sonra - Duraklatılmış:', window.speechSynthesis.paused);
+                }, 100);
+                
+                setTimeout(() => {
+                    console.log('[speakWithEdgeVoice] 500ms sonra - Konuşma durumu:', window.speechSynthesis.speaking);
+                    if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+                        console.warn('[speakWithEdgeVoice] TTS başlatılamadı veya hemen bitti!');
+                        appendFeedback('[WARNING] Ses çıkışı kontrol edilmeli');
+                    }
+                }, 500);
+            } catch (e) {
+                console.error('[speakWithEdgeVoice] speechSynthesis.speak hatası:', e);
+                appendFeedback('TTS başlatma hatası: ' + e.message);
+            }
+        }
+
+        function executeCommand() {
+            const text = document.getElementById('txtCikti').value;
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ action: 'execute', text: text }));
+            } else {
+                console.error("[JavaScript] WebView bulunamadı!");
+            }
+        }
+
+
+        // Çıktı alanına yeni mesaj ekle (en üste ekler)
+        function appendOutput(message, isSystem = false, target = 'outputArea') {
+            console.log('[JavaScript] appendOutput çağrıldı:', message, 'isSystem:', isSystem, 'target:', target);
+            const outputDiv = document.getElementById(target);
+            
+            if (!outputDiv) {
+                console.error('[JavaScript] appendOutput - target element bulunamadı:', target);
+                return;
+            }
+            
+            // İlk mesajda placeholder'ı temizle
+            if (outputDiv.textContent.includes('Çıktılar burada görünecek')) {
+                outputDiv.innerHTML = '';
+                console.log('[JavaScript] appendOutput - placeholder temizlendi');
+            }
+            
+            const entry = document.createElement('div');
+            
+            // HTML içeriği kontrol et
+            if (message.includes('<!DOCTYPE html>') || message.includes('<html')) {
+                // Tam HTML sayfası algılandı - güvenlik nedeniyle sadece body içeriğini al
+                console.log('[JavaScript] appendOutput - Full HTML detected, extracting body content');
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(message, 'text/html');
+                const bodyContent = doc.body ? doc.body.innerHTML : message;
+                entry.innerHTML = bodyContent;
+            } else if (message.includes('<div') || message.includes('<p>') || message.includes('<a') || message.includes('<strong>')) {
+                // Kısmi HTML içeriği - doğrudan ekle
+                entry.innerHTML = message;
+                console.log('[JavaScript] appendOutput - Partial HTML content detected');
+                console.log('[JavaScript] First 200 chars of HTML:', message.substring(0, 200));
+            } else {
+                // Normal metin ise satır sonlarını <br> ile değiştir
+                const formattedMessage = message.replace(/\n/g, '<br>');
+                entry.innerHTML = `- ${formattedMessage}`;
+            }
+            
+            if (isSystem && target === 'outputArea') entry.style.color = '#6cf';
+            
+            // Yeni mesajı en üste ekle
+            if (outputDiv.firstChild) {
+                outputDiv.insertBefore(entry, outputDiv.firstChild);
+            } else {
+                outputDiv.appendChild(entry);
+            }
+            outputDiv.scrollTop = 0;
+            console.log('[JavaScript] appendOutput tamamlandı, mesaj eklendi');
+            
+            // Yeni eklenen linkleri kontrol et ve debug için logla
+            const newLinks = entry.querySelectorAll('a');
+            if (newLinks.length > 0) {
+                console.log('[JavaScript] Yeni eklenen linkler:', newLinks.length);
+                newLinks.forEach((link, index) => {
+                    console.log(`[JavaScript] Link ${index + 1}: href="${link.href}", text="${link.textContent}"`);
+                });
+            }
+        }
+
+        // Komut geri bildirim alanına (feedbackArea) mesaj ekle, en fazla 5 satır tut
+        // Feedback deduplication için son mesajları takip et
+        let feedbackHistory = [];
+        const FEEDBACK_HISTORY_SIZE = 10;
+        const FEEDBACK_DUPLICATE_TIMEOUT = 2000; // 2 saniye içinde aynı mesaj gelirse engelle
+        
+        function appendFeedback(message) {
+            const feedbackDiv = document.getElementById('feedbackArea');
+            const now = Date.now();
+            
+            // Tekrarlanan mesajları kontrol et
+            const recentDuplicate = feedbackHistory.find(item => 
+                item.message === message && 
+                (now - item.timestamp) < FEEDBACK_DUPLICATE_TIMEOUT
+            );
+            
+            if (recentDuplicate) {
+                console.log('[Feedback] Tekrarlanan mesaj engellendi:', message);
+                return; // Aynı mesaj kısa süre önce gösterilmiş, atla
+            }
+            
+            // İlk mesajda placeholder'ı temizle
+            if (feedbackDiv.textContent.includes('Sistem durumu')) {
+                feedbackDiv.innerHTML = '';
+            }
+            
+            // Mesaj tipine göre renk belirle
+            let color = 'var(--feedback-color)';
+            if (message.includes('[ERROR]')) {
+                color = '#dc3545';
+            } else if (message.includes('[SUCCESS]')) {
+                color = '#28a745';
+            } else if (message.includes('[INFO]')) {
+                color = '#17a2b8';
+            }
+            
+            // Tek satır için sadece metin güncelle
+            const cleanMessage = message.replace(/\[(ERROR|SUCCESS|INFO|WARNING)\]/g, '').trim();
+            feedbackDiv.innerHTML = `<span style="color: ${color}">● ${cleanMessage}</span>`;
+            feedbackDiv.style.color = color;
+            
+            feedbackDiv.scrollTop = feedbackDiv.scrollHeight;
+            
+            // Mesajı geçmişe ekle
+            feedbackHistory.push({ message, timestamp: now });
+            
+            // Geçmişi sınırla
+            if (feedbackHistory.length > FEEDBACK_HISTORY_SIZE) {
+                feedbackHistory.shift();
+            }
+        }
+
+        // Eski updateOutput fonksiyonu, textarea yerine çıktı alanını günceller
+        function updateOutput(text) {
+            appendOutput(text);
+            checkButtonStates();
+        }
+
+        function checkButtonStates() {
+            const hasText = document.getElementById('txtCikti').value.trim().length > 0;
+            const executeBtn = document.getElementById('executeButton');
+            if (executeBtn) {
+                executeBtn.disabled = !hasText;
+            }
+        }        // Debounced text change handler
+        document.getElementById('txtCikti').addEventListener('input', function (e) {
+            checkButtonStates();
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'textChanged',
+                        text: e.target.value
+                    }));
+                }
+            }, 500);
+        });
+
+        // Eski dosyadan: Textarea'ya her tıklandığında koordinatları güncelle
+        document.getElementById('txtCikti').addEventListener('focus', function(e) {
+            console.log('[JavaScript] Textarea focus event - koordinatlar güncelleniyor');
+            try {
+                const textarea = e.target;
+                const rect = textarea.getBoundingClientRect();
+                const scale = window.devicePixelRatio || 1;
+                const screenLeft = ((window.screenLeft !== undefined ? window.screenLeft : window.screenX) + rect.left) * scale;
+                const screenTop = ((window.screenTop !== undefined ? window.screenTop : window.screenY) + rect.top) * scale;
+                
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'textareaPosition',
+                        left: screenLeft,
+                        top: screenTop,
+                        width: rect.width * scale,
+                        height: rect.height * scale
+                    }));
+                    console.log('[JavaScript] Focus event - textarea koordinatları güncellendi');
+                }
+            } catch (error) {
+                console.error('[JavaScript] Focus event koordinat hatası:', error);
+            }
+        });
+
+        // Eski dosyadan: Textarea'ya her tıklandığında koordinatları güncelle
+        document.getElementById('txtCikti').addEventListener('click', function(e) {
+            console.log('[JavaScript] Textarea click event - koordinatlar güncelleniyor');
+            try {
+                const textarea = e.target;
+                const rect = textarea.getBoundingClientRect();
+                const scale = window.devicePixelRatio || 1;
+                const screenLeft = ((window.screenLeft !== undefined ? window.screenLeft : window.screenX) + rect.left) * scale;
+                const screenTop = ((window.screenTop !== undefined ? window.screenTop : window.screenY) + rect.top) * scale;
+                
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'textareaPosition',
+                        left: screenLeft,
+                        top: screenTop,
+                        width: rect.width * scale,
+                        height: rect.height * scale
+                    }));
+                    console.log('[JavaScript] Click event - textarea koordinatları güncellendi');
+                }
+            } catch (error) {
+                console.error('[JavaScript] Click event koordinat hatası:', error);
+            }
+        });
+
+        // Link tıklamalarını yakala - event delegation ile dinamik içerik için de çalışır
+        document.addEventListener('click', function(e) {
+            // A tag'ine tıklanmış mı kontrol et
+            let target = e.target;
+            while (target && target.tagName !== 'A') {
+                target = target.parentElement;
+            }
+            
+            if (target && target.tagName === 'A') {
+                e.preventDefault(); // Varsayılan davranışı engelle
+                e.stopPropagation(); // Event yayılmasını durdur
+                
+                // href veya data-href'den URL'yi al
+                const url = target.href || target.getAttribute('data-href');
+                
+                if (url && url !== '#' && url !== 'javascript:void(0)') {
+                    console.log('[JavaScript] Link tıklandı:', url);
+                    console.log('[JavaScript] Link element:', target);
+                    console.log('[JavaScript] Link class:', target.className);
+                    
+                    // C#'a mesaj gönder
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify({
+                            action: 'openLink',
+                            url: url
+                        }));
+                    } else {
+                        console.error('[JavaScript] WebView bridge bulunamadı!');
+                    }
+                }
+            }
+        }, true); // true = capture phase'de çalışsın
+
+        // WebView'dan gelen mesajları dinle
+        if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.addEventListener('message', function (e) {
+                console.log('[JavaScript] WebView mesajı alındı:', e.data);
+                
+                // e.data zaten bir JavaScript objesi ise parse etme
+                let data;
+                if (typeof e.data === 'string') {
+                    data = JSON.parse(e.data);
+                } else {
+                    data = e.data;
+                }
+                console.log('[JavaScript] Parsed data:', data);
+                
+                if (data.action === 'updateText') {
+                    document.getElementById('txtCikti').value = data.text;
+                    checkButtonStates();
+                    // Dikte metni geldiğinde butonu normale döndür
+                    updateDikteButtonState(false);
+                    isDictationActive = false;
+                    console.log('[JavaScript] updateText - Dikte butonu normale döndürüldü');
+                } else if (data.action === 'clearText') {
+                    console.log('[JavaScript] clearText action alındı!');
+                    
+                    // Güçlü temizleme - birkaç farklı yöntemle temizle
+                    const textarea = document.getElementById('txtCikti');
+                    if (textarea) {
+                        console.log('[JavaScript] clearText - textarea bulundu, mevcut değer:', textarea.value);
+                        
+                        // 1. Normal temizleme
+                        textarea.value = '';
+                        
+                        // 2. DOM property olarak da temizle
+                        textarea.textContent = '';
+                        textarea.innerText = '';
+                        
+                        // 3. setAttribute ile de temizle
+                        textarea.setAttribute('value', '');
+                        
+                        // 4. Focus ve selection temizle
+                        textarea.focus();
+                        textarea.setSelectionRange(0, 0);
+                        
+                        // 5. Zorla bir kez daha
+                        setTimeout(() => {
+                            textarea.value = '';
+                            textarea.focus();
+                            checkButtonStates();
+                        }, 10);
+                        
+                        checkButtonStates();
+                        console.log('[JavaScript] clearText - textarea güçlü temizleme yapıldı, yeni değer:', textarea.value);
+                    } else {
+                        console.error('[JavaScript] clearText - textarea bulunamadı!');
+                    }
+                } else if (data.action === 'updateButtonText') {
+                    document.getElementById(data.buttonId).innerHTML = data.text;
+                } else if (data.action === 'setButtonState') {
+                    document.getElementById(data.buttonId).disabled = data.disabled;
+                } else if (data.action === 'appendOutput') {
+                    console.log('[JavaScript] appendOutput action alındı:', data.text, 'isSystem:', data.isSystem);
+                    appendOutput(data.text, data.isSystem);
+                } else if (data.action === 'appendFeedback') {
+                    appendFeedback(data.text);
+                } else if (data.action === 'speak') {
+                    appendFeedback(data.text);
+                    window.chrome.webview.postMessage(JSON.stringify({ action: 'speak', text: data.text }));
+                } else if (data.action === 'updateWidget') {
+                    console.log('[JavaScript] updateWidget action alındı:', data);
+                    handleWidgetUpdate(data);
+                } else if (data.action === 'speakWithEdge') {
+                    console.log('[WebView Message] speakWithEdge action alındı:', data);
+                    appendFeedback('[DEBUG] speakWithEdge mesajı alındı: ' + data.text);
+                    appendFeedback('[DEBUG] Ses: ' + data.voice);
+                    
+                    // Edge Neural TTS ile konuş
+                    // Ses ismini belirle (data.voice varsa kullan)
+                    if (data.voice) {
+                        window.currentEdgeVoiceName = data.voice;
+                    }
+                    
+                    // Fonksiyonu çağırmadan önce kontrol et
+                    if (typeof speakWithEdgeVoice === 'function') {
+                        console.log('[WebView Message] speakWithEdgeVoice fonksiyonu çağrılıyor...');
+                        speakWithEdgeVoice(data.text);
+                    } else {
+                        console.error('[WebView Message] speakWithEdgeVoice fonksiyonu bulunamadı!');
+                        appendFeedback('[ERROR] speakWithEdgeVoice fonksiyonu bulunamadı!');
+                    }
+                } else if (data.action === 'dikteEnded' || data.action === 'dikteStopped') {
+                    console.log('[JavaScript] Dikte durduruldu - action:', data.action);
+                    // Dikte butonunu normal haline döndür
+                    updateDikteButtonState(false);
+                    isDictationActive = false;
+                    appendFeedback('🎙️ Dikte durduruldu');
+                } else if (data.action === 'updateDictationState') {
+                    console.log('[JavaScript] updateDictationState alındı, isActive:', data.isActive);
+                    isDictationActive = data.isActive;
+                    updateDikteButtonState(data.isActive, data.isActive ? 'Dinleniyor...' : 'Dikte');
+                    if (!data.isActive) {
+                        appendFeedback('🎙️ Dikte durduruldu');
+                    }
+                } else if (data.action === 'runTestAudio') {
+                    console.log('[JavaScript] runTestAudio action alındı');
+                    testAudioOutput();
+                } else if (data.action === 'playAudioStream') {
+                    console.log('[JavaScript] playAudioStream action alındı');
+                    console.log('[JavaScript] Audio data length:', data.audioData ? data.audioData.length : 0);
+                    console.log('[JavaScript] Audio format:', data.format);
+                    appendFeedback('[DEBUG] playAudioStream mesajı alındı');
+                    // TTS başlıyorsa dikte butonu normale dönsün
+                    updateDikteButtonState(false);
+                    isDictationActive = false;
+                    if (data.audioData) {
+                        playBase64Audio(data.audioData, data.format || 'webm');
+                    } else {
+                        console.error('[JavaScript] Audio data boş!');
+                        appendFeedback('[ERROR] Audio data boş!');
+                    }
+                } else if (data.action === 'backgroundAnalysisResult') {
+                    // Arka plan analizi sonucu
+                    handleBackgroundAnalysis(data.brightness);
+                }
+            });
+        }
+        
+        // C# tarafından gelen base64 audio stream'i oynat
+        function playBase64Audio(base64Data, format) {
+            try {
+                console.log('[playBase64Audio] Audio stream alındı, boyut:', base64Data.length);
+                
+                // Çoklu stream önleme - debounce kontrolü
+                const MIN_AUDIO_INTERVAL = 100; // 100ms
+                if (Date.now() - lastAudioTime < MIN_AUDIO_INTERVAL) {
+                    console.log('[playBase64Audio] Çok hızlı audio isteği, atlanıyor');
+                    return;
+                }
+                
+                // Mevcut audio oynatılıyorsa önce durdur
+                if (isPlayingAudio && currentAudio) {
+                    console.log('[playBase64Audio] Mevcut audio durduruluyor, yeni audio başlatılıyor');
+                    
+                    // Mevcut sesi durdur
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    currentAudio = null;
+                    isPlayingAudio = false;
+                    
+                    // URL temizliği
+                    if (currentAudioUrl) {
+                        try {
+                            URL.revokeObjectURL(currentAudioUrl);
+                        } catch (e) {
+                            console.warn('[playBase64Audio] URL temizleme hatası:', e);
+                        }
+                        currentAudioUrl = null;
+                    }
+                    
+                    // TTS kontrollerini gizle
+                    hideTTSControls();
+                }
+                
+                lastAudioTime = Date.now();
+                appendFeedback('[Edge TTS] C# tarafından ses verisi alındı');
+                
+                // Base64'ü binary'ye çevir
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Blob oluştur
+                let blob;
+                let audioUrl;
+                
+                try {
+                    blob = new Blob([bytes], { type: `audio/${format}` });
+                    
+                    // Blob boyutunu kontrol et
+                    if (blob.size === 0) {
+                        console.error('[playBase64Audio] Boş blob oluşturuldu');
+                        throw new Error('Boş blob');
+                    }
+                    
+                    // WebView2 için özel blob URL oluşturma
+                    try {
+                        audioUrl = URL.createObjectURL(blob);
+                    } catch (urlError) {
+                        console.error('[playBase64Audio] URL.createObjectURL hatası:', urlError);
+                        // Alternative approach for WebView2
+                        audioUrl = null;
+                    }
+                    
+                    // Blob URL null kontrolü - daha güvenli kontrol
+                    if (!audioUrl || typeof audioUrl !== 'string' || audioUrl.includes('null') || audioUrl === 'blob:null' || !audioUrl.startsWith('blob:')) {
+                        console.error('[playBase64Audio] Geçersiz blob URL:', audioUrl);
+                        throw new Error('Geçersiz blob URL');
+                    }
+                } catch (blobError) {
+                    console.error('[playBase64Audio] Blob oluşturma hatası:', blobError);
+                    appendFeedback('[ERROR] Ses dosyası oluşturulamadı - Data URL kullanılıyor');
+                    
+                    // Fallback: Data URL dene - WebView2'de daha güvenilir
+                    try {
+                        const dataUrl = `data:audio/${format};base64,${base64Data}`;
+                        console.log('[playBase64Audio] Data URL fallback deneniyor');
+                        
+                        // Data URL'i doğrudan kullan
+                        const audio = new Audio();
+                        audio.volume = 1.0;
+                        currentAudio = audio;
+                        
+                        // Event listeners ekle
+                        audio.onloadeddata = () => {
+                            console.log('[playBase64Audio] Data URL audio yüklendi');
+                        };
+                        
+                        audio.onplay = () => {
+                            console.log('[EdgeTTS] Data URL audio oynatılıyor');
+                            appendFeedback('[SUCCESS] Edge TTS (Data URL) ses çalıyor!');
+                            isPlayingAudio = true;
+                            showTTSControls();
+                            updateTTSStatus('🔊 Metin seslendiriliyor...');
+                            
+                            if (window.chrome && window.chrome.webview) {
+                                window.chrome.webview.postMessage(JSON.stringify({ action: 'ttsStarted' }));
+                            }
+                        };
+                        
+                        audio.onended = () => {
+                            console.log('[EdgeTTS] Data URL audio tamamlandı');
+                            appendFeedback('[SUCCESS] Edge TTS tamamlandı!');
+                            isPlayingAudio = false;
+                            hideTTSControls();
+                            currentAudio = null;
+                            
+                            if (window.chrome && window.chrome.webview) {
+                                window.chrome.webview.postMessage(JSON.stringify({ action: 'ttsEnded' }));
+                            }
+                        };
+                        
+                        audio.onerror = (e) => {
+                            console.error('[EdgeTTS] Data URL audio hatası:', e);
+                            appendFeedback('[ERROR] Data URL audio oynatma hatası');
+                            isPlayingAudio = false;
+                            currentAudio = null;
+                        };
+                        
+                        // Data URL'i ayarla ve oynat
+                        audio.src = dataUrl;
+                        audio.play().catch(e => {
+                            console.error('[EdgeTTS] Data URL play hatası:', e);
+                            appendFeedback('[ERROR] Audio oynatma başlatılamadı: ' + e.message);
+                            isPlayingAudio = false;
+                            currentAudio = null;
+                        });
+                        
+                        return;
+                    } catch (e) {
+                        console.error('[playBase64Audio] Data URL da başarısız:', e);
+                        appendFeedback('[ERROR] Ses oynatma tamamen başarısız');
+                        return;
+                    }
+                }
+                
+                // Önceki audio'yu temizle
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                }
+                
+                // TTS pause durumunu temizle
+                ttsIsPaused = false;
+                
+                // Önceki blob URL'i temizle
+                if (currentAudioUrl && typeof currentAudioUrl === 'string' && !currentAudioUrl.includes('null')) {
+                    try {
+                        URL.revokeObjectURL(currentAudioUrl);
+                    } catch (e) {
+                        console.warn('[playBase64Audio] URL temizleme hatası:', e);
+                    }
+                }
+                
+                // Yeni URL'i global değişkende sakla
+                currentAudioUrl = audioUrl;
+                
+                // Audio element oluştur ve oynat
+                const audio = new Audio(audioUrl);
+                audio.volume = 1.0;
+                currentAudio = audio; // Global referans sakla
+                
+                audio.onplay = () => {
+                    console.log('[EdgeTTS] C# audio stream oynatılıyor');
+                    appendFeedback('[SUCCESS] Edge TTS (C#) ses çalıyor!');
+                    isPlayingAudio = true; // Audio oynatılıyor olarak işaretle
+                    
+                    // TTS kontrol panelini göster
+                    showTTSControls();
+                    updateTTSStatus('🔊 Metin seslendiriliyor...');
+                    
+                    // ÇÖZÜM: C#'a TTS başladığını bildir
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify({ action: 'ttsStarted' }));
+                        console.log('[JavaScript] ttsStarted mesajı gönderildi');
+                    }
+                };
+                
+                audio.onended = () => {
+                    console.log('[EdgeTTS] C# audio stream tamamlandı');
+                    appendFeedback('[SUCCESS] Edge TTS (C#) tamamlandı!');
+                    isPlayingAudio = false; // Audio bitti olarak işaretle
+                    
+                    // TTS kontrol panelini gizle
+                    hideTTSControls();
+                    currentAudio = null;
+                    
+                    // ÇÖZÜM: C#'a TTS bittiğini bildir
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify({ action: 'ttsEnded' }));
+                        console.log('[JavaScript] ttsEnded mesajı gönderildi');
+                    }
+                    
+                    // Blob URL'i temizle
+                    if (currentAudioUrl && typeof currentAudioUrl === 'string' && !currentAudioUrl.includes('null')) {
+                        try {
+                            URL.revokeObjectURL(currentAudioUrl);
+                        } catch (e) {
+                            console.warn('[playBase64Audio] onended URL temizleme hatası:', e);
+                        }
+                        currentAudioUrl = null;
+                    }
+                };
+                
+                audio.onerror = (e) => {
+                    console.error('[EdgeTTS] C# audio stream hatası:', e);
+                    console.error('[EdgeTTS] Error target:', e.target);
+                    console.error('[EdgeTTS] Audio src:', audio.src);
+                    console.error('[EdgeTTS] Audio error code:', audio.error);
+                    console.error('[EdgeTTS] Network state:', audio.networkState);
+                    console.error('[EdgeTTS] Ready state:', audio.readyState);
+                    
+                    let errorMsg = '[ERROR] Audio oynatma hatası';
+                    if (audio.error) {
+                        switch(audio.error.code) {
+                            case 1: errorMsg += ' - Medya yükleme iptal edildi'; break;
+                            case 2: errorMsg += ' - Ağ hatası'; break;
+                            case 3: errorMsg += ' - Codec desteklenmiyor veya bozuk veri'; break;
+                            case 4: errorMsg += ' - Desteklenmeyen medya formatı'; break;
+                        }
+                    }
+                    appendFeedback(errorMsg);
+                    isPlayingAudio = false; // Hata durumunda flag'i temizle
+                };
+                
+                // Oynat
+                audio.play().catch(e => {
+                    console.error('[EdgeTTS] Play hatası:', e);
+                    appendFeedback('[ERROR] Oynatma başlatılamadı: ' + e.message);
+                    isPlayingAudio = false; // Play hatası durumunda flag'i temizle
+                });
+                
+            } catch (e) {
+                console.error('[playBase64Audio] Audio işleme hatası:', e);
+                appendFeedback('[ERROR] Audio işleme hatası: ' + e.message);
+                isPlayingAudio = false; // Hata durumunda flag'i temizle
+            }
+        }
+        
+        // Data URL ile audio oynatma (fallback)
+        function playWithDataUrl(dataUrl) {
+            try {
+                const audio = new Audio(dataUrl);
+                audio.volume = 1.0;
+                currentAudio = audio;
+                isPlayingAudio = true;
+                
+                audio.onplay = () => {
+                    console.log('[playWithDataUrl] Data URL ile ses oynatılıyor');
+                    appendFeedback('[INFO] Alternatif yöntem ile ses oynatılıyor');
+                    showTTSControls();
+                    updateTTSStatus('🔊 Metin seslendiriliyor...');
+                };
+                
+                audio.onended = () => {
+                    console.log('[playWithDataUrl] Ses tamamlandı');
+                    isPlayingAudio = false;
+                    hideTTSControls();
+                    currentAudio = null;
+                    
+                    // C#'a TTS bittiğini bildir
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify({ action: 'ttsEnded' }));
+                        console.log('[JavaScript] ttsEnded mesajı gönderildi (Data URL)');
+                    }
+                };
+                
+                audio.onerror = (e) => {
+                    console.error('[playWithDataUrl] Data URL hatası:', e);
+                    appendFeedback('[ERROR] Alternatif yöntem de başarısız');
+                    isPlayingAudio = false;
+                };
+                
+                audio.play().catch(e => {
+                    console.error('[playWithDataUrl] Play hatası:', e);
+                    isPlayingAudio = false;
+                });
+                
+            } catch (e) {
+                console.error('[playWithDataUrl] Kritik hata:', e);
+                isPlayingAudio = false;
+            }
+        }
+        
+        // Edge TTS Real-time Streaming Player
+        class EdgeTTSStreamPlayer {
+            constructor() {
+                this.audioContext = null;
+                this.websocket = null;
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.audioChunks = [];
+                this.audioQueue = [];
+                this.sourceNode = null;
+                this.startTime = 0;
+                this.pauseTime = 0;
+                
+                // Edge TTS endpoint
+                this.WS_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+                this.TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+            }
+            
+            async initialize() {
+                try {
+                    console.log('[DEBUG] AudioContext oluşturuluyor...');
+                    appendFeedback('[DEBUG] AudioContext başlatılıyor...');
+                    
+                    // AudioContext oluştur
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    console.log('[EdgeTTSStreamPlayer] AudioContext oluşturuldu');
+                    console.log('[DEBUG] AudioContext state:', this.audioContext.state);
+                    console.log('[DEBUG] Sample rate:', this.audioContext.sampleRate);
+                    appendFeedback(`[DEBUG] AudioContext durumu: ${this.audioContext.state}`);
+                    
+                    // Suspended ise resume et
+                    if (this.audioContext.state === 'suspended') {
+                        console.log('[DEBUG] AudioContext suspended, resume ediliyor...');
+                        await this.audioContext.resume();
+                        console.log('[DEBUG] AudioContext resumed, yeni state:', this.audioContext.state);
+                        appendFeedback('[DEBUG] AudioContext aktif hale getirildi');
+                    }
+                    
+                    return true;
+                } catch (e) {
+                    console.error('[EdgeTTSStreamPlayer] Başlatma hatası:', e);
+                    console.error('[DEBUG] Hata detayı:', e.stack);
+                    appendFeedback('[ERROR] Audio sistem hatası: ' + e.message);
+                    appendFeedback('[DEBUG] Stack trace: ' + e.stack);
+                    return false;
+                }
+            }
+            
+            generateRequestId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
+            async speak(text, voice = 'tr-TR-EmelNeural') {
+                try {
+                    console.log('[DEBUG] speak() çağrıldı, text:', text, 'voice:', voice);
+                    appendFeedback('[STREAM] Edge TTS streaming başlatılıyor...');
+                    appendFeedback(`[DEBUG] Ses: ${voice}`);
+                    appendFeedback(`[DEBUG] Metin uzunluğu: ${text.length} karakter`);
+                    
+                    // AudioContext'i başlat
+                    if (!this.audioContext) {
+                        console.log('[DEBUG] AudioContext yok, başlatılıyor...');
+                        const initialized = await this.initialize();
+                        if (!initialized) {
+                            console.error('[DEBUG] AudioContext başlatılamadı!');
+                            return false;
+                        }
+                    }
+                    
+                    // Önceki bağlantıyı kapat
+                    this.stop();
+                    
+                    // WebSocket bağlantısı kur
+                    const wsUrl = `${this.WS_URL}?TrustedClientToken=${encodeURIComponent(this.TRUSTED_TOKEN)}`;
+                    console.log('[DEBUG] WebSocket URL:', wsUrl);
+                    appendFeedback('[DEBUG] WebSocket bağlantısı kuruluyor...');
+                    
+                    this.websocket = new WebSocket(wsUrl);
+                    this.websocket.binaryType = 'arraybuffer';
+                    console.log('[DEBUG] WebSocket oluşturuldu, binaryType:', this.websocket.binaryType);
+                    
+                    this.audioChunks = [];
+                    this.audioQueue = [];
+                    this.isPlaying = true;
+                    this.isPaused = false;
+                    
+                    // WebSocket olayları
+                    this.websocket.onopen = () => {
+                        console.log('[EdgeTTSStreamPlayer] WebSocket bağlandı');
+                        console.log('[DEBUG] WebSocket readyState:', this.websocket.readyState);
+                        console.log('[DEBUG] WebSocket protocol:', this.websocket.protocol);
+                        appendFeedback('[SUCCESS] Edge TTS bağlantısı kuruldu');
+                        
+                        // Config mesajı
+                        const configMessage = {
+                            context: {
+                                synthesis: {
+                                    audio: {
+                                        metadataoptions: {
+                                            sentenceBoundaryEnabled: "false",
+                                            wordBoundaryEnabled: "false"
+                                        },
+                                        outputFormat: "webm-24khz-16bit-mono-opus"
+                                    }
+                                }
+                            }
+                        };
+                        
+                        const configStr = `Content-Type:application/json; charset=utf-8\r\n\r\n${JSON.stringify(configMessage)}`;
+                        console.log('[DEBUG] Config mesajı gönderiliyor:', configStr);
+                        this.websocket.send(configStr);
+                        appendFeedback('[DEBUG] Config mesajı gönderildi');
+                        
+                        // SSML mesajı
+                        const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='tr-TR'>
+                            <voice name='${voice}'>
+                                <prosody pitch='+0Hz' rate='1.0' volume='+0%'>
+                                    ${text}
+                                </prosody>
+                            </voice>
+                        </speak>`;
+                        
+                        const requestId = this.generateRequestId();
+                        console.log('[DEBUG] Request ID:', requestId);
+                        const ssmlMessage = `X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\n\r\n${ssml}`;
+                        
+                        console.log('[DEBUG] SSML mesajı gönderiliyor:', ssmlMessage.substring(0, 200) + '...');
+                        this.websocket.send(ssmlMessage);
+                        console.log('[EdgeTTSStreamPlayer] SSML gönderildi');
+                        appendFeedback('[INFO] Ses verisi bekleniyor...');
+                        appendFeedback(`[DEBUG] Request ID: ${requestId}`);
+                    };
+                    
+                    this.websocket.onmessage = async (event) => {
+                        if (typeof event.data === 'string') {
+                            // Text mesaj
+                            console.log('[EdgeTTSStreamPlayer] Text mesaj alındı');
+                            console.log('[DEBUG] Mesaj içeriği:', event.data);
+                            appendFeedback('[DEBUG] Text mesaj: ' + event.data.substring(0, 100));
+                            
+                            // Mesaj tipini kontrol et
+                            if (event.data.includes('turn.start')) {
+                                console.log('[DEBUG] turn.start mesajı alındı');
+                                appendFeedback('[DEBUG] Ses üretimi başladı');
+                            } else if (event.data.includes('turn.end')) {
+                                console.log('[EdgeTTSStreamPlayer] Stream tamamlandı');
+                                appendFeedback('[SUCCESS] Ses stream tamamlandı');
+                                this.websocket.close();
+                            } else if (event.data.includes('Path:')) {
+                                console.log('[DEBUG] Path mesajı alındı');
+                                appendFeedback('[DEBUG] Audio path bilgisi alındı');
+                            }
+                        } else {
+                            // Binary audio data
+                            const audioData = event.data;
+                            console.log('[EdgeTTSStreamPlayer] Audio chunk alındı:', audioData.byteLength, 'bytes');
+                            console.log('[DEBUG] Chunk tipi:', audioData.constructor.name);
+                            console.log('[DEBUG] Toplam chunk sayısı:', this.audioChunks.length + 1);
+                            
+                            // İlk chunk'ta oynatmaya başla
+                            if (this.audioChunks.length === 0) {
+                                console.log('[DEBUG] İlk audio chunk alındı!');
+                                appendFeedback('[SUCCESS] Ses akışı başladı!');
+                                appendFeedback(`[DEBUG] İlk chunk boyutu: ${audioData.byteLength} bytes`);
+                                this.startStreaming();
+                            }
+                            
+                            // Chunk'ı kuyruğa ekle
+                            this.audioChunks.push(audioData);
+                            
+                            // Audio data'yı decode et ve oynat
+                            console.log('[DEBUG] processAudioChunk çağrılıyor...');
+                            await this.processAudioChunk(audioData);
+                        }
+                    };
+                    
+                    this.websocket.onerror = (error) => {
+                        console.error('[EdgeTTSStreamPlayer] WebSocket hatası:', error);
+                        console.error('[DEBUG] Error event:', error);
+                        console.error('[DEBUG] WebSocket state:', this.websocket.readyState);
+                        appendFeedback('[ERROR] Bağlantı hatası');
+                        appendFeedback('[DEBUG] WebSocket durumu: ' + this.websocket.readyState);
+                        appendFeedback('[DEBUG] Hata tipi: ' + error.type);
+                        this.stop();
+                    };
+                    
+                    this.websocket.onclose = (event) => {
+                        console.log('[EdgeTTSStreamPlayer] WebSocket kapatıldı');
+                        console.log('[DEBUG] Close event code:', event.code);
+                        console.log('[DEBUG] Close event reason:', event.reason);
+                        console.log('[DEBUG] Was clean:', event.wasClean);
+                        appendFeedback(`[DEBUG] WebSocket kapandı - Code: ${event.code}, Reason: ${event.reason}`);
+                        if (this.isPlaying) {
+                            appendFeedback('[INFO] Bağlantı kapatıldı');
+                        }
+                    };
+                    
+                    return true;
+                    
+                } catch (e) {
+                    console.error('[EdgeTTSStreamPlayer] Konuşma hatası:', e);
+                    appendFeedback('[ERROR] TTS hatası: ' + e.message);
+                    return false;
+                }
+            }
+            
+            async processAudioChunk(audioData) {
+                try {
+                    console.log('[DEBUG] processAudioChunk başladı, data size:', audioData.byteLength);
+                    
+                    // İlk birkaç byte'ı kontrol et
+                    const view = new Uint8Array(audioData);
+                    const header = Array.from(view.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                    console.log('[DEBUG] Chunk header (ilk 4 byte):', header);
+                    
+                    // WebM/Opus formatını decode et
+                    console.log('[DEBUG] decodeAudioData çağrılıyor...');
+                    const audioBuffer = await this.audioContext.decodeAudioData(audioData.slice(0));
+                    
+                    console.log('[DEBUG] Decode başarılı!');
+                    console.log('[DEBUG] Buffer duration:', audioBuffer.duration, 'seconds');
+                    console.log('[DEBUG] Buffer sampleRate:', audioBuffer.sampleRate);
+                    console.log('[DEBUG] Buffer channels:', audioBuffer.numberOfChannels);
+                    
+                    // Buffer'ı kuyruğa ekle
+                    this.audioQueue.push(audioBuffer);
+                    console.log('[DEBUG] Buffer kuyruğa eklendi, kuyruk uzunluğu:', this.audioQueue.length);
+                    
+                    // Eğer oynatma devam ediyorsa ve kuyrukta bekleyen yoksa oynat
+                    if (this.isPlaying && !this.isPaused && !this.sourceNode) {
+                        console.log('[DEBUG] playNextBuffer çağrılıyor...');
+                        this.playNextBuffer();
+                    }
+                    
+                } catch (e) {
+                    // Decode hatası - chunk muhtemelen parçalı geldi
+                    console.error('[EdgeTTSStreamPlayer] Decode hatası:', e);
+                    console.error('[DEBUG] Hata mesajı:', e.message);
+                    console.error('[DEBUG] Hata tipi:', e.name);
+                    appendFeedback('[ERROR] Audio decode hatası: ' + e.message);
+                    
+                    console.log('[DEBUG] Chunk birleştirme deneniyor...');
+                    console.log('[DEBUG] Mevcut chunk sayısı:', this.audioChunks.length);
+                    
+                    // Birden fazla chunk'ı birleştirip tekrar dene
+                    if (this.audioChunks.length > 1) {
+                        console.log('[DEBUG] ' + this.audioChunks.length + ' chunk birleştiriliyor...');
+                        const combined = this.combineChunks(this.audioChunks);
+                        console.log('[DEBUG] Birleştirilmiş boyut:', combined.byteLength);
+                        
+                        try {
+                            const audioBuffer = await this.audioContext.decodeAudioData(combined);
+                            console.log('[DEBUG] Birleştirilmiş chunk decode başarılı!');
+                            this.audioQueue.push(audioBuffer);
+                            this.audioChunks = []; // Temizle
+                            
+                            if (this.isPlaying && !this.isPaused && !this.sourceNode) {
+                                this.playNextBuffer();
+                            }
+                        } catch (e2) {
+                            console.error('[EdgeTTSStreamPlayer] Birleştirilmiş chunk da decode edilemedi:', e2);
+                            appendFeedback('[ERROR] Birleştirilmiş audio da decode edilemedi');
+                        }
+                    } else {
+                        console.log('[DEBUG] Yeterli chunk yok, bekleniyor...');
+                    }
+                }
+            }
+            
+            combineChunks(chunks) {
+                // ArrayBuffer'ları birleştir
+                const totalLength = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+                const combined = new Uint8Array(totalLength);
+                let offset = 0;
+                
+                for (const chunk of chunks) {
+                    combined.set(new Uint8Array(chunk), offset);
+                    offset += chunk.byteLength;
+                }
+                
+                return combined.buffer;
+            }
+            
+            playNextBuffer() {
+                console.log('[DEBUG] playNextBuffer çağrıldı');
+                console.log('[DEBUG] Kuyruk uzunluğu:', this.audioQueue.length);
+                console.log('[DEBUG] isPaused:', this.isPaused);
+                
+                if (this.audioQueue.length === 0 || this.isPaused) {
+                    console.log('[DEBUG] Kuyruk boş veya duraklatılmış, çıkılıyor');
+                    this.sourceNode = null;
+                    return;
+                }
+                
+                const buffer = this.audioQueue.shift();
+                console.log('[DEBUG] Buffer kuyruktan alındı, kalan:', this.audioQueue.length);
+                console.log('[DEBUG] Buffer duration:', buffer.duration, 'seconds');
+                
+                try {
+                    // Source node oluştur
+                    this.sourceNode = this.audioContext.createBufferSource();
+                    this.sourceNode.buffer = buffer;
+                    this.sourceNode.connect(this.audioContext.destination);
+                    console.log('[DEBUG] BufferSource oluşturuldu ve bağlandı');
+                    
+                    // Bittiğinde sonrakini oynat
+                    this.sourceNode.onended = () => {
+                        console.log('[DEBUG] Buffer oynatma tamamlandı');
+                        this.sourceNode = null;
+                        if (this.isPlaying && !this.isPaused) {
+                            console.log('[DEBUG] Moving to next buffer...');
+                            this.playNextBuffer();
+                        }
+                    };
+                    
+                    // Oynat
+                    this.sourceNode.start(0);
+                    console.log('[DEBUG] Buffer oynatma başlatıldı');
+                    appendFeedback('[DEBUG] Audio buffer oynatılıyor...');
+                } catch (e) {
+                    console.error('[DEBUG] playNextBuffer hatası:', e);
+                    appendFeedback('[ERROR] Oynatma hatası: ' + e.message);
+                }
+            }
+            
+            startStreaming() {
+                this.startTime = this.audioContext.currentTime;
+                console.log('[EdgeTTSStreamPlayer] Streaming başladı');
+            }
+            
+            pause() {
+                if (this.isPlaying && !this.isPaused) {
+                    this.isPaused = true;
+                    this.pauseTime = this.audioContext.currentTime;
+                    
+                    if (this.sourceNode) {
+                        this.sourceNode.stop();
+                        this.sourceNode = null;
+                    }
+                    
+                    console.log('[EdgeTTSStreamPlayer] Duraklatıldı');
+                    appendFeedback('[INFO] Ses duraklatıldı');
+                    return true;
+                }
+                return false;
+            }
+            
+            resume() {
+                if (this.isPlaying && this.isPaused) {
+                    this.isPaused = false;
+                    
+                    // Kuyruktaki sesleri oynatmaya devam et
+                    this.playNextBuffer();
+                    
+                    console.log('[EdgeTTSStreamPlayer] Devam ettiriliyor');
+                    appendFeedback('[INFO] Ses devam ettiriliyor');
+                    return true;
+                }
+                return false;
+            }
+            
+            stop() {
+                this.isPlaying = false;
+                this.isPaused = false;
+                
+                // WebSocket'i kapat
+                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                    this.websocket.close();
+                }
+                this.websocket = null;
+                
+                // Oynatmayı durdur
+                if (this.sourceNode) {
+                    this.sourceNode.stop();
+                    this.sourceNode = null;
+                }
+                
+                // Kuyrukları temizle
+                this.audioChunks = [];
+                this.audioQueue = [];
+                
+                console.log('[EdgeTTSStreamPlayer] Durduruldu');
+                appendFeedback('[INFO] Ses durduruldu');
+                return true;
+            }
+            
+            getStatus() {
+                return {
+                    isPlaying: this.isPlaying,
+                    isPaused: this.isPaused,
+                    hasConnection: this.websocket && this.websocket.readyState === WebSocket.OPEN,
+                    queueLength: this.audioQueue.length,
+                    chunksReceived: this.audioChunks.length
+                };
+            }
+        }
+        
+        // Global stream player instance
+        let edgeTTSStreamPlayer = null;
+        
+        // Edge TTS implementasyonu - Python edge-tts benzeri
+        async function useEdgeFreeTTS(text, voiceName = 'tr-TR-EmelNeural') {
+            try {
+                console.log('[useEdgeFreeTTS] Edge TTS başlatılıyor:', text);
+                appendFeedback('[EDGE FREE TTS] Ücretsiz Edge TTS deneniyor...');
+                
+                // Microsoft'un public TTS endpoint'i
+                const endpoint = 'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+                
+                // Önce sesleri listele
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const voices = await response.json();
+                        const turkishVoices = voices.filter(v => v.Locale === 'tr-TR');
+                        
+                        appendFeedback(`[SUCCESS] ${turkishVoices.length} Türkçe Edge sesi bulundu`);
+                        turkishVoices.forEach(v => {
+                            appendFeedback(`- ${v.ShortName}: ${v.FriendlyName}`);
+                        });
+                    }
+                } catch (e) {
+                    console.log('[useEdgeFreeTTS] Ses listesi alınamadı:', e);
+                }
+                
+                // Alternatif: Mevcut sesleri kullan
+                const voices = window.speechSynthesis.getVoices();
+                const turkishVoices = voices.filter(v => v.lang.includes('tr'));
+                
+                if (turkishVoices.length > 0) {
+                    const voice = turkishVoices.find(v => v.name.includes('Emel')) || turkishVoices[0];
+                    
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.voice = voice;
+                    utterance.lang = 'tr-TR';
+                    utterance.volume = 1.0;
+                    utterance.rate = 1.0;
+                    
+                    utterance.onstart = () => {
+                        appendFeedback('[SUCCESS] Edge Free TTS başladı');
+                    };
+                    
+                    utterance.onend = () => {
+                        appendFeedback('[SUCCESS] Edge Free TTS tamamlandı');
+                    };
+                    
+                    utterance.onerror = (e) => {
+                        appendFeedback('[ERROR] TTS hatası: ' + e.error);
+                    };
+                    
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                    
+                    return true;
+                }
+                
+                return false;
+            } catch (e) {
+                console.error('[useEdgeFreeTTS] Hata:', e);
+                appendFeedback('[ERROR] Edge Free TTS hatası: ' + e.message);
+                return false;
+            }
+        }
+        
+        // Edge TTS token al
+        async function getEdgeTTSToken() {
+            try {
+                // Edge TTS için public endpoint kullan
+                // Bu endpoint token olmadan da çalışır
+                return 'edge_tts_public_token';
+            } catch (e) {
+                console.error('[getEdgeTTSToken] Token alma hatası:', e);
+                return null;
+            }
+        }
+        
+        // Unique request ID oluştur
+        function generateRequestId() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        // Edge TTS audio chunks'larını oynat
+        async function playEdgeAudio(audioChunks) {
+            try {
+                if (audioChunks.length === 0) {
+                    console.error('[playEdgeAudio] Ses chunk\'ı yok');
+                    return;
+                }
+                
+                console.log('[playEdgeAudio] Audio oynatılıyor, chunk sayısı:', audioChunks.length);
+                appendFeedback(`[AUDIO] ${audioChunks.length} audio chunk oynatılıyor...`);
+                
+                // Blob'ları birleştir
+                let audioBlob;
+                let audioUrl;
+                
+                try {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    // Blob boyutunu kontrol et
+                    if (audioBlob.size === 0) {
+                        console.error('[playEdgeAudio] Boş audio blob oluşturuldu');
+                        appendFeedback('[ERROR] Boş ses dosyası');
+                        return;
+                    }
+                    
+                    audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    // URL kontrolü
+                    if (!audioUrl || typeof audioUrl !== 'string' || audioUrl.includes('null')) {
+                        console.error('[playEdgeAudio] Geçersiz audio URL:', audioUrl);
+                        appendFeedback('[ERROR] Geçersiz ses URL\'i');
+                        return;
+                    }
+                } catch (blobError) {
+                    console.error('[playEdgeAudio] Blob oluşturma hatası:', blobError);
+                    appendFeedback('[ERROR] Ses dosyası oluşturulamadı');
+                    return;
+                }
+                
+                // Audio element oluştur ve oynat
+                const audio = new Audio(audioUrl);
+                audio.volume = 1.0;
+                
+                audio.onplay = () => {
+                    console.log('[playEdgeAudio] Ses çalmaya başladı');
+                    appendFeedback('[SUCCESS] Edge TTS ses çalıyor!');
+                };
+                
+                audio.onended = () => {
+                    console.log('[playEdgeAudio] Ses çalma tamamlandı');
+                    appendFeedback('[SUCCESS] Edge TTS tamamlandı!');
+                    if (audioUrl && typeof audioUrl === 'string' && !audioUrl.includes('null')) {
+                        try {
+                            URL.revokeObjectURL(audioUrl);
+                        } catch (e) {
+                            console.warn('[playEdgeAudio] URL temizleme hatası:', e);
+                        }
+                    }
+                };
+                
+                audio.onerror = (e) => {
+                    console.error('[playEdgeAudio] Ses çalma hatası:', e);
+                    appendFeedback('[ERROR] Ses çalma hatası');
+                };
+                
+                // Oynat
+                await audio.play();
+                
+            } catch (e) {
+                console.error('[playEdgeAudio] Hata:', e);
+                appendFeedback('[ERROR] Audio oynatma hatası: ' + e.message);
+            }
+        }
+        
+        // Ses seçimini güncelle
+        function updateSelectedVoice() {
+            const voiceSelect = document.getElementById('voiceSelect');
+            selectedVoice = voiceSelect.value;
+            console.log('[updateSelectedVoice] Ses seçildi:', selectedVoice);
+            
+            // localStorage'a kaydet
+            try {
+                localStorage.setItem('selectedVoice', selectedVoice);
+                console.log('[updateSelectedVoice] Ses ayarı kaydedildi');
+            } catch (e) {
+                console.error('[updateSelectedVoice] localStorage kaydetme hatası:', e);
+            }
+            
+            // C#'a bildir
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    action: 'voiceChanged',
+                    voice: selectedVoice
+                }));
+            }
+            
+            // Kullanıcıya bildir - sadece değişiklik olduğunda
+            const voiceNames = {
+                'automatic': 'Otomatik',
+                'edge-emel': 'Emel',
+                'edge-ahmet': 'Ahmet',
+                'windows-tolga': 'Tolga'
+            };
+            
+            if (voiceNames[selectedVoice]) {
+                appendFeedback(`[INFO] ${voiceNames[selectedVoice]} sesi seçildi`);
+            }
+        }
+        
+        // Ayarlardan ses seçimini yükle
+        function loadVoiceFromSettings() {
+            try {
+                // localStorage'dan ses ayarını oku
+                const savedVoice = localStorage.getItem('selectedVoice');
+                if (savedVoice) {
+                    const voiceSelect = document.getElementById('voiceSelect');
+                    if (voiceSelect) {
+                        // Geçerli bir seçenek mi kontrol et
+                        const validOptions = Array.from(voiceSelect.options).map(opt => opt.value);
+                        if (validOptions.includes(savedVoice)) {
+                            voiceSelect.value = savedVoice;
+                            selectedVoice = savedVoice;
+                            console.log('[loadVoiceFromSettings] Ses ayarı yüklendi:', savedVoice);
+                            
+                            // C#'a bildir
+                            if (window.chrome && window.chrome.webview) {
+                                window.chrome.webview.postMessage(JSON.stringify({
+                                    action: 'voiceChanged',
+                                    voice: savedVoice
+                                }));
+                            }
+                        } else {
+                            console.warn('[loadVoiceFromSettings] Geçersiz ses ayarı:', savedVoice);
+                        }
+                    }
+                } else {
+                    console.log('[loadVoiceFromSettings] Kayıtlı ses ayarı bulunamadı, varsayılan kullanılacak');
+                }
+            } catch (e) {
+                console.error('[loadVoiceFromSettings] Hata:', e);
+            }
+        }
+        
+        // Stream durumunu göster
+        function showStreamStatus() {
+            if (edgeTTSStreamPlayer) {
+                const status = edgeTTSStreamPlayer.getStatus();
+                appendFeedback('------- STREAM DURUMU -------');
+                appendFeedback(`Oynatılıyor: ${status.isPlaying ? 'Evet' : 'Hayır'}`);
+                appendFeedback(`Duraklatıldı: ${status.isPaused ? 'Evet' : 'Hayır'}`);
+                appendFeedback(`Bağlantı: ${status.hasConnection ? 'Aktif' : 'Kapalı'}`);
+                appendFeedback(`Kuyruk: ${status.queueLength} buffer`);
+                appendFeedback(`Alınan chunk: ${status.chunksReceived}`);
+                appendFeedback('----------------------------');
+            } else {
+                appendFeedback('[INFO] Stream player henüz oluşturulmamış');
+            }
+        }
+        
+        
+        // TTS Kontrol Fonksiyonları
+        function showTTSControls() {
+            const controls = document.getElementById('ttsControls');
+            controls.classList.add('show');
+            controls.style.display = 'flex';
+            ttsIsPaused = false;
+            updatePauseButton();
+        }
+        
+        function hideTTSControls() {
+            const controls = document.getElementById('ttsControls');
+            controls.classList.remove('show');
+            controls.style.display = 'none';
+            // TTS pause durumunu temizle
+            ttsIsPaused = false;
+            updatePauseButton();
+        }
+        
+        function updateTTSStatus(status) {
+            const statusElement = document.getElementById('ttsStatus');
+            if (statusElement) {
+                statusElement.textContent = status;
+            } else {
+                console.warn('[updateTTSStatus] ttsStatus elementi bulunamadı');
+                // Alternatif olarak ttsStatusDisplay içindeki bir elementi güncellemeyi dene
+                const displayElement = document.getElementById('ttsStatusDisplay');
+                if (displayElement) {
+                    // TTS durumunu göstermek için yeni bir element ekle veya mevcut bir elementi güncelle
+                    let statusTextElement = displayElement.querySelector('.tts-status-text');
+                    if (!statusTextElement) {
+                        statusTextElement = document.createElement('div');
+                        statusTextElement.className = 'tts-status-text';
+                        statusTextElement.style.cssText = 'text-align: center; margin-top: 10px; font-size: 14px;';
+                        displayElement.appendChild(statusTextElement);
+                    }
+                    statusTextElement.textContent = status;
+                }
+            }
+        }
+        
+        function updatePauseButton() {
+            const btn = document.getElementById('ttsPauseBtn');
+            if (ttsIsPaused) {
+                btn.innerHTML = '<span class="icon">▶️</span>';
+                btn.classList.add('active');
+            } else {
+                btn.innerHTML = '<span class="icon">⏸️</span>';
+                btn.classList.remove('active');
+            }
+        }
+        
+        function togglePauseTTS() {
+            if (!currentAudio) return;
+            
+            if (ttsIsPaused) {
+                currentAudio.play();
+                ttsIsPaused = false;
+                updateTTSStatus('🔊 Metin seslendiriliyor...');
+            } else {
+                currentAudio.pause();
+                ttsIsPaused = true;
+                updateTTSStatus('⏸️ Duraklatıldı');
+            }
+            updatePauseButton();
+        }
+        
+        function stopTTS() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            
+            // Blob URL'i temizle
+            if (currentAudioUrl && typeof currentAudioUrl === 'string' && !currentAudioUrl.includes('null')) {
+                try {
+                    URL.revokeObjectURL(currentAudioUrl);
+                } catch (e) {
+                    console.warn('[stopTTS] URL temizleme hatası:', e);
+                }
+                currentAudioUrl = null;
+            }
+            
+            // TTS pause durumunu temizle
+            ttsIsPaused = false;
+            
+            // C#'a TTS durdurma mesajı gönder
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ action: 'stopTts' }));
+            }
+            
+            hideTTSControls();
+            appendFeedback('⏹️ TTS durduruldu');
+        }
+        
+        function skipTTS() {
+            // Mevcut metni durdur
+            stopTTS();
+            
+            // C#'a skip mesajı gönder (sonraki mail/haber'e geç)
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ action: 'skipTts' }));
+            }
+            
+            appendFeedback('⏭️ Sonraki metne geçildi');
+        }
+        
+        // Enhanced Keyboard Shortcuts System
+        const keyboardShortcuts = {
+            'Ctrl+Space': () => toggleCommandPalette(),
+            'Ctrl+K': () => toggleCommandPalette(),
+            'Ctrl+D': () => toggleDikte(),
+            'Ctrl+Enter': () => executeCommand(),
+            'Ctrl+/': () => showKeyboardShortcuts(),
+            'Escape': () => closeAllModals(),
+            'F11': () => toggleFocusMode()
+        };
+        
+        // Command Palette Functions
+        let commandPaletteVisible = false;
+        let commandHistory = [];
+        let currentCommandIndex = -1;
+        
+        const commands = [
+            { name: 'Mail Gönder', action: 'sendMail', shortcut: 'Ctrl+M', icon: '📧' },
+            { name: 'Dosya Ara', action: 'searchFile', shortcut: 'Ctrl+F', icon: '🔍' },
+            { name: 'Ayarlar', action: 'openSettings', shortcut: 'Ctrl+,', icon: '⚙️' },
+            { name: 'Haber Oku', action: 'readNews', shortcut: 'Ctrl+N', icon: '📰' },
+            { name: 'Twitter Trendleri', action: 'twitterTrends', shortcut: 'Ctrl+T', icon: '🐦' },
+            { name: 'Sistem Komutları', action: 'systemCommands', shortcut: 'Ctrl+S', icon: '💻' },
+            { name: 'Temizle', action: 'clearAll', shortcut: 'Ctrl+L', icon: '🧹' },
+            { name: 'Yardım', action: 'showHelp', shortcut: 'F1', icon: '❓' }
+        ];
+        
+        function toggleCommandPalette() {
+            const palette = document.getElementById('commandPalette');
+            const overlay = document.getElementById('overlay');
+            const input = document.getElementById('commandInput');
+            
+            commandPaletteVisible = !commandPaletteVisible;
+            
+            if (commandPaletteVisible) {
+                palette.classList.add('show');
+                overlay.classList.add('show');
+                input.value = '';
+                input.focus();
+                renderCommands('');
+            } else {
+                palette.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+        }
+        
+        function renderCommands(searchTerm) {
+            const results = document.getElementById('commandResults');
+            const filtered = commands.filter(cmd => 
+                cmd.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            results.innerHTML = filtered.map((cmd, index) => `
+                <div class="command-result ${index === 0 ? 'active' : ''}" 
+                     data-action="${cmd.action}"
+                     onclick="executeCommandAction('${cmd.action}')">
+                    <span class="command-icon">${cmd.icon}</span>
+                    <span class="command-name">${cmd.name}</span>
+                    <span class="command-shortcut">${cmd.shortcut}</span>
+                </div>
+            `).join('');
+        }
+        
+        function executeCommandAction(action) {
+            toggleCommandPalette();
+            
+            switch(action) {
+                case 'sendMail':
+                    document.getElementById('txtCikti').value = 'mail gönder';
+                    executeCommand();
+                    break;
+                case 'searchFile':
+                    document.getElementById('txtCikti').value = 'dosya ara ';
+                    document.getElementById('txtCikti').focus();
+                    break;
+                case 'openSettings':
+                    openSettings();
+                    break;
+                case 'readNews':
+                    document.getElementById('txtCikti').value = 'haber oku';
+                    executeCommand();
+                    break;
+                case 'twitterTrends':
+                    document.getElementById('txtCikti').value = 'twitter trendleri';
+                    executeCommand();
+                    break;
+                case 'clearAll':
+                    document.getElementById('outputArea').textContent = '';
+                    document.getElementById('feedbackArea').textContent = '';
+                    document.getElementById('txtCikti').value = '';
+                    appendFeedback('✨ Tüm alanlar temizlendi');
+                    break;
+                case 'showHelp':
+                    showKeyboardShortcuts();
+                    break;
+            }
+        }
+        
+        function showKeyboardShortcuts() {
+            const shortcuts = Object.entries(keyboardShortcuts).map(([key, fn]) => 
+                `<div class="feedback-info feedback-message">${key}: ${getFunctionDescription(fn)}</div>`
+            ).join('');
+            
+            document.getElementById('outputArea').innerHTML = 
+                `<h3>⌨️ Klavye Kısayolları</h3>${shortcuts}`;
+        }
+        
+        function getFunctionDescription(fn) {
+            const fnString = fn.toString();
+            if (fnString.includes('toggleCommandPalette')) return 'Komut Paleti';
+            if (fnString.includes('startDikte')) return 'Diksiyon Başlat';
+            if (fnString.includes('executeCommand')) return 'Komutu Çalıştır';
+            if (fnString.includes('showKeyboardShortcuts')) return 'Kısayolları Göster';
+            if (fnString.includes('closeAllModals')) return 'Tüm Pencereleri Kapat';
+            if (fnString.includes('toggleFocusMode')) return 'Odak Modu';
+            return 'Bilinmeyen';
+        }
+        
+        function closeAllModals() {
+            const palette = document.getElementById('commandPalette');
+            const overlay = document.getElementById('overlay');
+            
+            palette.classList.remove('show');
+            overlay.classList.remove('show');
+            commandPaletteVisible = false;
+            
+            // TTS kontrollerini de kapat
+            if (document.getElementById('ttsControls').style.display === 'block') {
+                stopTTS();
+            }
+        }
+        
+        function toggleFocusMode() {
+            document.body.classList.toggle('focus-mode');
+            const isFocused = document.body.classList.contains('focus-mode');
+            appendFeedback(isFocused ? '🎯 Odak modu aktif' : '👁️ Normal görünüm');
+        }
+        
+        // Enhanced keyboard event listener
+        document.addEventListener('keydown', (e) => {
+            // Construct key combination string
+            const key = [];
+            if (e.ctrlKey) key.push('Ctrl');
+            if (e.altKey) key.push('Alt');
+            if (e.shiftKey) key.push('Shift');
+            if (e.key === ' ') key.push('Space');
+            else if (e.key === 'Enter') key.push('Enter');
+            else if (e.key === 'Escape') key.push('Escape');
+            else if (e.key.startsWith('F')) key.push(e.key);
+            else if (e.key.length === 1) key.push(e.key.toUpperCase());
+            
+            const combo = key.join('+');
+            
+            // Check if shortcut exists
+            if (keyboardShortcuts[combo]) {
+                e.preventDefault();
+                keyboardShortcuts[combo]();
+                
+                // Add visual feedback for shortcut use
+                showShortcutFeedback(combo);
+            }
+            
+            // Command palette navigation
+            if (commandPaletteVisible) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    navigateCommands(e.key === 'ArrowDown' ? 1 : -1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const activeCommand = document.querySelector('.command-result.active');
+                    if (activeCommand) {
+                        executeCommandAction(activeCommand.dataset.action);
+                    }
+                }
+            }
+        });
+        
+        function navigateCommands(direction) {
+            const results = document.querySelectorAll('.command-result');
+            if (results.length === 0) return;
+            
+            const currentActive = document.querySelector('.command-result.active');
+            let currentIndex = Array.from(results).indexOf(currentActive);
+            
+            results[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + direction + results.length) % results.length;
+            results[currentIndex].classList.add('active');
+            results[currentIndex].scrollIntoView({ block: 'nearest' });
+        }
+        
+        function showShortcutFeedback(shortcut) {
+            const feedback = document.createElement('div');
+            feedback.className = 'feedback-info feedback-message';
+            feedback.style.position = 'fixed';
+            feedback.style.bottom = '20px';
+            feedback.style.right = '20px';
+            feedback.style.zIndex = '10001';
+            feedback.textContent = `${shortcut} kullanıldı`;
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+                setTimeout(() => feedback.remove(), 300);
+            }, 1500);
+        }
+        
+        // Command input handler
+        document.getElementById('commandInput').addEventListener('input', (e) => {
+            renderCommands(e.target.value);
+        });
+        
+        // Overlay click handler
+        document.getElementById('overlay').addEventListener('click', closeAllModals);
+        
+        // Button loading states
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('loading');
+                button.disabled = false;
+            }
+        }
+        
+        // Enhanced executeCommand with loading state
+        const originalExecuteCommand = window.executeCommand;
+        window.executeCommand = function() {
+            const executeBtn = document.getElementById('executeButton');
+            setButtonLoading(executeBtn, true);
+            
+            // Add animation to output area
+            const outputArea = document.getElementById('outputArea');
+            outputArea.style.opacity = '0.5';
+            outputArea.innerHTML += '<div class="loading-spinner" style="margin: 10px auto; display: block;"></div>';
+            
+            // Call original function
+            if (originalExecuteCommand) {
+                originalExecuteCommand();
+            }
+            
+            // Simulate loading completion (will be overridden by actual response)
+            setTimeout(() => {
+                setButtonLoading(executeBtn, false);
+                outputArea.style.opacity = '1';
+                const spinner = outputArea.querySelector('.loading-spinner');
+                if (spinner) spinner.remove();
+            }, 500);
+        };
+        
+        // Error Handling and Recovery System
+        class ErrorHandler {
+            static showError(message, isRecoverable = true, showToUser = true) {
+                console.error('[ErrorHandler]', message);
+                
+                // Only show error UI if explicitly requested
+                if (showToUser) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'feedback-error feedback-message';
+                    errorDiv.style.position = 'fixed';
+                    errorDiv.style.top = '20px';
+                    errorDiv.style.right = '20px';
+                    errorDiv.style.zIndex = '10002';
+                    errorDiv.style.maxWidth = '400px';
+                    errorDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">⚠️</span>
+                            <div>
+                                <div style="font-weight: 600;">Hata</div>
+                                <div style="font-size: 12px; margin-top: 4px;">${message}</div>
+                                ${isRecoverable ? '<div style="font-size: 11px; margin-top: 4px; opacity: 0.8;">Otomatik olarak düzeltiliyor...</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(errorDiv);
+                    
+                    // Auto remove after 5 seconds
+                    setTimeout(() => {
+                        errorDiv.style.opacity = '0';
+                        setTimeout(() => errorDiv.remove(), 300);
+                    }, 5000);
+                }
+                
+                // Only attempt recovery for critical errors
+                if (isRecoverable && showToUser) {
+                    this.attemptRecovery();
+                }
+            }
+            
+            static attemptRecovery() {
+                console.log('[ErrorHandler] Attempting recovery...');
+                
+                // Reset UI states
+                const executeBtn = document.getElementById('executeButton');
+                const dikteBtn = document.getElementById('dikteButton');
+                
+                if (executeBtn) {
+                    setButtonLoading(executeBtn, false);
+                }
+                
+                if (dikteBtn) {
+                    dikteBtn.classList.remove('recording');
+                }
+                
+                // Hide indicators
+                hideVoiceIndicator();
+                hideAIThinking();
+                hideTTSStatus();
+                
+                // Clear any spinners
+                document.querySelectorAll('.loading-spinner').forEach(spinner => spinner.remove());
+                
+                // Reset opacity
+                const outputArea = document.getElementById('outputArea');
+                if (outputArea) {
+                    outputArea.style.opacity = '1';
+                }
+                
+                // Recovery message - only show in debug mode or for critical errors
+                // Commented out to prevent unnecessary messages
+                // appendFeedback('✅ Sistem kurtarıldı, hazır.');
+            }
+            
+            static handleNetworkError() {
+                this.showError('İnternet bağlantısı kesildi. Kontrol ediliyor...', true);
+                
+                // Try to reconnect
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                const retryInterval = setInterval(() => {
+                    retryCount++;
+                    
+                    // Check if WebView is responsive
+                    if (window.chrome && window.chrome.webview) {
+                        clearInterval(retryInterval);
+                        appendFeedback('✅ Bağlantı yeniden kuruldu.');
+                    } else if (retryCount >= maxRetries) {
+                        clearInterval(retryInterval);
+                        this.showError('Bağlantı kurulamadı. Lütfen uygulamayı yeniden başlatın.', false);
+                    }
+                }, 2000);
+            }
+            
+            static handleCommandError(error) {
+                console.error('[CommandError]', error);
+                
+                if (error.includes('WebView')) {
+                    this.showError('WebView yanıt vermiyor. Yeniden yükleniyor...', true);
+                    setTimeout(() => window.location.reload(), 2000);
+                } else if (error.includes('network')) {
+                    this.handleNetworkError();
+                } else {
+                    this.showError('Komut işlenemedi: ' + error, true);
+                }
+            }
+        }
+        
+        // Global error handler - more selective
+        window.addEventListener('error', (event) => {
+            console.error('[GlobalError]', event.error);
+            
+            // Only show error to user for critical errors
+            const error = event.error;
+            const isCritical = error && (
+                error.message?.includes('WebView') ||
+                error.message?.includes('Fatal') ||
+                error.message?.includes('Critical') ||
+                error.stack?.includes('executeCommand')
+            );
+            
+            if (isCritical) {
+                ErrorHandler.showError('Beklenmeyen bir hata oluştu.', true);
+            }
+            
+            event.preventDefault();
+        });
+        
+        // Unhandled promise rejection handler - more selective
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('[UnhandledRejection]', event.reason);
+            
+            // Ignore common non-critical rejections
+            const reason = event.reason?.toString() || '';
+            const isNetworkError = reason.includes('NetworkError') || 
+                                 reason.includes('Failed to fetch') ||
+                                 reason.includes('HttpRequestException');
+            const isXmlError = reason.includes('XmlException') || 
+                              reason.includes('XML');
+            
+            // Only show error for non-network, non-XML errors
+            if (!isNetworkError && !isXmlError) {
+                // Log but don't show to user unless critical
+                console.warn('[UnhandledRejection] Non-critical error logged:', reason);
+            }
+            
+            event.preventDefault();
+        });
+        
+        // WebView communication error handler
+        function safeWebViewCall(action, data = {}) {
+            try {
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ action, ...data }));
+                    return true;
+                } else {
+                    throw new Error('WebView not available');
+                }
+            } catch (error) {
+                ErrorHandler.handleCommandError(error.message);
+                return false;
+            }
+        }
+        
+        // Enhanced executeCommand with error handling
+        window.executeCommand = async function() {
+            const executeBtn = document.getElementById('executeButton');
+            const txtCikti = document.getElementById('txtCikti');
+            const outputArea = document.getElementById('outputArea');
+            
+            if (!txtCikti.value.trim()) {
+                ErrorHandler.showError('Lütfen bir komut girin.', false);
+                return;
+            }
+            
+            try {
+                setButtonLoading(executeBtn, true);
+                showAIThinking();
+                
+                // Add animation to output area
+                outputArea.style.opacity = '0.5';
+                
+                const success = safeWebViewCall('executeCommand', {
+                    command: txtCikti.value
+                });
+                
+                if (!success) {
+                    throw new Error('WebView communication failed');
+                }
+                
+                // Simulate response handling
+                setTimeout(() => {
+                    setButtonLoading(executeBtn, false);
+                    hideAIThinking();
+                    outputArea.style.opacity = '1';
+                }, 1000);
+                
+            } catch (error) {
+                ErrorHandler.handleCommandError(error.message);
+                setButtonLoading(executeBtn, false);
+                hideAIThinking();
+                outputArea.style.opacity = '1';
+            }
+        };
+        
+        // Settings fonksiyonu
+        function openSettings() {
+            console.log('[JavaScript] Settings açılıyor');
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ action: 'openSettings' }));
+            }
+        }
+        
+        // Theme change listener
+        window.addEventListener('themeChanged', function(e) {
+            console.log('[JavaScript] Theme changed event received:', e.detail);
+            
+            // Clear tema kontrolü
+            if (e.detail.theme === 'Clear') {
+                console.log('[JavaScript] Clear tema aktif - şeffaflık kontrolü yapılıyor');
+                
+                // Body ve documentElement'i kontrol et
+                const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+                const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+                console.log('[JavaScript] Body background:', bodyBg);
+                console.log('[JavaScript] HTML background:', htmlBg);
+                
+                // full-transparency sınıfının varlığını kontrol et
+                console.log('[JavaScript] full-transparency class:', document.body.classList.contains('full-transparency'));
+                
+                // CSS değişkenlerini kontrol et
+                const rootStyle = getComputedStyle(document.documentElement);
+                console.log('[JavaScript] --glass-bg:', rootStyle.getPropertyValue('--glass-bg'));
+                console.log('[JavaScript] --glass-blur:', rootStyle.getPropertyValue('--glass-blur'));
+            }
+        });
+        
+        // Ripple effect for buttons
+        function addRippleEffect(button) {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                
+                this.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        }
+        
+        // Akıllı arka plan adaptasyonu
+        let backgroundCheckInterval = null;
+        let lastBackgroundBrightness = -1;
+        
+        function startBackgroundAdaptation() {
+            // Clear tema değilse veya tam şeffaflık yoksa çık
+            if (!document.body.classList.contains('theme-clear') || 
+                !document.body.classList.contains('full-transparency')) {
+                stopBackgroundAdaptation();
+                return;
+            }
+            
+            console.log('[Background Adaptation] Başlatılıyor...');
+            
+            // Her 2 saniyede bir arka plan kontrolü yap
+            backgroundCheckInterval = setInterval(() => {
+                checkBackgroundBrightness();
+            }, 2000);
+            
+            // İlk kontrolü hemen yap
+            checkBackgroundBrightness();
+        }
+        
+        function stopBackgroundAdaptation() {
+            if (backgroundCheckInterval) {
+                clearInterval(backgroundCheckInterval);
+                backgroundCheckInterval = null;
+                console.log('[Background Adaptation] Durduruldu');
+            }
+        }
+        
+        function checkBackgroundBrightness() {
+            // WebView2'ye arka plan analizi isteği gönder
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ 
+                    action: 'analyzeBackground'
+                }));
+            }
+        }
+        
+        // C#'tan gelen arka plan parlaklık bilgisini işle
+        function handleBackgroundAnalysis(brightness) {
+            console.log('[Background Adaptation] Parlaklık:', brightness);
+            
+            // Parlaklık değişmediyse işlem yapma
+            if (Math.abs(brightness - lastBackgroundBrightness) < 0.1) {
+                return;
+            }
+            
+            lastBackgroundBrightness = brightness;
+            
+            // Parlaklık eşiği: 0.5 (0 = siyah, 1 = beyaz)
+            const isDarkBackground = brightness < 0.5;
+            
+            // Body sınıfını güncelle
+            if (isDarkBackground) {
+                document.body.classList.add('dark-bg');
+                console.log('[Background Adaptation] Koyu arka plan algılandı');
+                appendFeedback('🌙 Koyu arka plan için kontrast ayarlandı');
+            } else {
+                document.body.classList.remove('dark-bg');
+                console.log('[Background Adaptation] Açık arka plan algılandı');
+                appendFeedback('☀️ Açık arka plan için kontrast ayarlandı');
+            }
+            
+            // Smooth geçiş için animation
+            document.querySelectorAll('.ai-container, #txtCikti').forEach(el => {
+                el.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            });
+        }
+        
+        // Theme değişikliklerini dinle
+        window.addEventListener('themeChanged', function(e) {
+            console.log('[Background Adaptation] Tema değişti:', e.detail.theme);
+            
+            if (e.detail.theme === 'Clear') {
+                // Clear tema aktif, adaptasyonu başlat
+                setTimeout(() => {
+                    startBackgroundAdaptation();
+                }, 500);
+            } else {
+                // Diğer temalar, adaptasyonu durdur
+                stopBackgroundAdaptation();
+                document.body.classList.remove('dark-bg');
+            }
+        });
+        
+        // Pencere focus/blur olaylarını dinle
+        window.addEventListener('focus', () => {
+            if (document.body.classList.contains('theme-clear')) {
+                checkBackgroundBrightness();
+            }
+        });
+        
+        // Sayfa yüklendiğinde
+        window.addEventListener('load', function() {
+            console.log("[index.html] Sayfa yüklendi");
+            
+            // Buton durumlarını kontrol et
+            checkButtonStates();
+            
+            // Ayarlardan ses seçimini yükle
+            loadVoiceFromSettings();
+            
+            // WebView mesaj alımını logla ve widget'ları başlat
+            if (window.chrome && window.chrome.webview) {
+                console.log('[index.html] WebView2 mesaj sistemi hazır');
+                
+                // Widget'ları hemen başlat
+                console.log('[index.html] Widget\'lar başlatılıyor...');
+                updateClock();
+                
+                // WebView2 hazır olduğunda widget'ları güncelle
+                setTimeout(() => {
+                    console.log('[index.html] Widget verileri isteniyor...');
+                    updateWeather();
+                    updateMeetings();
+                    updateMails();
+                    updateNews();
+                }, 100); // Kısa bir gecikme ile widget'ları başlat
+            } else {
+                console.log('[index.html] WebView2 henüz hazır değil, bekleniyor...');
+                // WebView2 hazır olana kadar bekle
+                let checkInterval = setInterval(() => {
+                    if (window.chrome && window.chrome.webview) {
+                        clearInterval(checkInterval);
+                        console.log('[index.html] WebView2 şimdi hazır, widget\'lar başlatılıyor...');
+                        updateClock();
+                        setTimeout(() => {
+                            updateWeather();
+                            updateMeetings();
+                            updateMails();
+                            updateNews();
+                        }, 100);
+                    }
+                }, 100);
+            }
+            
+            // Widget'ları periyodik güncelle
+            setInterval(updateClock, 60000); // Her dakika
+            setInterval(updateWeather, 300000); // 5 dakikada bir
+            setInterval(updateMeetings, 300000); // 5 dakikada bir
+            setInterval(updateMails, 300000); // 5 dakikada bir
+            setInterval(updateNews, 180000); // 3 dakikada bir
+            
+            // Ripple effect ekle
+            document.querySelectorAll('button').forEach(button => {
+                button.style.position = 'relative';
+                button.style.overflow = 'hidden';
+                addRippleEffect(button);
+            });
+            
+            // Performance observer for smooth animations
+            if ('IntersectionObserver' in window) {
+                const observerOptions = {
+                    root: null,
+                    rootMargin: '0px',
+                    threshold: 0.1
+                };
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                        }
+                    });
+                }, observerOptions);
+                
+                // Observe elements with glass-panel class
+                document.querySelectorAll('.glass-panel').forEach(el => {
+                    observer.observe(el);
+                });
+            }
+            
+            // Clear tema ise adaptasyonu başlat
+            if (document.body.classList.contains('theme-clear')) {
+                setTimeout(() => {
+                    startBackgroundAdaptation();
+                }, 1000);
+            }
+        });
+
+        // Widget Update Functions
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            
+            // Türkçe gün adları
+            const gunler = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+            const gunAdi = gunler[now.getDay()];
+            
+            document.getElementById('clockValue').textContent = `${hours}:${minutes}`;
+            document.getElementById('dateValue').textContent = `${gunAdi}, ${day}/${month}/${year}`;
+        }
+        
+        function updateWeather() {
+            try {
+                // WebView2 API kullanarak hava durumu verisi iste
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ 
+                        action: 'requestWidget', 
+                        widgetType: 'weather' 
+                    }));
+                } else {
+                    console.error('WebView bulunamadı!');
+                }
+            } catch (error) {
+                console.error('Hava durumu bilgisi alınamadı:', error);
+            }
+        }
+        
+        async function updateMeetings() {
+            try {
+                // WebView2 API kullanarak meeting verisi iste
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ 
+                        action: 'requestWidget', 
+                        widgetType: 'meetings' 
+                    }));
+                } else {
+                    console.error('WebView bulunamadı!');
+                    document.getElementById('meetingsValue').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Toplantı bilgisi alınamadı:', error);
+                document.getElementById('meetingsValue').textContent = '0';
+            }
+        }
+        
+        async function updateMails() {
+            try {
+                // WebView2 API kullanarak email verisi iste
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ 
+                        action: 'requestWidget', 
+                        widgetType: 'emails' 
+                    }));
+                } else {
+                    console.error('WebView bulunamadı!');
+                    document.getElementById('mailsValue').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Mail bilgisi alınamadı:', error);
+                document.getElementById('mailsValue').textContent = '0';
+            }
+        }
+        
+        async function updateNews() {
+            try {
+                // WebView2 API kullanarak haber verisi iste
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ 
+                        action: 'requestWidget', 
+                        widgetType: 'news' 
+                    }));
+                }
+            } catch (error) {
+                console.error('Haber bilgisi alınamadı:', error);
+            }
+        }
+        
+        // Widget response handler
+        function handleWidgetUpdate(data) {
+            try {
+                const { widgetType, data: widgetData } = data;
+                
+                switch (widgetType) {
+                    case 'weather':
+                        if (widgetData) {
+                            document.getElementById('weatherValue').textContent = `${Math.round(widgetData.temperature)}°C`;
+                            document.getElementById('weatherLabel').textContent = widgetData.description;
+                            
+                            // Icon güncelle
+                            const weatherIcon = document.querySelector('#weatherWidget .widget-icon');
+                            if (weatherIcon && widgetData.icon) {
+                                weatherIcon.textContent = widgetData.icon;
+                            }
+                        }
+                        break;
+                        
+                    case 'emails':
+                        if (widgetData) {
+                            document.getElementById('mailsValue').textContent = widgetData.count;
+                        }
+                        break;
+                        
+                    case 'meetings':
+                        if (widgetData) {
+                            document.getElementById('meetingsValue').textContent = widgetData.count;
+                        }
+                        break;
+                        
+                    case 'news':
+                        if (widgetData && widgetData.headlines) {
+                            const newsContainer = document.getElementById('newsTicker');
+                            if (newsContainer && widgetData.headlines.length > 0) {
+                                // Yeni içerik oluştur (sadece ilk 10 haber)
+                                const newContent = widgetData.headlines.slice(0, 10).map(headline => 
+                                    `<span class="news-item">${headline.title}</span>`
+                                ).join('');
+                                
+                                // İçerik değişmişse güncelle ama animasyonu resetleme
+                                if (newsContainer.innerHTML !== newContent) {
+                                    // Seamless loop için haberleri 2 kez koy
+                                    const duplicatedContent = newContent + newContent;
+                                    newsContainer.innerHTML = duplicatedContent;
+                                    
+                                    // Yeni içerik için animasyonu yeniden başlat
+                                    startNewsScroll();
+                                    console.log('[News] İçerik güncellendi (2x duplicate), animasyon yeniden başlatıldı');
+                                }
+                            }
+                        }
+                        break;
+                        
+                    default:
+                        console.log(`Unknown widget type: ${widgetType}`);
+                }
+            } catch (error) {
+                console.error('Widget update error:', error);
+            }
+        }
+
+        // News ticker için sürekli scroll sistemi
+        let newsScrollAnimationFrame;
+        let newsScrollPosition = 0;
+        const newsScrollSpeed = 1; // px per frame
+        
+        function startNewsScroll() {
+            // Önceki animasyonu durdur
+            if (newsScrollAnimationFrame) {
+                cancelAnimationFrame(newsScrollAnimationFrame);
+            }
+            
+            const ticker = document.getElementById('newsTicker');
+            if (!ticker) return;
+            
+            // Başlangıç pozisyonu ayarla
+            newsScrollPosition = ticker.offsetParent ? ticker.offsetParent.offsetWidth : window.innerWidth;
+            
+            function animate() {
+                // Sola kay
+                newsScrollPosition -= newsScrollSpeed;
+                
+                // Seamless loop: İçeriğin yarısına geldiğinde sıfırla
+                // Böylece duplicate content görünmez şekilde döner
+                const halfWidth = ticker.scrollWidth / 2;
+                if (newsScrollPosition < -halfWidth) {
+                    newsScrollPosition += halfWidth;
+                }
+                
+                // Transform uygula
+                ticker.style.transform = `translateX(${newsScrollPosition}px)`;
+                
+                // Bir sonraki frame'i planla
+                newsScrollAnimationFrame = requestAnimationFrame(animate);
+            }
+            
+            // Animasyonu başlat
+            animate();
+        }
+        
+        // Widget'ları başlat ve periyodik güncelle
+        function initializeWidgets() {
+            // İlk güncelleme
+            updateClock();
+            updateWeather();
+            updateMeetings();
+            updateMails();
+            updateNews();
+            
+            // News ticker animasyonunu başlat
+            setTimeout(() => {
+                startNewsScroll();
+            }, 1000); // 1 saniye bekle ki haberler yüklensin
+            
+            // Periyodik güncellemeler (kullanıcının istediği aralıklarla)
+            setInterval(updateClock, 1000); // Her saniye
+            setInterval(updateWeather, 7200000); // 2 saatte bir (7200000ms)
+            setInterval(updateMeetings, 900000); // 15 dakikada bir (900000ms)
+            setInterval(updateMails, 60000); // 1 dakikada bir (60000ms)
+            setInterval(updateNews, 180000); // 3 dakikada bir haber güncelle (180000ms)
+        }
+        
+        // Sayfa yüklendiğinde widget'ları başlat
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeWidgets);
+        } else {
+            initializeWidgets();
+        }
+
+    </script>
+    </div> <!-- ai-container end -->
+</body>
+</html>

@@ -1,0 +1,76 @@
+{
+  "agents": {
+    "orchestrator": {
+      "model": "opus-4",
+      "role": "Görev dağıtımı ve koordinasyon yöneticisi",
+      "priority": "highest",
+      "capabilities": ["task-analysis", "agent-management", "result-merging"]
+    },
+    "architect": {
+      "model": "opus-4",
+      "role": "Sistem mimarı ve tasarımcı",
+      "priority": "high",
+      "capabilities": ["system-design", "pattern-selection", "architecture-planning"]
+    },
+    "developer": {
+      "model": "sonnet-4",
+      "role": "Ana geliştirici",
+      "priority": "normal",
+      "capabilities": ["code-writing", "refactoring", "implementation"]
+    },
+    "tester": {
+      "model": "sonnet-4",
+      "role": "Test uzmanı",
+      "priority": "normal",
+      "capabilities": ["unit-testing", "integration-testing", "test-coverage"]
+    },
+    "reviewer": {
+      "model": "opus-4",
+      "role": "Kod incelemeci",
+      "priority": "normal",
+      "capabilities": ["code-review", "best-practices", "optimization"]
+    },
+    "production": {
+      "model": "opus-4",
+      "role": "Production ve ölçeklendirme uzmanı (50K-1M kullanıcı)",
+      "priority": "high",
+      "capabilities": ["scalability", "load-balancing", "caching", "monitoring"]
+    },
+    "security": {
+      "model": "opus-4",
+      "role": "Güvenlik uzmanı",
+      "priority": "high",
+      "capabilities": ["vulnerability-scanning", "security-hardening", "penetration-testing"]
+    },
+    "compliance": {
+      "model": "opus-4",
+      "role": "KVKK/GDPR uyumluluk uzmanı",
+      "priority": "normal",
+      "capabilities": ["data-privacy", "compliance-audit", "policy-implementation"]
+    },
+    "performance": {
+      "model": "sonnet-4",
+      "role": "Performans optimizasyon uzmanı",
+      "priority": "normal",
+      "capabilities": ["profiling", "optimization", "benchmark"]
+    },
+    "devops": {
+      "model": "sonnet-4",
+      "role": "DevOps ve CI/CD uzmanı",
+      "priority": "normal",
+      "capabilities": ["pipeline-creation", "deployment", "containerization"]
+    },
+    "ultrasearch": {
+      "model": "opus-4",
+      "role": "Derin araştırma uzmanı",
+      "priority": "high",
+      "capabilities": ["deep-research", "documentation-analysis", "best-practice-finding"]
+    },
+    "ultrathinking": {
+      "model": "opus-4",
+      "role": "Derin düşünme ve problem çözme uzmanı",
+      "priority": "high",
+      "capabilities": ["complex-problem-solving", "strategic-thinking", "solution-design"]
+    }
+  }
+}

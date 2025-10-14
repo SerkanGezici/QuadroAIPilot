@@ -1,0 +1,9 @@
+  Geri yüklenecek projeler belirleniyor...
+  Geri yükleme için tüm projeler güncel.
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
+
+Oluşturma başarılı oldu.
+    0 Uyarı
+    0 Hata
+
+Geçen Süre 00:00:28.85

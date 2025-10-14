@@ -1,0 +1,22 @@
+{
+  "project": {
+    "name": "QuadroAIPilot",
+    "type": "generic",
+    "path": "/mnt/c/Users/serkan/source/repos/QuadroAIPilot",
+    "created": "2025-07-29T16:34:45+03:00",
+    "lastUpdated": "2025-07-29T16:34:45+03:00"
+  },
+  "settings": {
+    "language": "tr-TR",
+    "automationMode": "YOLO",
+    "parallelAgents": true,
+    "jsonCommunication": true,
+    "autoSave": true
+  },
+  "features": {
+    "productionReady": false,
+    "securityHardened": false,
+    "complianceEnabled": false,
+    "performanceOptimized": false
+  }
+}

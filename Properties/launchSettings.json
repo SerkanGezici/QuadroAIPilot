@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "QuadroAIPilot (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "QuadroAIPilot (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

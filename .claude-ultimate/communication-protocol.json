@@ -1,0 +1,31 @@
+{
+  "protocol": {
+    "version": "1.0",
+    "format": "json",
+    "encoding": "utf-8"
+  },
+  "messageStructure": {
+    "taskId": "unique-identifier",
+    "timestamp": "ISO-8601",
+    "userPrompt": "original-user-request",
+    "context": {
+      "project": "project-name",
+      "type": "project-type",
+      "currentFiles": ["affected-files"],
+      "dependencies": ["project-dependencies"]
+    },
+    "orchestration": {
+      "priority": "high|normal|low",
+      "parallelExecution": true,
+      "timeout": 300000
+    },
+    "agentTasks": {
+      "agentName": {
+        "task": "specific-task-description",
+        "inputs": {},
+        "expectedOutput": "description",
+        "dependencies": ["other-agents"]
+      }
+    }
+  }
+}

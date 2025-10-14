@@ -1,0 +1,99 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+		<RootNamespace>QuadroAIPilot</RootNamespace>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<Platforms>x86;x64;ARM64</Platforms>
+		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
+		<UseWinUI>true</UseWinUI>
+		<EnableMsixTooling>true</EnableMsixTooling>
+		<Nullable>annotations</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+	</PropertyGroup>
+	<ItemGroup>
+	
+	</ItemGroup>
+  <!-- COMReference kaldırıldı: SHDocVw -->
+	<ItemGroup>
+		
+		
+		
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+		<PackageReference Include="System.ServiceModel.Syndication" Version="8.0.0" />
+		<!-- Serilog for structured logging -->
+		<PackageReference Include="Serilog" Version="3.1.1" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+		<PackageReference Include="Serilog.Formatting.Compact" Version="2.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.3916" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
+		<PackageReference Include="NAudio" Version="2.2.1" />
+		<PackageReference Include="System.Speech" Version="9.0.4" />
+		<PackageReference Include="TorchSharp-cpu" Version="0.105.0" />
+		<!-- WebView2 paketi eklendi -->
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3240.44" />
+		<!-- Web Scraping için Selenium ve yardımcı paketler -->
+		<PackageReference Include="Selenium.WebDriver" Version="4.27.0" />
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+		<PackageReference Include="Polly" Version="8.5.0" />
+		<!-- System.Management for GPU detection -->
+		<PackageReference Include="System.Management" Version="8.0.0" />
+		<!-- System.Drawing.Common for background analysis -->
+		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+		<!-- NuGet Office Interop - daha stabil -->
+		<PackageReference Include="Microsoft.Office.Interop.Outlook" Version="15.0.4797.1003">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+		<Manifest Include="$(ApplicationManifest)" />
+	</ItemGroup>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);CA1401;CA2101;SYSLIB;SPELL;IDE;CS;CS1998;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8622;CS8625;CS1760;NU1701;MSB3277</NoWarn>
+		<DefaultLanguage>tr-tr</DefaultLanguage>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+		<ProjectCapability Include="Msix" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Commands\SystemCommand.txt">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>SystemCommand.cs</DependentUpon>
+		</None>
+	
+		<!-- Index.html'i çıktıya kopyala -->
+		<None Update="Assets\index.html">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		
+		<!-- App.config dosyası -->
+		<None Update="App.config">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+  
+	<ItemGroup>
+		<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Update="Assets\index.html">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+		<HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+	</PropertyGroup>
+</Project>

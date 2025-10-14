@@ -1,0 +1,123 @@
+[
+  {
+    "name": "OpenExcel",
+    "intent": "open_application",
+    "patterns": [
+      "excel.*aç",
+      "excel.*başlat",
+      "excel.*çalıştır",
+      "excel.*open",
+      "microsoft excel.*aç"
+    ],
+    "action": "open_application",
+    "target": "excel",
+    "description": "Microsoft Excel uygulamasını açar"
+  },
+  {
+    "name": "OpenWord",
+    "intent": "open_application", 
+    "patterns": [
+      "word.*aç",
+      "word.*başlat",
+      "word.*çalıştır",
+      "microsoft word.*aç"
+    ],
+    "action": "open_application",
+    "target": "winword",
+    "description": "Microsoft Word uygulamasını açar"
+  },
+  {
+    "name": "OpenPowerPoint",
+    "intent": "open_application",
+    "patterns": [
+      "powerpoint.*aç",
+      "power point.*aç",
+      "powerpoint.*başlat",
+      "powerpnt.*aç",
+      "microsoft powerpoint.*aç"
+    ],
+    "action": "open_application", 
+    "target": "powerpnt",
+    "description": "Microsoft PowerPoint uygulamasını açar"
+  },
+  {
+    "name": "OpenNotepad",
+    "intent": "open_application",
+    "patterns": [
+      "not defteri.*aç",
+      "notepad.*aç",
+      "not defteri.*başlat",
+      "notepad.*başlat"
+    ],
+    "action": "open_application",
+    "target": "notepad",
+    "description": "Not Defteri uygulamasını açar"
+  },
+  {
+    "name": "OpenCalculator",
+    "intent": "open_application",
+    "patterns": [
+      "hesap makinesi.*aç",
+      "calculator.*aç",
+      "hesap makinesi.*başlat",
+      "calculator.*başlat",
+      "calc.*aç"
+    ],
+    "action": "open_application",
+    "target": "calc",
+    "description": "Hesap Makinesi uygulamasını açar"
+  },
+  {
+    "name": "OpenBrowser",
+    "intent": "open_application",
+    "patterns": [
+      "tarayıcı.*aç",
+      "browser.*aç",
+      "internet.*aç",
+      "chrome.*aç",
+      "edge.*aç",
+      "firefox.*aç"
+    ],
+    "action": "open_application",
+    "target": "msedge",
+    "description": "Web tarayıcısını açar"
+  },
+  {
+    "name": "OpenFileExplorer",
+    "intent": "open_application",
+    "patterns": [
+      "dosya gezgini.*aç",
+      "file explorer.*aç",
+      "klasör.*aç",
+      "explorer.*aç"
+    ],
+    "action": "open_application",
+    "target": "explorer",
+    "description": "Dosya Gezgini uygulamasını açar"
+  },
+  {
+    "name": "OpenVSCode",
+    "intent": "open_application", 
+    "patterns": [
+      "visual studio code.*aç",
+      "vs code.*aç",
+      "vscode.*aç",
+      "code.*aç"
+    ],
+    "action": "open_application",
+    "target": "code",
+    "description": "Visual Studio Code uygulamasını açar"
+  },
+  {
+    "name": "FindFile",
+    "intent": "find_file",
+    "patterns": [
+      ".*dosya.*bul",
+      ".*dosya.*ara",
+      ".*file.*find",
+      ".*file.*search"
+    ],
+    "action": "find_file",
+    "description": "Belirtilen dosyayı bulur"
+  }
+]

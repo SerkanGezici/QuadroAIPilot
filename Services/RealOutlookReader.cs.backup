@@ -1,0 +1,1158 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+namespace QuadroAIPilot.Services
+{
+    /// <summary>
+    /// Gerçek Outlook MAPI Reader - Late binding ile çalışır
+    /// COM Interop çakışmasını önler
+    /// </summary>
+    public class RealOutlookReader
+    {
+        private dynamic _outlookApp;
+        private dynamic _nameSpace;
+        
+        public class RealEmailInfo
+        {
+            public string Subject { get; set; } = "";
+            public string SenderName { get; set; } = "";
+            public string SenderEmail { get; set; } = "";
+            public string RecipientName { get; set; } = "";  // Gönderilmiş mailler için alıcı adı
+            public string RecipientEmail { get; set; } = ""; // Gönderilmiş mailler için alıcı email
+            public DateTime ReceivedTime { get; set; }
+            public string BodyPreview { get; set; } = "";
+            public bool IsRead { get; set; }
+            public string Importance { get; set; } = "";
+            public bool HasAttachments { get; set; }
+            public string AccountName { get; set; } = "";
+            public List<AttachmentInfo> Attachments { get; set; } = new List<AttachmentInfo>();
+            public bool IsSentMail { get; set; } = false; // Mail gönderilmiş mi yoksa gelen mi
+        }
+        
+        public class AttachmentInfo
+        {
+            public string FileName { get; set; } = "";
+            public string FileType { get; set; } = "";
+            public long FileSize { get; set; }
+            public string SizeFormatted => FormatFileSize(FileSize);
+            public string ContentSummary { get; set; } = "";
+            
+            private static string FormatFileSize(long bytes)
+            {
+                if (bytes < 1024) return $"{bytes} B";
+                if (bytes < 1024 * 1024) return $"{bytes / 1024} KB";
+                return $"{bytes / (1024 * 1024)} MB";
+            }
+        }
+        
+        /// <summary>
+        /// Outlook'a late binding ile bağlan
+        /// </summary>
+        public async Task<bool> ConnectAsync()
+        {
+            try
+            {
+                Debug.WriteLine("[RealOutlookReader] Outlook'a late binding ile bağlanılıyor...");
+                
+                // Late binding - COM çakışması olmaz
+                Type outlookType = Type.GetTypeFromProgID("Outlook.Application");
+                if (outlookType == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] Outlook ProgID bulunamadı");
+                    return false;
+                }
+                
+                _outlookApp = Activator.CreateInstance(outlookType);
+                if (_outlookApp == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] Outlook Application oluşturulamadı");
+                    return false;
+                }
+                
+                _nameSpace = _outlookApp.GetNamespace("MAPI");
+                if (_nameSpace == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] MAPI NameSpace alınamadı");
+                    return false;
+                }
+                
+                Debug.WriteLine("[RealOutlookReader] Outlook bağlantısı başarılı");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Bağlantı hatası: {ex.Message}");
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Okunmamış mailleri al
+        /// </summary>
+        public async Task<List<RealEmailInfo>> GetUnreadEmailsAsync(int maxCount = 20)
+        {
+            var emails = new List<RealEmailInfo>();
+            
+            try
+            {
+                if (_nameSpace == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] NameSpace null - önce Connect() çağır");
+                    return emails;
+                }
+                
+                Debug.WriteLine("[RealOutlookReader] Okunmamış mailler alınıyor...");
+                
+                // Tüm hesapları kontrol et
+                var stores = _nameSpace.Stores;
+                
+                for (int i = 1; i <= stores.Count; i++)
+                {
+                    try
+                    {
+                        var store = stores[i];
+                        Debug.WriteLine($"[RealOutlookReader] Store kontrol ediliyor: {store.DisplayName}");
+                        
+                        // Timeout için task wrapper
+                        var storeTask = Task.Run(() => {
+                            try 
+                            {
+                                // Inbox klasörünü al
+                                var folder = store.GetDefaultFolder(6); // olFolderInbox = 6
+                                var accountEmails = GetUnreadEmailsFromFolder(folder, store.DisplayName, maxCount);
+                                
+                                // COM cleanup
+                                Marshal.ReleaseComObject(folder);
+                                return accountEmails;
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store işlem hatası: {ex.Message}");
+                                return new List<RealEmailInfo>();
+                            }
+                        });
+                        
+                        // 30 saniye timeout
+                        if (storeTask.Wait(30000))
+                        {
+                            emails.AddRange(storeTask.Result);
+                            Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store başarıyla işlendi");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store timeout (30s), atlanıyor");
+                        }
+                        
+                        // COM cleanup
+                        Marshal.ReleaseComObject(store);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] Store {i} okuma hatası: {ex.Message}");
+                    }
+                }
+                
+                Marshal.ReleaseComObject(stores);
+                
+                // En yeni mailleri önce getir
+                emails = emails.OrderByDescending(e => e.ReceivedTime).Take(maxCount).ToList();
+                
+                Debug.WriteLine($"[RealOutlookReader] {emails.Count} okunmamış mail bulundu");
+                return emails;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] GetUnreadEmailsAsync hatası: {ex.Message}");
+                return emails;
+            }
+        }
+        
+        /// <summary>
+        /// En son mailleri al
+        /// </summary>
+        public async Task<List<RealEmailInfo>> GetRecentEmailsAsync(int maxCount = 10)
+        {
+            var emails = new List<RealEmailInfo>();
+            
+            try
+            {
+                if (_nameSpace == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] NameSpace null - önce Connect() çağır");
+                    return emails;
+                }
+                
+                Debug.WriteLine("[RealOutlookReader] Son mailler alınıyor...");
+                
+                // Tüm hesapları kontrol et
+                var stores = _nameSpace.Stores;
+                
+                for (int i = 1; i <= stores.Count; i++)
+                {
+                    try
+                    {
+                        var store = stores[i];
+                        Debug.WriteLine($"[RealOutlookReader] Store kontrol ediliyor: {store.DisplayName}");
+                        
+                        // Timeout için task wrapper
+                        var storeTask = Task.Run(() => {
+                            try 
+                            {
+                                // Inbox klasörünü al
+                                var folder = store.GetDefaultFolder(6); // olFolderInbox = 6
+                                var accountEmails = GetRecentEmailsFromFolder(folder, store.DisplayName, maxCount);
+                                
+                                // COM cleanup
+                                Marshal.ReleaseComObject(folder);
+                                return accountEmails;
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store işlem hatası: {ex.Message}");
+                                return new List<RealEmailInfo>();
+                            }
+                        });
+                        
+                        // 30 saniye timeout
+                        if (storeTask.Wait(30000))
+                        {
+                            emails.AddRange(storeTask.Result);
+                            Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store başarıyla işlendi");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store timeout (30s), atlanıyor");
+                        }
+                        
+                        // COM cleanup
+                        Marshal.ReleaseComObject(store);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] Store {i} okuma hatası: {ex.Message}");
+                    }
+                }
+                
+                Marshal.ReleaseComObject(stores);
+                
+                // En yeni mailleri önce getir
+                emails = emails.OrderByDescending(e => e.ReceivedTime).Take(maxCount).ToList();
+                
+                Debug.WriteLine($"[RealOutlookReader] {emails.Count} son mail bulundu");
+                return emails;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] GetRecentEmailsAsync hatası: {ex.Message}");
+                return emails;
+            }
+        }
+        
+        /// <summary>
+        /// Gönderilmiş mailleri al
+        /// </summary>
+        public async Task<List<RealEmailInfo>> GetSentEmailsAsync(int maxCount = 10)
+        {
+            var emails = new List<RealEmailInfo>();
+            
+            try
+            {
+                if (_nameSpace == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] NameSpace null - önce Connect() çağır");
+                    return emails;
+                }
+                
+                Debug.WriteLine("[RealOutlookReader] Gönderilmiş mailler alınıyor...");
+                
+                // Tüm hesapları kontrol et
+                var stores = _nameSpace.Stores;
+                
+                for (int i = 1; i <= stores.Count; i++)
+                {
+                    try
+                    {
+                        var store = stores[i];
+                        Debug.WriteLine($"[RealOutlookReader] Store kontrol ediliyor: {store.DisplayName}");
+                        
+                        // Timeout için task wrapper
+                        var storeTask = Task.Run(() => {
+                            try 
+                            {
+                                // Sent Items klasörünü al
+                                var folder = store.GetDefaultFolder(5); // olFolderSentMail = 5
+                                var accountEmails = GetSentEmailsFromFolder(folder, store.DisplayName, maxCount);
+                                
+                                // COM cleanup
+                                Marshal.ReleaseComObject(folder);
+                                return accountEmails;
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store işlem hatası: {ex.Message}");
+                                return new List<RealEmailInfo>();
+                            }
+                        });
+                        
+                        // 30 saniye timeout
+                        if (storeTask.Wait(30000))
+                        {
+                            emails.AddRange(storeTask.Result);
+                            Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store başarıyla işlendi");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] {store.DisplayName} - Store timeout (30s), atlanıyor");
+                        }
+                        
+                        // COM cleanup
+                        Marshal.ReleaseComObject(store);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] Store {i} okuma hatası: {ex.Message}");
+                    }
+                }
+                
+                Marshal.ReleaseComObject(stores);
+                
+                // En yeni mailleri önce getir
+                emails = emails.OrderByDescending(e => e.ReceivedTime).Take(maxCount).ToList();
+                
+                Debug.WriteLine($"[RealOutlookReader] {emails.Count} gönderilmiş mail bulundu");
+                return emails;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] GetSentEmailsAsync hatası: {ex.Message}");
+                return emails;
+            }
+        }
+        
+        private List<RealEmailInfo> GetSentEmailsFromFolder(dynamic folder, string accountName, int maxCount)
+        {
+            var emails = new List<RealEmailInfo>();
+            
+            try
+            {
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - folder.Items erişiliyor...");
+                var items = folder.Items;
+                
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - {items.Count} item bulundu, sıralanıyor...");
+                
+                // Timeout riski için sadece son 100 item'ı işle
+                int totalCount = items.Count;
+                int startIndex = Math.Max(1, totalCount - 100);
+                
+                // Sort kullanmadan performanslı çözüm
+                int processedCount = 0;
+                for (int i = totalCount; i >= startIndex && processedCount < maxCount; i--)
+                {
+                    try
+                    {
+                        var item = items[i];
+                        
+                        // Mail item mı kontrol et
+                        if (item.Class == 43) // olMail = 43
+                        {
+                            emails.Add(ConvertToSentEmailInfo(item, accountName));
+                            processedCount++;
+                        }
+                        
+                        if (item != null) Marshal.ReleaseComObject(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] {accountName} - Mail item {i} okuma hatası: {ex.Message}");
+                    }
+                }
+                
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - {emails.Count} gönderilmiş mail toplandı");
+                
+                Marshal.ReleaseComObject(items);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - Folder okuma hatası: {ex.Message}");
+            }
+            
+            return emails;
+        }
+        
+        private List<RealEmailInfo> GetUnreadEmailsFromFolder(dynamic folder, string accountName, int maxCount)
+        {
+            var emails = new List<RealEmailInfo>();
+            
+            try
+            {
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - folder.Items erişiliyor...");
+                var items = folder.Items;
+                
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - {items.Count} item bulundu, sıralanıyor...");
+                
+                // Timeout riski için sadece son 100 item'ı işle
+                int totalCount = items.Count;
+                int startIndex = Math.Max(1, totalCount - 100);
+                
+                // Sort yerine restrict kullan - daha performanslı
+                var restrictedItems = items.Restrict("[UnRead] = True");
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - okunmamış maillerle kısıtlandı");
+                
+                int processedCount = 0;
+                for (int i = 1; i <= restrictedItems.Count && processedCount < maxCount; i++)
+                {
+                    try
+                    {
+                        var item = restrictedItems[i];
+                        
+                        // Mail item mı kontrol et
+                        if (item.Class == 43) // olMail = 43
+                        {
+                            emails.Add(ConvertToRealEmailInfo(item, accountName));
+                            processedCount++;
+                        }
+                        
+                        if (item != null) Marshal.ReleaseComObject(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] {accountName} - Mail item {i} okuma hatası: {ex.Message}");
+                    }
+                }
+                
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - {emails.Count} okunmamış mail toplandı");
+                
+                Marshal.ReleaseComObject(restrictedItems);
+                Marshal.ReleaseComObject(items);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - Folder okuma hatası: {ex.Message}");
+            }
+            
+            return emails;
+        }
+        
+        private List<RealEmailInfo> GetRecentEmailsFromFolder(dynamic folder, string accountName, int maxCount)
+        {
+            var emails = new List<RealEmailInfo>();
+            
+            try
+            {
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - folder.Items erişiliyor...");
+                var items = folder.Items;
+                
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - {items.Count} item bulundu, sıralanıyor...");
+                
+                // Timeout riski için sadece son 100 item'ı işle
+                int totalCount = items.Count;
+                int startIndex = Math.Max(1, totalCount - 100);
+                
+                // Sort kullanmadan performanslı çözüm
+                int processedCount = 0;
+                for (int i = totalCount; i >= startIndex && processedCount < maxCount; i--)
+                {
+                    try
+                    {
+                        var item = items[i];
+                        
+                        // Mail item mı kontrol et
+                        if (item.Class == 43) // olMail = 43
+                        {
+                            emails.Add(ConvertToRealEmailInfo(item, accountName));
+                            processedCount++;
+                        }
+                        
+                        if (item != null) Marshal.ReleaseComObject(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] {accountName} - Mail item {i} okuma hatası: {ex.Message}");
+                    }
+                }
+                
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - {emails.Count} son mail toplandı");
+                
+                Marshal.ReleaseComObject(items);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] {accountName} - Folder okuma hatası: {ex.Message}");
+            }
+            
+            return emails;
+        }
+        
+        private RealEmailInfo ConvertToRealEmailInfo(dynamic mailItem, string accountName)
+        {
+            try
+            {
+                var bodyPreview = "";
+                try
+                {
+                    string body = mailItem.Body ?? "";
+                    if (!string.IsNullOrEmpty(body))
+                    {
+                        // HTML taglarını temizle ve ilk 200 karakteri al
+                        bodyPreview = System.Text.RegularExpressions.Regex.Replace(body, "<.*?>", "");
+                        if (bodyPreview.Length > 200)
+                            bodyPreview = bodyPreview.Substring(0, 200) + "...";
+                    }
+                }
+                catch { }
+                
+                // Ek dosya analizi
+                var attachments = new List<AttachmentInfo>();
+                if (mailItem.Attachments.Count > 0)
+                {
+                    attachments = ExtractAttachmentInfo(mailItem.Attachments);
+                }
+
+                // Sender email'i düzgün almak için
+                string senderEmail = "";
+                try
+                {
+                    senderEmail = mailItem.SenderEmailAddress ?? "";
+                    
+                    // Exchange adresi ise SMTP'ye çevirmeyi dene
+                    if (senderEmail.StartsWith("/o=") || senderEmail.StartsWith("/O="))
+                    {
+                        try
+                        {
+                            var sender = mailItem.Sender;
+                            if (sender != null)
+                            {
+                                var exchangeUser = sender.GetExchangeUser();
+                                if (exchangeUser != null)
+                                {
+                                    senderEmail = exchangeUser.PrimarySmtpAddress ?? senderEmail;
+                                    Marshal.ReleaseComObject(exchangeUser);
+                                }
+                                Marshal.ReleaseComObject(sender);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] Exchange to SMTP conversion failed: {ex.Message}");
+                        }
+                    }
+                    
+                    Debug.WriteLine($"[RealOutlookReader] Mail from: {mailItem.SenderName} <{senderEmail}>");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[RealOutlookReader] SenderEmail extraction error: {ex.Message}");
+                }
+
+                return new RealEmailInfo
+                {
+                    Subject = mailItem.Subject ?? "Konu yok",
+                    SenderName = mailItem.SenderName ?? "Bilinmeyen",
+                    SenderEmail = senderEmail,
+                    ReceivedTime = mailItem.ReceivedTime,
+                    BodyPreview = bodyPreview.Trim(),
+                    IsRead = !mailItem.UnRead,
+                    Importance = mailItem.Importance.ToString(),
+                    HasAttachments = mailItem.Attachments.Count > 0,
+                    AccountName = accountName,
+                    Attachments = attachments
+                };
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Mail convert hatası: {ex.Message}");
+                return new RealEmailInfo
+                {
+                    Subject = "Mail okuma hatası",
+                    SenderName = "Hata",
+                    AccountName = accountName
+                };
+            }
+        }
+        
+        private RealEmailInfo ConvertToSentEmailInfo(dynamic mailItem, string accountName)
+        {
+            try
+            {
+                var bodyPreview = "";
+                try
+                {
+                    string body = mailItem.Body ?? "";
+                    if (!string.IsNullOrEmpty(body))
+                    {
+                        // HTML taglarını temizle ve ilk 200 karakteri al
+                        bodyPreview = System.Text.RegularExpressions.Regex.Replace(body, "<.*?>", "");
+                        if (bodyPreview.Length > 200)
+                            bodyPreview = bodyPreview.Substring(0, 200) + "...";
+                    }
+                }
+                catch { }
+                
+                // Ek dosya analizi
+                var attachments = new List<AttachmentInfo>();
+                if (mailItem.Attachments.Count > 0)
+                {
+                    attachments = ExtractAttachmentInfo(mailItem.Attachments);
+                }
+
+                // Gönderilmiş mail için alıcı bilgisini al
+                string recipientName = "";
+                string recipientEmail = "";
+                try
+                {
+                    var recipients = mailItem.Recipients;
+                    if (recipients.Count > 0)
+                    {
+                        var firstRecipient = recipients[1]; // COM index 1'den başlar
+                        recipientName = firstRecipient.Name ?? "";
+                        recipientEmail = firstRecipient.Address ?? "";
+                        
+                        // Exchange adresi ise SMTP'ye çevirmeyi dene
+                        if (recipientEmail.StartsWith("/o=") || recipientEmail.StartsWith("/O="))
+                        {
+                            try
+                            {
+                                var addressEntry = firstRecipient.AddressEntry;
+                                if (addressEntry != null)
+                                {
+                                    var exchangeUser = addressEntry.GetExchangeUser();
+                                    if (exchangeUser != null)
+                                    {
+                                        recipientEmail = exchangeUser.PrimarySmtpAddress ?? recipientEmail;
+                                        Marshal.ReleaseComObject(exchangeUser);
+                                    }
+                                    Marshal.ReleaseComObject(addressEntry);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[RealOutlookReader] Recipient Exchange to SMTP conversion failed: {ex.Message}");
+                            }
+                        }
+                        
+                        Debug.WriteLine($"[RealOutlookReader] Sent mail to: {recipientName} <{recipientEmail}>");
+                        
+                        // Eğer birden fazla alıcı varsa, sadece ilkini al
+                        if (recipients.Count > 1)
+                        {
+                            recipientName += $" (+{recipients.Count - 1} diğer)";
+                        }
+                        
+                        Marshal.ReleaseComObject(firstRecipient);
+                    }
+                    Marshal.ReleaseComObject(recipients);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[RealOutlookReader] Alıcı bilgisi alma hatası: {ex.Message}");
+                }
+
+                // Sender email'i düzgün almak için (gönderilmiş mailede de lazım)
+                string senderEmail = "";
+                try
+                {
+                    senderEmail = mailItem.SenderEmailAddress ?? "";
+                    
+                    // Exchange adresi ise SMTP'ye çevirmeyi dene
+                    if (senderEmail.StartsWith("/o=") || senderEmail.StartsWith("/O="))
+                    {
+                        try
+                        {
+                            var sender = mailItem.Sender;
+                            if (sender != null)
+                            {
+                                var exchangeUser = sender.GetExchangeUser();
+                                if (exchangeUser != null)
+                                {
+                                    senderEmail = exchangeUser.PrimarySmtpAddress ?? senderEmail;
+                                    Marshal.ReleaseComObject(exchangeUser);
+                                }
+                                Marshal.ReleaseComObject(sender);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] Sender Exchange to SMTP conversion failed: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[RealOutlookReader] SenderEmail extraction error: {ex.Message}");
+                }
+
+                return new RealEmailInfo
+                {
+                    Subject = mailItem.Subject ?? "Konu yok",
+                    SenderName = mailItem.SenderName ?? "Bilinmeyen", // Gönderen (kendisi)
+                    SenderEmail = senderEmail,
+                    RecipientName = recipientName, // Alıcı (kime gönderildi)
+                    RecipientEmail = recipientEmail,
+                    ReceivedTime = mailItem.SentOn ?? mailItem.ReceivedTime, // Gönderilme zamanı
+                    BodyPreview = bodyPreview.Trim(),
+                    IsRead = true, // Gönderilmiş mailler her zaman okunmuş sayılır
+                    Importance = mailItem.Importance.ToString(),
+                    HasAttachments = mailItem.Attachments.Count > 0,
+                    AccountName = accountName,
+                    Attachments = attachments,
+                    IsSentMail = true // Bu gönderilmiş mail
+                };
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Gönderilmiş mail convert hatası: {ex.Message}");
+                return new RealEmailInfo
+                {
+                    Subject = "Mail okuma hatası",
+                    SenderName = "Hata",
+                    AccountName = accountName,
+                    IsSentMail = true
+                };
+            }
+        }
+        
+        /// <summary>
+        /// Bağlantıyı kapat
+        /// </summary>
+        public void Disconnect()
+        {
+            try
+            {
+                if (_nameSpace != null)
+                {
+                    Marshal.ReleaseComObject(_nameSpace);
+                    _nameSpace = null;
+                }
+                
+                if (_outlookApp != null)
+                {
+                    Marshal.ReleaseComObject(_outlookApp);
+                    _outlookApp = null;
+                }
+                
+                Debug.WriteLine("[RealOutlookReader] Bağlantı kapatıldı");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Disconnect hatası: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Ek dosya bilgilerini çıkarır
+        /// </summary>
+        private List<AttachmentInfo> ExtractAttachmentInfo(dynamic attachments)
+        {
+            var attachmentList = new List<AttachmentInfo>();
+            
+            try
+            {
+                for (int i = 1; i <= attachments.Count; i++)
+                {
+                    try
+                    {
+                        var attachment = attachments[i];
+                        
+                        var attachInfo = new AttachmentInfo
+                        {
+                            FileName = attachment.FileName ?? "Bilinmeyen dosya",
+                            FileSize = attachment.Size,
+                            FileType = GetFileTypeFromExtension(attachment.FileName),
+                            ContentSummary = AnalyzeAttachmentContent(attachment)
+                        };
+                        
+                        attachmentList.Add(attachInfo);
+                        
+                        if (attachment != null) Marshal.ReleaseComObject(attachment);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] Ek dosya {i} analiz hatası: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Ek dosya listesi hatası: {ex.Message}");
+            }
+            
+            return attachmentList;
+        }
+
+        #region Calendar/Appointment Methods
+
+        /// <summary>
+        /// Takvim etkinliği bilgisi
+        /// </summary>
+        public class CalendarEventInfo
+        {
+            public string Subject { get; set; } = "";
+            public DateTime StartTime { get; set; }
+            public DateTime EndTime { get; set; }
+            public string Location { get; set; } = "";
+            public string Organizer { get; set; } = "";
+            public string Body { get; set; } = "";
+            public bool IsAllDay { get; set; }
+            public string Duration => $"{(EndTime - StartTime).TotalHours:F1} saat";
+            public bool IsRecurring { get; set; }
+            public string Status { get; set; } = "";
+            public List<string> Attendees { get; set; } = new List<string>();
+        }
+
+        /// <summary>
+        /// Bugünkü takvim etkinliklerini getirir
+        /// </summary>
+        public async Task<List<CalendarEventInfo>> GetTodayAppointmentsAsync()
+        {
+            return await GetAppointmentsByDateAsync(DateTime.Today, DateTime.Today.AddDays(1));
+        }
+
+        /// <summary>
+        /// Yarınki takvim etkinliklerini getirir
+        /// </summary>
+        public async Task<List<CalendarEventInfo>> GetTomorrowAppointmentsAsync()
+        {
+            var tomorrow = DateTime.Today.AddDays(1);
+            return await GetAppointmentsByDateAsync(tomorrow, tomorrow.AddDays(1));
+        }
+
+        /// <summary>
+        /// Bu haftaki takvim etkinliklerini getirir
+        /// </summary>
+        public async Task<List<CalendarEventInfo>> GetWeekAppointmentsAsync()
+        {
+            var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+            var endOfWeek = startOfWeek.AddDays(7);
+            return await GetAppointmentsByDateAsync(startOfWeek, endOfWeek);
+        }        /// <summary>
+        /// Belirtilen tarih aralığındaki takvim etkinliklerini getirir
+        /// </summary>
+        public async Task<List<CalendarEventInfo>> GetAppointmentsByDateAsync(DateTime startDate, DateTime endDate)
+        {
+            var appointments = new List<CalendarEventInfo>();
+
+            try
+            {
+                Debug.WriteLine($"[RealOutlookReader] Takvim etkinlikleri alınıyor: {startDate:dd.MM.yyyy} - {endDate:dd.MM.yyyy}");
+
+                if (_nameSpace == null)
+                {
+                    Debug.WriteLine("[RealOutlookReader] NameSpace bağlantısı yok");
+                    return appointments;
+                }
+
+                // TIMEOUT KONTROLÜ: 30 saniye timeout ekle
+                using (var timeoutCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+                {
+                    return await Task.Run(() => GetAppointmentsByDateSync(startDate, endDate), timeoutCancellation.Token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("[RealOutlookReader] Takvim okuma timeout oldu");
+                return appointments;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Takvim okuma hatası: {ex.Message}");
+                Debug.WriteLine($"[RealOutlookReader] StackTrace: {ex.StackTrace}");
+                return appointments;
+            }
+        }
+
+        private List<CalendarEventInfo> GetAppointmentsByDateSync(DateTime startDate, DateTime endDate)
+        {
+            var appointments = new List<CalendarEventInfo>();
+
+            try
+            {
+                // ÇÖZÜM: Her adımda null check ekle
+                dynamic calendarFolder = null;
+                dynamic items = null;
+                dynamic restrictedItems = null;
+
+                try
+                {
+                    // Takvim klasörünü al (olDefaultFolderCalendar = 9)
+                    calendarFolder = _nameSpace.GetDefaultFolder(9);
+                    if (calendarFolder == null)
+                    {
+                        Debug.WriteLine("[RealOutlookReader] Takvim klasörü alınamadı");
+                        return appointments;
+                    }
+
+                    items = calendarFolder.Items;
+                    if (items == null)
+                    {
+                        Debug.WriteLine("[RealOutlookReader] Takvim items alınamadı");
+                        return appointments;
+                    }
+
+                    items.IncludeRecurrences = true;
+                    // items.Sort("[Start]"); // KALDIRILDI: 15 dakika timeout riski
+
+                    // Tarih filtresi
+                    string filter = $"[Start] >= '{startDate:MM/dd/yyyy}' AND [Start] < '{endDate:MM/dd/yyyy}'";
+                    restrictedItems = items.Restrict(filter);
+
+                    if (restrictedItems == null)
+                    {
+                        Debug.WriteLine("[RealOutlookReader] Filtrelenmiş items alınamadı");
+                        return appointments;
+                    }
+
+                    int itemCount = 0;
+                    try
+                    {
+                        itemCount = restrictedItems.Count;
+                        
+                        // GÜVENLIK: Count değeri mantıksızsa sınırla
+                        if (itemCount > 1000 || itemCount < 0)
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] Anormal item count: {itemCount}, sınırlanıyor");
+                            itemCount = Math.Min(itemCount, 100); // Maksimum 100 item
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[RealOutlookReader] Item count alınamadı: {ex.Message}");
+                        return appointments;
+                    }
+
+                    Debug.WriteLine($"[RealOutlookReader] {itemCount} takvim etkinliği bulundu");
+
+                    // GÜVENLIK: Maksimum 100 item ile sınırla
+                    int maxItems = Math.Min(itemCount, 100);
+                    for (int i = 1; i <= maxItems; i++)
+                    {
+                        dynamic appointment = null;
+                        try
+                        {
+                            appointment = restrictedItems[i];
+                            if (appointment == null)
+                            {
+                                Debug.WriteLine($"[RealOutlookReader] Etkinlik {i} null");
+                                continue;
+                            }
+
+                            // GÜVENLIK: Appointment'ın gerçek bir appointment olup olmadığını kontrol et
+                            try
+                            {
+                                var testSubject = appointment.Subject; // Test etmek için Subject'e eriş
+                                if (testSubject == null)
+                                {
+                                    Debug.WriteLine($"[RealOutlookReader] Etkinlik {i} subject null");
+                                    continue;
+                                }
+                            }
+                            catch
+                            {
+                                Debug.WriteLine($"[RealOutlookReader] Etkinlik {i} invalid appointment");
+                                continue;
+                            }
+
+                            var appointmentInfo = ConvertToCalendarEventInfo(appointment);
+                            if (appointmentInfo != null)
+                            {
+                                appointments.Add(appointmentInfo);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] Etkinlik {i} dönüştürme hatası: {ex.Message}");
+                        }
+                        finally
+                        {
+                            if (appointment != null)
+                            {
+                                try { Marshal.ReleaseComObject(appointment); }
+                                catch { }
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    // ÇÖZÜM: COM nesnelerini güvenli şekilde temizle
+                    if (restrictedItems != null)
+                    {
+                        try { Marshal.ReleaseComObject(restrictedItems); }
+                        catch { }
+                    }
+                    if (items != null)
+                    {
+                        try { Marshal.ReleaseComObject(items); }
+                        catch { }
+                    }
+                    if (calendarFolder != null)
+                    {
+                        try { Marshal.ReleaseComObject(calendarFolder); }
+                        catch { }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Takvim okuma hatası: {ex.Message}");
+                Debug.WriteLine($"[RealOutlookReader] StackTrace: {ex.StackTrace}");
+            }
+
+            return appointments.OrderBy(a => a.StartTime).ToList();
+        }
+
+        /// <summary>
+        /// Appointment nesnesini CalendarEventInfo'ya dönüştürür
+        /// </summary>
+        private CalendarEventInfo ConvertToCalendarEventInfo(dynamic appointment)
+        {
+            try
+            {
+                var attendeesList = new List<string>();
+
+                // Katılımcıları al
+                try
+                {
+                    var recipients = appointment.Recipients;
+                    for (int i = 1; i <= recipients.Count; i++)
+                    {
+                        try
+                        {
+                            var recipient = recipients[i];
+                            attendeesList.Add(recipient.Name ?? "Bilinmeyen");
+                            if (recipient != null) Marshal.ReleaseComObject(recipient);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[RealOutlookReader] Katılımcı {i} okuma hatası: {ex.Message}");
+                        }
+                    }
+                    if (recipients != null) Marshal.ReleaseComObject(recipients);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[RealOutlookReader] Katılımcılar okuma hatası: {ex.Message}");
+                }
+
+                return new CalendarEventInfo
+                {
+                    Subject = appointment.Subject ?? "Konu yok",
+                    StartTime = appointment.Start,
+                    EndTime = appointment.End,
+                    Location = appointment.Location ?? "",
+                    Organizer = appointment.Organizer ?? "",
+                    Body = (appointment.Body ?? "").Length > 200 
+                        ? appointment.Body.Substring(0, 200) + "..." 
+                        : appointment.Body ?? "",
+                    IsAllDay = appointment.AllDayEvent,
+                    IsRecurring = appointment.IsRecurring,
+                    Status = GetAppointmentStatus(appointment.MeetingStatus),
+                    Attendees = attendeesList
+                };
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] Appointment convert hatası: {ex.Message}");
+                return new CalendarEventInfo
+                {
+                    Subject = "Etkinlik okuma hatası",
+                    StartTime = DateTime.Now,
+                    EndTime = DateTime.Now.AddHours(1)
+                };
+            }
+        }
+
+        /// <summary>
+        /// Toplantı durumunu anlamlı metin olarak döndürür
+        /// </summary>
+        private string GetAppointmentStatus(dynamic meetingStatus)
+        {
+            try
+            {
+                int status = meetingStatus;
+                return status switch
+                {
+                    0 => "Normal", // olNonMeeting
+                    1 => "Toplantı", // olMeeting
+                    2 => "Alındı", // olMeetingReceived
+                    3 => "İptal Edildi", // olMeetingCanceled
+                    _ => "Bilinmiyor"
+                };
+            }
+            catch
+            {
+                return "Bilinmiyor";
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Dosya uzantısından tür belirler
+        /// </summary>
+        private string GetFileTypeFromExtension(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return "Bilinmeyen";
+            
+            var extension = System.IO.Path.GetExtension(fileName).ToLowerInvariant();
+            
+            return extension switch
+            {
+                ".pdf" => "PDF Döküman",
+                ".doc" or ".docx" => "Word Döküman",
+                ".xls" or ".xlsx" => "Excel Tablosu",
+                ".ppt" or ".pptx" => "PowerPoint Sunumu",
+                ".txt" => "Metin Dosyası",
+                ".jpg" or ".jpeg" or ".png" or ".gif" => "Resim Dosyası",
+                ".zip" or ".rar" or ".7z" => "Sıkıştırılmış Dosya",
+                ".mp4" or ".avi" or ".mov" => "Video Dosyası",
+                ".mp3" or ".wav" => "Ses Dosyası",
+                _ => "Dosya"
+            };
+        }
+        
+        /// <summary>
+        /// Ek dosya içeriği analizi (gelecekte AI ile geliştirilebilir)
+        /// </summary>
+        private string AnalyzeAttachmentContent(dynamic attachment)
+        {
+            try
+            {
+                string fileName = attachment.FileName ?? "";
+                string fileType = GetFileTypeFromExtension(fileName);
+                long fileSize = attachment.Size;
+                
+                // Basit kural tabanlı analiz
+                if (fileName.ToLowerInvariant().Contains("fatura"))
+                    return "Muhtemelen fatura dökümanı";
+                else if (fileName.ToLowerInvariant().Contains("rapor"))
+                    return "Rapor dökümanı";
+                else if (fileName.ToLowerInvariant().Contains("sözleşme"))
+                    return "Sözleşme dökümanı";
+                else if (fileName.ToLowerInvariant().Contains("teklif"))
+                    return "Teklif dökümanı";
+                else if (fileType.Contains("Resim"))
+                    return "Görsel içerik";
+                else if (fileSize > 10 * 1024 * 1024) // 10MB+
+                    return "Büyük dosya - dikkatli inceleyin";
+                else if (fileType.Contains("PDF"))
+                    return "Okunabilir döküman";
+                else if (fileType.Contains("Word"))
+                    return "Düzenlenebilir döküman";
+                else if (fileType.Contains("Excel"))
+                    return "Tablo/hesaplama dökümanı";
+                
+                return $"{fileType} - İçerik analizi gerekebilir";
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RealOutlookReader] İçerik analiz hatası: {ex.Message}");
+                return "İçerik analiz edilemedi";
+            }
+        }
+    }
+}
