@@ -5,6 +5,7 @@
 		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
 		<RootNamespace>QuadroAIPilot</RootNamespace>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
 		<Platforms>x86;x64;ARM64</Platforms>
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
 		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
@@ -14,6 +15,11 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>false</PublishSingleFile>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 	</PropertyGroup>
 	<ItemGroup>
 	
@@ -42,7 +48,6 @@
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
 		<PackageReference Include="NAudio" Version="2.2.1" />
 		<PackageReference Include="System.Speech" Version="9.0.4" />
-		<PackageReference Include="TorchSharp-cpu" Version="0.105.0" />
 		<!-- WebView2 paketi eklendi -->
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3240.44" />
 		<!-- Web Scraping için Selenium ve yardımcı paketler -->
@@ -53,16 +58,17 @@
 		<PackageReference Include="System.Management" Version="8.0.0" />
 		<!-- System.Drawing.Common for background analysis -->
 		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-		<!-- NuGet Office Interop - daha stabil -->
-		<PackageReference Include="Microsoft.Office.Interop.Outlook" Version="15.0.4797.1003">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
+		<!-- AutoUpdater.NET for automatic updates -->
+		<PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);CA1401;CA2101;SYSLIB;SPELL;IDE;CS;CS1998;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8622;CS8625;CS1760;NU1701;MSB3277</NoWarn>
 		<DefaultLanguage>tr-tr</DefaultLanguage>
+		<!-- Sadece Türkçe dil dosyalarını dahil et -->
+		<SatelliteResourceLanguages>tr</SatelliteResourceLanguages>
+		<!-- WindowsAppSDK dil dosyalarını sınırla -->
+		<IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
 		<ProjectCapability Include="Msix" />
@@ -79,10 +85,26 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		
+		<!-- Icon dosyalarını çıktıya kopyala -->
+		<None Update="Assets\icon.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+
+		<!-- BrowserExtensions klasörünü çıktıya ve publish'e kopyala -->
+		<Content Include="BrowserExtensions\**\*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+		<None Update="Assets\icon128.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		
 		<!-- App.config dosyası -->
 		<None Update="App.config">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+		
+		
 	</ItemGroup>
   
 	<ItemGroup>

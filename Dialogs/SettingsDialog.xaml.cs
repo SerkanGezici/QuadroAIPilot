@@ -42,6 +42,16 @@ namespace QuadroAIPilot.Dialogs
             SetupEventHandlers();
             LoadSystemInfo();
             LoadProfileDataAsync();
+            
+            // Dialog kapatılırken ayarları kaydet
+            this.Closing += async (sender, args) =>
+            {
+                if (args.Result == ContentDialogResult.Primary)
+                {
+                    // Ayarları kaydet
+                    await _settingsManager.UpdateSettingsAsync(_tempSettings);
+                }
+            };
         }
 
         private void InitializeControls()
@@ -64,11 +74,15 @@ namespace QuadroAIPilot.Dialogs
                 }
             };
             
-            PerformanceComboBox.SelectionChanged += (s, e) =>
+            // Performance profili kaldırıldı - her zaman otomatik
+            
+            // Voice ComboBox handler
+            VoiceComboBox.SelectionChanged += (s, e) =>
             {
-                if (PerformanceComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
+                if (VoiceComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
                 {
-                    _tempSettings.Performance = Enum.Parse<PerformanceProfile>(item.Tag.ToString());
+                    // PreferredVoice özelliği yoksa, ayarları genişletelim
+                    // Şimdilik sadece local olarak saklayalım
                 }
             };
             
@@ -82,38 +96,9 @@ namespace QuadroAIPilot.Dialogs
                 }
             };
             
-            BlurIntensitySlider.ValueChanged += (s, e) =>
-            {
-                if (s is Slider slider)
-                {
-                    _tempSettings.BlurIntensity = slider.Value;
-                }
-            };
+            // BlurIntensitySlider kaldırıldı
             
-            // Toggle switches
-            EnableAnimationsToggle.Toggled += (s, e) =>
-            {
-                if (s is ToggleSwitch toggle)
-                {
-                    _tempSettings.EnableAnimations = toggle.IsOn;
-                }
-            };
-            
-            EnableGlowToggle.Toggled += (s, e) =>
-            {
-                if (s is ToggleSwitch toggle)
-                {
-                    _tempSettings.EnableGlowEffects = toggle.IsOn;
-                }
-            };
-            
-            EnableParallaxToggle.Toggled += (s, e) =>
-            {
-                if (s is ToggleSwitch toggle)
-                {
-                    _tempSettings.EnableParallaxEffects = toggle.IsOn;
-                }
-            };
+            // Görsel efekt toggle'ları kaldırıldı
             
             // Voice selection
             VoiceComboBox.SelectionChanged += (s, e) =>
@@ -125,7 +110,11 @@ namespace QuadroAIPilot.Dialogs
             };
             
             // Dialog buttons
-            this.PrimaryButtonClick += async (s, e) => await SaveSettingsAsync();
+            this.PrimaryButtonClick += async (s, e) => 
+            {
+                System.Diagnostics.Debug.WriteLine("[SettingsDialog] PrimaryButtonClick - Kaydet butonu tıklandı");
+                await SaveSettingsAsync();
+            };
             this.SecondaryButtonClick += (s, e) => { /* Cancel - do nothing */ };
             
             // Profile photo buttons
@@ -134,6 +123,14 @@ namespace QuadroAIPilot.Dialogs
             
             // Profile delete button
             DeleteProfileButton.Click += DeleteProfile_Click;
+
+            // Update system event handlers
+            AutoUpdateToggle.Toggled += AutoUpdateToggle_Toggled;
+            CheckUpdatesButton.Click += CheckUpdates_Click;
+            ReleaseNotesLink.Click += ReleaseNotes_Click;
+
+            // Load update info
+            LoadUpdateInfo();
         }
 
         private void LoadSettingsToUI(AppSettings settings)
@@ -148,24 +145,12 @@ namespace QuadroAIPilot.Dialogs
                 }
             }
             
-            // Performance
-            foreach (ComboBoxItem item in PerformanceComboBox.Items)
-            {
-                if (item.Tag?.ToString() == settings.Performance.ToString())
-                {
-                    PerformanceComboBox.SelectedItem = item;
-                    break;
-                }
-            }
+            // Performance profili kaldırıldı
             
             // Sliders
             AnimationSpeedSlider.Value = settings.AnimationSpeed;
-            BlurIntensitySlider.Value = settings.BlurIntensity;
-            
-            // Toggles
-            EnableAnimationsToggle.IsOn = settings.EnableAnimations;
-            EnableGlowToggle.IsOn = settings.EnableGlowEffects;
-            EnableParallaxToggle.IsOn = settings.EnableParallaxEffects;
+
+            // Görsel efekt ayarları kaldırıldı
             
             // Voice selection
             foreach (ComboBoxItem item in VoiceComboBox.Items)
@@ -209,14 +194,22 @@ namespace QuadroAIPilot.Dialogs
 
         private async Task SaveSettingsAsync()
         {
+            System.Diagnostics.Debug.WriteLine("[SettingsDialog] SaveSettingsAsync başladı");
+            
             // Profil verilerini doğrula ve kaydet
-            if (!await ValidateAndSaveProfileAsync())
+            System.Diagnostics.Debug.WriteLine("[SettingsDialog] ValidateAndSaveProfileAsync çağrılıyor...");
+            var profileSaved = await ValidateAndSaveProfileAsync();
+            System.Diagnostics.Debug.WriteLine($"[SettingsDialog] ValidateAndSaveProfileAsync sonucu: {profileSaved}");
+            
+            if (!profileSaved)
             {
                 // Profil doğrulama başarısız, dialog açık kalsın
+                System.Diagnostics.Debug.WriteLine("[SettingsDialog] Profil doğrulama başarısız, SaveSettingsAsync'den çıkılıyor");
                 return;
             }
             
             // Apply all settings
+            System.Diagnostics.Debug.WriteLine("[SettingsDialog] Diğer ayarlar kaydediliyor...");
             await _settingsManager.UpdateSettingsAsync(_tempSettings);
             
             // Haber tercihlerini kaydet
@@ -225,6 +218,8 @@ namespace QuadroAIPilot.Dialogs
             // Theme'i yeniden uygula ki şeffaflık değişiklikleri hemen etkin olsun
             var themeManager = ThemeManager.Instance;
             await themeManager.ApplyThemeAsync(_tempSettings.Theme);
+            
+            System.Diagnostics.Debug.WriteLine("[SettingsDialog] SaveSettingsAsync tamamlandı");
         }
         
         private void LoadNewsPreferences()
@@ -595,10 +590,14 @@ namespace QuadroAIPilot.Dialogs
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine("[SettingsDialog] ValidateAndSaveProfileAsync başladı");
+                
                 // UI'dan verileri topla
                 _tempProfile.FirstName = FirstNameTextBox.Text.Trim();
                 _tempProfile.LastName = LastNameTextBox.Text.Trim();
                 _tempProfile.Email = EmailTextBox.Text.Trim();
+                
+                System.Diagnostics.Debug.WriteLine($"[SettingsDialog] UI'dan alınan veriler - Ad: '{_tempProfile.FirstName}', Soyad: '{_tempProfile.LastName}', Email: '{_tempProfile.Email}'");
                 _tempProfile.Phone = PhoneTextBox.Text.Trim();
                 _tempProfile.Country = CountryTextBox.Text.Trim();
                 _tempProfile.City = CityTextBox.Text.Trim();
@@ -628,47 +627,57 @@ namespace QuadroAIPilot.Dialogs
                 // GDPR onayı
                 _tempProfile.HasGdprConsent = GdprConsentCheckBox.IsChecked ?? false;
                 
+                // Tüm validation hatalarını topla
+                var validationErrors = new List<string>();
+                
                 // Zorunlu alanları kontrol et
                 if (string.IsNullOrWhiteSpace(_tempProfile.FirstName) ||
                     string.IsNullOrWhiteSpace(_tempProfile.LastName) ||
                     string.IsNullOrWhiteSpace(_tempProfile.Email))
                 {
-                    var dialog = new ContentDialog
-                    {
-                        Title = "Eksik Bilgi",
-                        Content = "Lütfen zorunlu alanları doldurun (Ad, Soyad, E-posta).",
-                        CloseButtonText = "Tamam",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await dialog.ShowAsync();
-                    return false;
+                    System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Zorunlu alan eksik - Ad boş: {string.IsNullOrWhiteSpace(_tempProfile.FirstName)}, Soyad boş: {string.IsNullOrWhiteSpace(_tempProfile.LastName)}, Email boş: {string.IsNullOrWhiteSpace(_tempProfile.Email)}");
+                    validationErrors.Add("Lütfen zorunlu alanları doldurun (Ad, Soyad, E-posta).");
                 }
                 
                 // Email formatını kontrol et
-                if (!IsValidEmail(_tempProfile.Email))
+                if (!string.IsNullOrWhiteSpace(_tempProfile.Email) && !IsValidEmail(_tempProfile.Email))
                 {
-                    var dialog = new ContentDialog
-                    {
-                        Title = "Geçersiz E-posta",
-                        Content = "Lütfen geçerli bir e-posta adresi girin.",
-                        CloseButtonText = "Tamam",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await dialog.ShowAsync();
-                    return false;
+                    System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Email formatı hatalı: {_tempProfile.Email}");
+                    validationErrors.Add("Lütfen geçerli bir e-posta adresi girin.");
                 }
                 
                 // GDPR onayı kontrolü
                 if (!_tempProfile.HasGdprConsent)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[SettingsDialog] GDPR onayı verilmemiş: {_tempProfile.HasGdprConsent}");
+                    validationErrors.Add("Kişisel verilerinizin saklanması için GDPR onayı vermeniz gerekiyor.");
+                }
+                
+                // Validation hatası varsa tek dialog göster
+                if (validationErrors.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Validation hataları bulundu: {string.Join(", ", validationErrors)}");
+                    var errorMessage = string.Join("\n", validationErrors);
                     var dialog = new ContentDialog
                     {
-                        Title = "GDPR Onayı",
-                        Content = "Kişisel verilerinizin saklanması için GDPR onayı vermeniz gerekiyor.",
+                        Title = "Doğrulama Hatası",
+                        Content = errorMessage,
                         CloseButtonText = "Tamam",
                         XamlRoot = this.XamlRoot
                     };
-                    await dialog.ShowAsync();
+                    
+                    // Mevcut açık dialog var mı kontrol et
+                    try
+                    {
+                        await dialog.ShowAsync();
+                    }
+                    catch (Exception)
+                    {
+                        // Dialog zaten açıksa sessizce devam et
+                        System.Diagnostics.Debug.WriteLine("[SettingsDialog] ContentDialog zaten açık, yeni dialog gösterilemedi");
+                    }
+                    
+                    System.Diagnostics.Debug.WriteLine("[SettingsDialog] Validation hatası nedeniyle false dönülüyor");
                     return false;
                 }
                 
@@ -685,6 +694,12 @@ namespace QuadroAIPilot.Dialogs
                 var saved = await _profileService.SaveProfileAsync(_tempProfile);
                 
                 System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Profil kaydetme sonucu: {saved}");
+                
+                // Kullanıcı adı cache'ini temizle
+                if (saved)
+                {
+                    Helpers.UserNameHelper.ClearCache();
+                }
                 
                 if (!saved)
                 {
@@ -735,6 +750,55 @@ namespace QuadroAIPilot.Dialogs
         /// <summary>
         /// Profil fotoğrafı seç
         /// </summary>
+        // TestTTSButton_Click metodu kaldırıldı
+        /* Kaldırıldı
+        private async void TestTTSButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Test butonu devre dışı bırak
+                TestTTSButton.IsEnabled = false;
+                TestTTSButton.Content = "🔄 Test ediliyor...";
+                
+                // Seçili ses ile test metni seslendir
+                var selectedVoice = "automatic";
+                if (VoiceComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
+                {
+                    selectedVoice = item.Tag.ToString();
+                }
+                
+                // TextToSpeechService statik sınıfını doğrudan kullan
+                string testText = "Merhaba! QuadroAIPilot ses testi başarılı. Seçtiğiniz ses ayarı ile konuşuyorum.";
+                
+                // EdgeTTS kullanarak seslendirme yap (her zaman EdgeTTS kullan tercih olarak)
+                bool useEdge = selectedVoice.StartsWith("edge-") || selectedVoice == "automatic";
+                
+                // TextToSpeechService.SpeakTextAsync kullan
+                await TextToSpeechService.SpeakTextAsync(testText, useEdge);
+                
+                // 2 saniye bekle
+                await Task.Delay(2000);
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "TTS Test Hatası",
+                    Content = $"Ses testi sırasında hata oluştu:\n{ex.Message}",
+                    CloseButtonText = "Tamam",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+            finally
+            {
+                // Test butonunu tekrar etkinleştir
+                TestTTSButton.IsEnabled = true;
+                TestTTSButton.Content = "🔊 Sesi Test Et";
+            }
+        }
+        */
+
         private async void SelectPhoto_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -833,6 +897,126 @@ namespace QuadroAIPilot.Dialogs
             }
         }
         
+        #endregion
+
+        #region Update System Methods
+
+        /// <summary>
+        /// Update bilgilerini yükle
+        /// </summary>
+        private void LoadUpdateInfo()
+        {
+            try
+            {
+                var updateService = Services.UpdateService.Instance;
+
+                // Mevcut versiyon
+                CurrentVersionText.Text = updateService.GetCurrentVersion();
+
+                // Otomatik güncelleme ayarı
+                AutoUpdateToggle.IsOn = _settingsManager.Settings.AutoUpdateEnabled;
+
+                // Son kontrol zamanı
+                var lastCheck = _settingsManager.Settings.LastUpdateCheck;
+                if (lastCheck == DateTime.MinValue)
+                {
+                    LastCheckText.Text = "Henüz kontrol edilmedi";
+                }
+                else
+                {
+                    var timeSince = DateTime.Now - lastCheck;
+                    if (timeSince.TotalMinutes < 1)
+                    {
+                        LastCheckText.Text = "Az önce";
+                    }
+                    else if (timeSince.TotalHours < 1)
+                    {
+                        LastCheckText.Text = $"{(int)timeSince.TotalMinutes} dakika önce";
+                    }
+                    else if (timeSince.TotalDays < 1)
+                    {
+                        LastCheckText.Text = $"{(int)timeSince.TotalHours} saat önce";
+                    }
+                    else
+                    {
+                        LastCheckText.Text = lastCheck.ToString("dd.MM.yyyy HH:mm");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadUpdateInfo error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Otomatik güncelleme toggle değiştiğinde
+        /// </summary>
+        private async void AutoUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _tempSettings.AutoUpdateEnabled = AutoUpdateToggle.IsOn;
+                await Services.UpdateService.Instance.SetAutoUpdateEnabledAsync(AutoUpdateToggle.IsOn);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AutoUpdateToggle_Toggled error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Güncellemeleri kontrol et butonu
+        /// </summary>
+        private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                CheckUpdatesButton.IsEnabled = false;
+                CheckUpdatesButton.Content = "Kontrol ediliyor...";
+
+                var updateService = Services.UpdateService.Instance;
+                await updateService.CheckForUpdatesManualAsync();
+
+                // Son kontrol zamanını güncelle
+                LoadUpdateInfo();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CheckUpdates_Click error: {ex.Message}");
+
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Güncelleme Hatası",
+                    Content = $"Güncelleme kontrolü sırasında hata oluştu:\n{ex.Message}",
+                    CloseButtonText = "Tamam",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+            finally
+            {
+                CheckUpdatesButton.IsEnabled = true;
+                CheckUpdatesButton.Content = "Güncellemeleri Kontrol Et";
+            }
+        }
+
+        /// <summary>
+        /// Release notes linkine tıklandığında
+        /// </summary>
+        private void ReleaseNotes_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var updateService = Services.UpdateService.Instance;
+                updateService.OpenReleasePage();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ReleaseNotes_Click error: {ex.Message}");
+            }
+        }
+
         #endregion
     }
 

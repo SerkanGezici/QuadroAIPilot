@@ -22,11 +22,13 @@ namespace QuadroAIPilot.Interfaces
         void UpdateText(string text);
         void UpdateDictationState(bool isActive);
         void SendWidgetUpdate(string widgetType, object data);
+        void SendMessage(object message);
         Task LoadHtmlContentAsync(string htmlContent);
         
         // Edge TTS support
         Task SpeakWithEdgeTTS(string text);
         Task SendAudioStreamAsync(byte[] audioData, string format = "webm", string text = null);
+        void StopTTS();
         
         // Events
         event EventHandler<string>? MessageReceived;

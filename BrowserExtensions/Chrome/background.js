@@ -56,15 +56,19 @@ function copySelectedText() {
   }
 }
 
+// SECURITY: Shared authentication token (must match C# server)
+const AUTH_TOKEN = "QuadroAI-f7a3c9d8-4e2b-11ef-9a1c-0242ac120002";
+
 // QuadroAI Pilot'a HTTP isteği gönder
 async function triggerQuadroAI() {
   try {
     const response = await fetch('http://127.0.0.1:19741/trigger-read', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AUTH_TOKEN}`  // SECURITY FIX: Token authentication
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         action: 'read-clipboard',
         source: 'chrome-extension'
       })
@@ -83,7 +87,7 @@ async function triggerQuadroAI() {
     // Kullanıcıya bilgi ver
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'icon.svg',
+      iconUrl: 'icon128.png',
       title: 'QuadroAI Pilot',
       message: 'QuadroAI Pilot uygulaması çalışmıyor olabilir. Lütfen uygulamanın açık olduğundan emin olun.'
     });
@@ -95,13 +99,16 @@ chrome.action.onClicked.addListener(async (tab) => {
   // Icon'a tıklandığında QuadroAI'ın çalışıp çalışmadığını kontrol et
   try {
     const response = await fetch('http://127.0.0.1:19741/trigger-read', {
-      method: 'OPTIONS'
+      method: 'OPTIONS',
+      headers: {
+        'Authorization': `Bearer ${AUTH_TOKEN}`  // SECURITY FIX: Token for health check
+      }
     });
-    
+
     if (response.ok) {
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'icon.svg',
+        iconUrl: 'icon128.png',
         title: 'QuadroAI Pilot',
         message: 'Bağlantı başarılı! Metin seçip sağ tık yaparak kullanabilirsiniz.'
       });
@@ -109,9 +116,204 @@ chrome.action.onClicked.addListener(async (tab) => {
   } catch (error) {
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'icon.svg',
+      iconUrl: 'icon128.png',
       title: 'QuadroAI Pilot',
       message: 'QuadroAI Pilot uygulaması bulunamadı. Lütfen uygulamayı başlatın.'
     });
+  }
+});
+
+// ============================================
+// TAB TRACKING VE KAPATMA SİSTEMİ
+// ============================================
+
+// QuadroAI tarafından açılan tabları takip eden Map
+// keyword → {tabId, url, title, openedAt}
+const quadroTabs = new Map();
+
+// Tab kapatma endpoint'i - C# tarafından HTTP POST ile çağrılır
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.command === 'closeTab') {
+    handleCloseTab(request.criteria)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response için
+  } else if (request.command === 'trackTab') {
+    handleTrackTab(request)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  } else if (request.command === 'getTrackedTabs') {
+    const tabs = Array.from(quadroTabs.entries()).map(([keyword, data]) => ({
+      keyword,
+      ...data
+    }));
+    sendResponse({ success: true, tabs });
+    return false;
+  }
+});
+
+// Tab tracking fonksiyonu - yeni tab açıldığında çağrılır
+async function handleTrackTab(request) {
+  try {
+    const { keyword, url, tabId } = request;
+
+    // Tab bilgilerini al
+    const tab = tabId ? await chrome.tabs.get(tabId) : null;
+
+    // QuadroTabs'a kaydet
+    quadroTabs.set(keyword.toLowerCase(), {
+      tabId: tabId || null,
+      url: url,
+      title: tab ? tab.title : '',
+      openedAt: Date.now()
+    });
+
+    console.log(`[QuadroAI] Tab tracked: ${keyword} → ${url} (TabID: ${tabId})`);
+
+    return { success: true, keyword, tabId };
+  } catch (error) {
+    console.error('[QuadroAI] Track tab error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Tab kapatma fonksiyonu - sesli komuttan gelen isteği işler
+async function handleCloseTab(criteria) {
+  try {
+    const { keyword, urlPattern } = criteria;
+    const normalizedKeyword = keyword.toLowerCase();
+
+    console.log(`[QuadroAI] Closing tab: keyword="${keyword}", pattern="${urlPattern}"`);
+
+    // Öncelik 1: QuadroAI tarafından açılan ve keyword ile eşleşen tab
+    if (quadroTabs.has(normalizedKeyword)) {
+      const trackedTab = quadroTabs.get(normalizedKeyword);
+
+      try {
+        // Tab hala açık mı kontrol et
+        const tab = await chrome.tabs.get(trackedTab.tabId);
+
+        // Tab varsa kapat
+        await chrome.tabs.remove(trackedTab.tabId);
+
+        // Tracking'den kaldır
+        quadroTabs.delete(normalizedKeyword);
+
+        console.log(`[QuadroAI] ✓ Tracked tab closed: ${keyword} (TabID: ${trackedTab.tabId})`);
+
+        return {
+          success: true,
+          closedTab: {
+            tabId: trackedTab.tabId,
+            title: tab.title,
+            url: tab.url,
+            source: 'tracked'
+          }
+        };
+      } catch (error) {
+        // Tab bulunamadı (muhtemelen kullanıcı manuel kapattı)
+        console.log(`[QuadroAI] Tracked tab not found, removing from tracking: ${keyword}`);
+        quadroTabs.delete(normalizedKeyword);
+        // Fallback: tüm tabları ara
+      }
+    }
+
+    // Öncelik 2: Tüm açık tablarda URL pattern ile ara
+    const allTabs = await chrome.tabs.query({});
+
+    for (const tab of allTabs) {
+      if (matchesPattern(tab.url, urlPattern) || matchesKeyword(tab.title, keyword)) {
+        await chrome.tabs.remove(tab.id);
+
+        console.log(`[QuadroAI] ✓ Tab closed by pattern: ${tab.title} (TabID: ${tab.id})`);
+
+        return {
+          success: true,
+          closedTab: {
+            tabId: tab.id,
+            title: tab.title,
+            url: tab.url,
+            source: 'pattern'
+          }
+        };
+      }
+    }
+
+    // Tab bulunamadı
+    console.log(`[QuadroAI] ✗ Tab not found: ${keyword}`);
+    return {
+      success: false,
+      error: 'Tab not found',
+      keyword
+    };
+
+  } catch (error) {
+    console.error('[QuadroAI] Close tab error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// URL pattern matching fonksiyonu
+function matchesPattern(url, pattern) {
+  if (!url || !pattern) return false;
+
+  // Wildcard pattern'i regex'e çevir
+  // "*://*.hurriyet.com.tr/*" → /^.*:\/\/.*\.hurriyet\.com\.tr\/.*$/
+  const regexPattern = pattern
+    .replace(/\./g, '\\.')
+    .replace(/\*/g, '.*');
+
+  const regex = new RegExp(`^${regexPattern}$`, 'i');
+  return regex.test(url);
+}
+
+// Keyword matching fonksiyonu (title içinde arama)
+function matchesKeyword(title, keyword) {
+  if (!title || !keyword) return false;
+
+  // Türkçe karakter normalizasyonu
+  const normalizedTitle = normalizeTurkish(title.toLowerCase());
+  const normalizedKeyword = normalizeTurkish(keyword.toLowerCase());
+
+  return normalizedTitle.includes(normalizedKeyword);
+}
+
+// Türkçe karakter normalizasyonu
+function normalizeTurkish(text) {
+  return text
+    .replace(/ı/g, 'i').replace(/İ/g, 'I')
+    .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+    .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+    .replace(/ş/g, 's').replace(/Ş/g, 'S')
+    .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+    .replace(/ç/g, 'c').replace(/Ç/g, 'C');
+}
+
+// Tab güncellendiğinde tracking'i güncelle
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    // Eğer bu tab tracking'de varsa, title'ı güncelle
+    for (const [keyword, data] of quadroTabs.entries()) {
+      if (data.tabId === tabId) {
+        data.title = tab.title;
+        console.log(`[QuadroAI] Tab updated: ${keyword} → ${tab.title}`);
+        break;
+      }
+    }
+  }
+});
+
+// Tab kapatıldığında tracking'den kaldır
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  for (const [keyword, data] of quadroTabs.entries()) {
+    if (data.tabId === tabId) {
+      quadroTabs.delete(keyword);
+      console.log(`[QuadroAI] Tab removed from tracking: ${keyword}`);
+      break;
+    }
   }
 });

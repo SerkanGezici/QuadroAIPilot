@@ -73,7 +73,7 @@ namespace QuadroAIPilot.Managers
 
         #region Constructor
 
-        public WindowManager(IntPtr hWnd, int appBarWidth = 300)
+        public WindowManager(IntPtr hWnd, int appBarWidth = 300) // Normal pencere boyutu
         {
             _hWnd = hWnd;
             _appBarWidth = appBarWidth;

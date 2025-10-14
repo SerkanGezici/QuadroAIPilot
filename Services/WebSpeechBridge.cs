@@ -102,26 +102,11 @@ namespace QuadroAIPilot.Services
             }
             
             // TTS filtreleme kontrolü
-            bool isTTSPlaying = TextToSpeechService.IsSpeaking() || TextToSpeechService.CurrentState == TextToSpeechService.SpeechState.Speaking;
+            bool isTTSPlaying = TextToSpeechService.IsSpeaking;
             if (isTTSPlaying)
             {
-                string currentTTSText = TextToSpeechService.GetCurrentTTSText();
-                string lastTTSText = TextToSpeechService.GetLastTTSText();
-                
-                LogService.LogDebug($"[WebSpeechBridge] TTS kontrol - Playing: {isTTSPlaying}, CurrentTTS: '{currentTTSText}', LastTTS: '{lastTTSText}'");
-                
-                // TTS metni ile karşılaştır
-                if (!string.IsNullOrEmpty(currentTTSText) && text.Contains(currentTTSText.Substring(0, Math.Min(50, currentTTSText.Length))))
-                {
-                    LogService.LogDebug($"[WebSpeechBridge] TTS metni filtrelendi: '{text}'");
-                    return;
-                }
-                
-                if (!string.IsNullOrEmpty(lastTTSText) && text.Contains(lastTTSText.Substring(0, Math.Min(50, lastTTSText.Length))))
-                {
-                    LogService.LogDebug($"[WebSpeechBridge] Son TTS metni filtrelendi: '{text}'");
-                    return;
-                }
+                LogService.LogDebug($"[WebSpeechBridge] TTS çalışıyor, metin filtreleniyor: '{text}'");
+                return;
             }
             
             // DictationManager'a gönder
@@ -174,7 +159,7 @@ namespace QuadroAIPilot.Services
                     })()
                 ");
                 
-                return result.Contains("granted");
+                return result != null && result.Contains("granted");
             }
             catch
             {

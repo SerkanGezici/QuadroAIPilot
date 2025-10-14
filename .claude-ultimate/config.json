@@ -1,22 +1,43 @@
 {
-  "project": {
-    "name": "QuadroAIPilot",
-    "type": "generic",
-    "path": "/mnt/c/Users/serkan/source/repos/QuadroAIPilot",
-    "created": "2025-07-29T16:34:45+03:00",
-    "lastUpdated": "2025-07-29T16:34:45+03:00"
+  "version": "1.0.0",
+  "model": "claude-opus-4-1-20250805",
+  "agents": {
+    "enabled": true,
+    "default_model": "claude-opus-4-1-20250805",
+    "core_agents": [
+      "orchestrator",
+      "developer",
+      "reviewer",
+      "tester",
+      "architect",
+      "security",
+      "performance",
+      "database",
+      "api",
+      "frontend",
+      "devops",
+      "documentation",
+      "production",
+      "compliance",
+      "ultrasearch",
+      "ultrathinking"
+    ],
+    "optional_agents": [
+      "social-orchestrator",
+      "twitter-growth",
+      "tiktok-viral",
+      "instagram-engagement",
+      "linkedin-b2b",
+      "seo-dominance",
+      "youtube-algorithm",
+      "facebook-ads",
+      "marketing-orchestrator-integration"
+    ]
   },
   "settings": {
-    "language": "tr-TR",
-    "automationMode": "YOLO",
-    "parallelAgents": true,
-    "jsonCommunication": true,
-    "autoSave": true
-  },
-  "features": {
-    "productionReady": false,
-    "securityHardened": false,
-    "complianceEnabled": false,
-    "performanceOptimized": false
+    "auto_load_core_agents": true,
+    "parallel_agent_limit": 10,
+    "language": "tr",
+    "debug_mode": false
   }
 }

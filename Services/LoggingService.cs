@@ -28,8 +28,9 @@ namespace QuadroAIPilot.Services
 
                 try
                 {
-                    // Create logs directory if it doesn't exist
-                    var logsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+                    // Create logs directory in AppData instead of Program Files
+                    var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QuadroAIPilot");
+                    var logsPath = Path.Combine(appDataPath, "Logs");
                     Directory.CreateDirectory(logsPath);
 
                     // Configure Serilog

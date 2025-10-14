@@ -3,12 +3,14 @@
   "name": "QuadroAI Okuyucu",
   "version": "1.0.0",
   "description": "Seçili metni QuadroAI Pilot ile Türkçe okutun",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA12ZIm0JWt/kKyTdtk3pSfrss5PPwaemrttpHWDZymDRGLam0qFtrYSQ8Oe+zmL5hriMTA/mWqN09I24NSTEaL0Y4VJp3W4rqod62hLwtlQE1NSfQN2MI/tnJjjGnNKacBAAeUqP+4TZB/POOKwucpqQg7648BW1OpL2J7/yjk8EP8ei9Er6xrmOrK2hBPXOXeC2iWDRE2vShzpJ5E6eU/0Qgy5bCR9U98k+TQJuz1hkx73DJC2coCbBuaILZyj+xq5PMpIX+a7oudL/7HmLwpWDp1uYwgXVvf/0vxbjsSbn6pHFdPJfduUZpSZG79Bz93wAY0mUoi0lgIsvMAjnQNQIDAQAB",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
   },
   "permissions": [
+    "tabs",
     "contextMenus",
     "clipboardWrite",
     "activeTab",

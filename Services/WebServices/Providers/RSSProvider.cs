@@ -33,7 +33,7 @@ namespace QuadroAIPilot.Services.WebServices.Providers
         {
             _httpClient = httpClient ?? new HttpClient();
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("QuadroAIPilot/1.0");
-            _httpClient.Timeout = TimeSpan.FromSeconds(10);
+            _httpClient.Timeout = TimeSpan.FromSeconds(30); // Timeout'u artır
             
             _feedSources = InitializeFeedSources();
             _sourceHealth = new Dictionary<string, SourceHealthInfo>();
@@ -487,27 +487,51 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                 return null;
             }
             
-            try
+            const int maxRetries = 2;
+            int currentRetry = 0;
+            
+            while (currentRetry < maxRetries)
             {
-                // Configure request for Turkish content
-                var request = new HttpRequestMessage(HttpMethod.Get, source.FeedUrl);
-                request.Headers.AcceptCharset.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("utf-8"));
-                
-                var response = await _httpClient.SendAsync(request);
-                response.EnsureSuccessStatusCode();
+                try
+                {
+                    // Configure request for Turkish content
+                    var request = new HttpRequestMessage(HttpMethod.Get, source.FeedUrl);
+                    request.Headers.AcceptCharset.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("utf-8"));
+                    
+                    // Timeout için CancellationToken kullan
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(8));
+                    var response = await _httpClient.SendAsync(request, cts.Token);
+                    response.EnsureSuccessStatusCode();
 
-                var content = await response.Content.ReadAsStringAsync();
+                    var content = await response.Content.ReadAsStringAsync();
                 
                 // Fix common encoding issues
                 content = FixTurkishEncoding(content);
+                
+                // XML temizleme ve düzeltme
+                content = CleanAndFixXml(content);
 
-                using var stringReader = new System.IO.StringReader(content);
-                using var xmlReader = XmlReader.Create(stringReader);
-                
-                var feed = SyndicationFeed.Load(xmlReader);
-                
-                var rssFeed = new RSSFeed
+                // XML parsing için güvenli okuyucu ayarları
+                var xmlReaderSettings = new XmlReaderSettings
                 {
+                    DtdProcessing = DtdProcessing.Ignore,
+                    IgnoreComments = true,
+                    IgnoreProcessingInstructions = true,
+                    IgnoreWhitespace = true,
+                    ConformanceLevel = ConformanceLevel.Fragment,
+                    CheckCharacters = false,
+                    MaxCharactersFromEntities = 1024
+                };
+
+                try
+                {
+                    using var stringReader = new System.IO.StringReader(content);
+                    using var xmlReader = XmlReader.Create(stringReader, xmlReaderSettings);
+                    
+                    var feed = SyndicationFeed.Load(xmlReader);
+                    
+                    var rssFeed = new RSSFeed
+                    {
                     Title = feed.Title?.Text ?? source.Name,
                     Description = feed.Description?.Text ?? "",
                     Link = feed.Links?.FirstOrDefault()?.Uri?.ToString() ?? source.FeedUrl,
@@ -628,21 +652,53 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                 RecordSourceSuccess(source.FeedUrl);
 
                 return rssFeed;
-            }
-            catch (Exception ex)
-            {
-                // RSS hatalarını sessizce logla - kullanıcıyı rahatsız etme
-                if (!ex.Message.Contains("404") && !ex.Message.Contains("DTD"))
-                {
-                    // Hata sessizce yönetilecek
                 }
-                source.FailureCount++;
-                
-                // Başarısız kaynak kaydı
-                RecordSourceFailure(source.FeedUrl, ex.Message);
-                
-                return null;
+                catch (XmlException)
+                {
+                    // Inner try bloğunda XML parse hatası
+                    throw; // Stack trace'i koruyarak dış catch'e gönder
+                }
+                }
+                catch (Exception ex)
+                {
+                    currentRetry++;
+                    
+                    // XML parse hatası ise alternatif yöntem dene
+                    if (ex is XmlException xmlEx)
+                    {
+                        LogService.LogDebug($"[RSSProvider] XML parse hatası, basit parser deneniyor: {xmlEx.Message}");
+                        var simpleFeed = await TrySimpleXmlParsingAsync(source.FeedUrl, source);
+                        if (simpleFeed != null)
+                        {
+                            RecordSourceSuccess(source.FeedUrl);
+                            return simpleFeed;
+                        }
+                    }
+                    
+                    // Son deneme değilse, exponential backoff ile bekle
+                    if (currentRetry < maxRetries)
+                    {
+                        var delayMs = Math.Min(1000 * (int)Math.Pow(2, currentRetry), 8000); // Max 8 saniye
+                        LogService.LogDebug($"[RSSProvider] Retry {currentRetry}/{maxRetries} için {delayMs}ms bekleniyor");
+                        await Task.Delay(delayMs);
+                        continue;
+                    }
+                    
+                    // RSS hatalarını sessizce logla - kullanıcıyı rahatsız etme
+                    if (!ex.Message.Contains("404") && !ex.Message.Contains("DTD"))
+                    {
+                        LogService.LogDebug($"[RSSProvider] RSS feed hatası ({source.Name}): {ex.Message}");
+                    }
+                    source.FailureCount++;
+                    
+                    // Başarısız kaynak kaydı
+                    RecordSourceFailure(source.FeedUrl, ex.Message);
+                    
+                    return null;
+                }
             }
+            
+            return null; // Retry'lar tükendi
         }
 
         private RSSCategory DetermineCategory(string query)
@@ -783,17 +839,39 @@ namespace QuadroAIPilot.Services.WebServices.Providers
         private string FormatNewsContent(List<RSSItem> items)
         {
             var sb = new StringBuilder();
-            
+
             for (int i = 0; i < items.Count; i++)
             {
                 var item = items[i];
                 // HTML entity decode işlemi ekle
                 var decodedTitle = System.Net.WebUtility.HtmlDecode(item.Title);
-                var decodedDescription = System.Net.WebUtility.HtmlDecode(item.Description);
-                
+
+                // Description zaten CleanHtml'den geçmiş olmalı ama bazen kaçabilir
+                // Tekrar temizle - özellikle Google News için
+                var cleanDescription = item.Description;
+                if (!string.IsNullOrEmpty(cleanDescription))
+                {
+                    // HTML içeriyor mu kontrol et
+                    if (cleanDescription.Contains("<") && cleanDescription.Contains(">"))
+                    {
+                        // HTML varsa temizle
+                        cleanDescription = CleanHtml(cleanDescription);
+                    }
+                    else
+                    {
+                        // HTML yoksa sadece decode et
+                        cleanDescription = System.Net.WebUtility.HtmlDecode(cleanDescription);
+                    }
+                }
+
                 sb.AppendLine($"{i + 1}. {decodedTitle}");
-                sb.AppendLine($"   {decodedDescription}");
-                sb.AppendLine($"   Kaynak: {item.Source} | {item.PublishDate:dd.MM.yyyy HH:mm}");
+                if (!string.IsNullOrEmpty(cleanDescription))
+                {
+                    sb.AppendLine();
+                    sb.AppendLine(cleanDescription);
+                }
+                sb.AppendLine();
+                sb.AppendLine($"Kaynak: {item.Source} | {item.PublishDate:dd.MM.yyyy HH:mm}");
                 if (i < items.Count - 1) // Son haberden sonra ekstra boşluk ekleme
                 {
                     sb.AppendLine(); // Haberler arası boşluk
@@ -864,17 +942,77 @@ namespace QuadroAIPilot.Services.WebServices.Providers
             if (string.IsNullOrEmpty(html))
                 return "";
 
+            // Debug log for Google News
+            if (html.Contains("<ol>") && html.Contains("<li>") && html.Contains("<font"))
+            {
+                LogService.LogDebug($"[CleanHtml] Google News HTML detected, length: {html.Length}");
+            }
+
             // Remove script and style content first
             html = System.Text.RegularExpressions.Regex.Replace(html, @"<script[^>]*>[\s\S]*?</script>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             html = System.Text.RegularExpressions.Regex.Replace(html, @"<style[^>]*>[\s\S]*?</style>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
-            // Remove all HTML tags
-            html = System.Text.RegularExpressions.Regex.Replace(html, @"<[^>]+>", " ");
-            
-            // Use .NET's built-in HTML decoder first (handles numeric entities)
+
+            // Remove HTML comments
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<!--[\s\S]*?-->", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // AGRESIF Google News liste temizleme
+            if (html.Contains("<ol>") || html.Contains("<ul>") || html.Contains("<li>"))
+            {
+                // Önce complex pattern - <li><a>başlık</a> <font>kaynak</font></li>
+                html = System.Text.RegularExpressions.Regex.Replace(html,
+                    @"<li[^>]*>\s*<a[^>]*>([^<]+)</a>\s*<font[^>]*>([^<]+)</font>\s*</li>",
+                    "\n• $1 - $2",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline);
+
+                // Sadece link olan li'ler
+                html = System.Text.RegularExpressions.Regex.Replace(html,
+                    @"<li[^>]*>\s*<a[^>]*>([^<]+)</a>\s*</li>",
+                    "\n• $1",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                // İç içe taglar olan li'ler için - önce içindeki tagları temizle
+                html = System.Text.RegularExpressions.Regex.Replace(html,
+                    @"<li[^>]*>([\s\S]*?)</li>",
+                    delegate(System.Text.RegularExpressions.Match m)
+                    {
+                        var content = m.Groups[1].Value;
+                        // İçerideki tüm tagları temizle
+                        content = System.Text.RegularExpressions.Regex.Replace(content, @"<a[^>]*>([^<]+)</a>", "$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        content = System.Text.RegularExpressions.Regex.Replace(content, @"<font[^>]*>([^<]+)</font>", " - $1", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        content = System.Text.RegularExpressions.Regex.Replace(content, @"<[^>]+>", " ", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        return "\n• " + content.Trim();
+                    },
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+                // Ol ve ul taglarını kaldır
+                html = System.Text.RegularExpressions.Regex.Replace(html, @"</?[ou]l[^>]*>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            }
+
+            // Genel link temizleme (liste dışındakiler için)
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<a[^>]*>([^<]+)</a>", "$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Font taglarını temizle
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<font[^>]*>([^<]*)</font>", "$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Replace common HTML tags with appropriate spacing
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<br\s*/?>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"</p>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"</div>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<p[^>]*>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<div[^>]*>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Remove all remaining HTML tags
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<[^>]+>", " ", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Clean up any remaining tag fragments
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"<[^>]*$", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"^[^<]*>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // HTML decode - iki kez yap (nested entities için)
             html = System.Net.WebUtility.HtmlDecode(html);
-            
-            // Additional manual replacements for any remaining entities
+            html = System.Net.WebUtility.HtmlDecode(html);
+
+            // Additional manual replacements
             html = html.Replace("&nbsp;", " ")
                       .Replace("&amp;", "&")
                       .Replace("&lt;", "<")
@@ -970,16 +1108,23 @@ namespace QuadroAIPilot.Services.WebServices.Providers
         {
             if (string.IsNullOrEmpty(description))
                 return "";
-            
+
+            // HTML liste formatı tespit edilirse boş dön (sadece başlık kullanılacak)
+            if (description.Contains("<ol>") || description.Contains("<li>") || description.Contains("<font"))
+            {
+                LogService.LogDebug("[CleanGoogleNewsDescription] HTML list detected, returning empty description");
+                return ""; // Google News listelerinin açıklama kısmını kullanma
+            }
+
             // Önce başlığın tekrarını kaldır
             if (!string.IsNullOrEmpty(title) && description.StartsWith(title))
             {
                 description = description.Substring(title.Length).TrimStart(' ', '-', '|', '!', ':');
             }
-            
+
             // Bilinen tüm haber kaynaklarını listele - daha kapsamlı
-            var knownSources = new[] { 
-                "Habertürk", "Fanatik", "NTVSpor", "NTV Spor", "Milliyet", "Hürriyet", "Sabah", 
+            var knownSources = new[] {
+                "Habertürk", "Fanatik", "NTVSpor", "NTV Spor", "Milliyet", "Hürriyet", "Sabah",
                 "Sözcü", "CNN Türk", "CNN TÜRK", "BBC", "Reuters", "Bloomberg", "Forbes", "TRT Haber",
                 "NTV Haber", "A Haber", "A Spor", "Haber7", "Euronews", "Gazete Oksijen",
                 "İhlas Haber Ajansı", "AA", "DHA", "İHA", "Son Dakika Haberleri",
@@ -994,9 +1139,10 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                 "Misli", "Oley", "Tuttur", "Sahadan", "Mackolik", "Flashscore", "Sofascore",
                 "Onedio", "Webaslan", "Fotomaç", "Fotospor", "Hürriyet Spor", "Milliyet Spor",
                 "Sabah Spor", "Takvim Spor", "Posta Spor", "Güneş Spor", "Türkiye Gazetesi",
-                "Yeni Akit", "Yeni Şafak Spor", "Star Spor", "Akşam Spor", "Vatan", "Radikal"
+                "Yeni Akit", "Yeni Şafak Spor", "Star Spor", "Akşam Spor", "Vatan", "Radikal",
+                "GZT", "Karar"
             };
-            
+
             // Sadece başında kaynak ismi varsa temizle (daha akıllı temizlik)
             foreach (var source in knownSources)
             {
@@ -1490,6 +1636,133 @@ namespace QuadroAIPilot.Services.WebServices.Providers
             }
 
             return distance[source.Length, target.Length];
+        }
+        
+        /// <summary>
+        /// Bozuk XML'i temizler ve düzeltir
+        /// </summary>
+        private string CleanAndFixXml(string xml)
+        {
+            if (string.IsNullOrEmpty(xml)) return xml;
+            
+            // BOM karakterini kaldır
+            if (xml.StartsWith("\uFEFF"))
+            {
+                xml = xml.Substring(1);
+            }
+            
+            // Geçersiz karakterleri temizle
+            xml = System.Text.RegularExpressions.Regex.Replace(xml, @"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "");
+            
+            // CDATA bölümlerindeki sorunları düzelt
+            xml = System.Text.RegularExpressions.Regex.Replace(xml, @"<!\[CDATA\[(.+?)\]\]>", m =>
+            {
+                var content = m.Groups[1].Value;
+                // CDATA içindeki özel karakterleri encode et
+                content = content.Replace("&", "&amp;")
+                                 .Replace("<", "&lt;")
+                                 .Replace(">", "&gt;");
+                return content;
+            }, System.Text.RegularExpressions.RegexOptions.Singleline);
+            
+            // Kapanmamış tag'leri düzelt (basit düzeltme)
+            xml = System.Text.RegularExpressions.Regex.Replace(xml, @"<([^/>]+)(?<!/)>", "<$1/>");
+            
+            // Çift encoded entity'leri düzelt
+            xml = xml.Replace("&amp;amp;", "&amp;")
+                    .Replace("&amp;lt;", "&lt;")
+                    .Replace("&amp;gt;", "&gt;")
+                    .Replace("&amp;quot;", "&quot;")
+                    .Replace("&amp;apos;", "&apos;");
+            
+            return xml;
+        }
+        
+        /// <summary>
+        /// Basit XML parsing yöntemi (fallback için)
+        /// </summary>
+        private async Task<RSSFeed> TrySimpleXmlParsingAsync(string feedUrl, RSSSource source)
+        {
+            try
+            {
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(15));
+                var response = await _httpClient.GetStringAsync(feedUrl);
+                
+                var rssFeed = new RSSFeed
+                {
+                    Title = source.Name,
+                    Description = "",
+                    Link = feedUrl,
+                    Language = "tr",
+                    LastBuildDate = DateTime.Now,
+                    Category = source.Category
+                };
+                
+                // Basit regex ile item'ları bul
+                var itemMatches = System.Text.RegularExpressions.Regex.Matches(response, 
+                    @"<item[^>]*>(.+?)</item>", 
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                
+                foreach (System.Text.RegularExpressions.Match itemMatch in itemMatches.Take(20))
+                {
+                    var itemXml = itemMatch.Groups[1].Value;
+                    
+                    // Başlığı çıkar
+                    var titleMatch = System.Text.RegularExpressions.Regex.Match(itemXml, @"<title[^>]*>(.+?)</title>", 
+                        System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    // Açıklamayı çıkar
+                    var descMatch = System.Text.RegularExpressions.Regex.Match(itemXml, @"<description[^>]*>(.+?)</description>", 
+                        System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    // Link'i çıkar
+                    var linkMatch = System.Text.RegularExpressions.Regex.Match(itemXml, @"<link[^>]*>(.+?)</link>", 
+                        System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    // Tarih'i çıkar
+                    var pubDateMatch = System.Text.RegularExpressions.Regex.Match(itemXml, @"<pubDate[^>]*>(.+?)</pubDate>", 
+                        System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    if (titleMatch.Success)
+                    {
+                        var rssItem = new RSSItem
+                        {
+                            Title = CleanHtml(titleMatch.Groups[1].Value),
+                            Description = descMatch.Success ? CleanHtml(descMatch.Groups[1].Value) : "",
+                            Link = linkMatch.Success ? linkMatch.Groups[1].Value.Trim() : "",
+                            PublishDate = DateTime.Now,
+                            Source = source.Name,
+                            IsTranslated = false,
+                            OriginalLanguage = null,
+                            Guid = Guid.NewGuid().ToString()
+                        };
+                        
+                        // Tarihi parse etmeye çalış
+                        if (pubDateMatch.Success)
+                        {
+                            if (DateTime.TryParse(pubDateMatch.Groups[1].Value, out var pubDate))
+                            {
+                                rssItem.PublishDate = pubDate;
+                            }
+                        }
+                        
+                        rssFeed.Items.Add(rssItem);
+                    }
+                }
+                
+                if (rssFeed.Items.Any())
+                {
+                    LogService.LogDebug($"[RSSProvider] Basit parser ile {rssFeed.Items.Count} haber çekildi");
+                    return rssFeed;
+                }
+                
+                return null;
+            }
+            catch (Exception ex)
+            {
+                LogService.LogDebug($"[RSSProvider] Basit XML parsing başarısız: {ex.Message}");
+                return null;
+            }
         }
     }
 }

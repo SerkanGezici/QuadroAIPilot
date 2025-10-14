@@ -258,7 +258,7 @@ namespace QuadroAIPilot.Commands
                 AppState.CurrentState = AppState.ApplicationState.Speaking;
 
                 // Sesli yanıt ver
-                await TextToSpeechService.SpeakTextAsync(message, 0.9f, true);
+                await TextToSpeechService.SpeakTextAsync(message);
             }
             catch (Exception ex)
             {

@@ -3,12 +3,14 @@
   "name": "QuadroAI Okuyucu - Edge",
   "version": "1.0.0",
   "description": "Seçili metni QuadroAI Pilot ile Türkçe okutun - Microsoft Edge için optimize edilmiş",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2Ls+nkzOqy1QZqKdeIx3sYNhfLhxMMoZXMrxJ98y7oPmPdIdPGagTBnYwpKQEQC2ZGLa1bUVggxHiPHK/pdrSYYB7kkkm7SRLdYDOF6/SyaAMc69PHCgzs9jxF6X+Ur6PRtEIR3xd+5jRQyNdLSAQ7RPUohynJW79lmDXz2dFubSrcAbsaLhGIExiKDNFpwdFRjVua6An8QMBP3fcEIemlTlF7LbnDJvbbaqlUw96YKYowZpX9NzjyZrk4DCjQIXBIyX4QIWurhmb6ZASZmCOjc+JmgLxWOlHPmF0HE4GIBw57cobDchx3xBewNnFECWyMNRwzCIyFwJXrA0pwHY9QIDAQAB",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
   },
   "permissions": [
+    "tabs",
     "contextMenus",
     "clipboardWrite",
     "activeTab",
@@ -28,9 +30,5 @@
       "48": "icon48.png",
       "128": "icon128.png"
     }
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
-  "minimum_edge_version": "88.0"
+  }
 }

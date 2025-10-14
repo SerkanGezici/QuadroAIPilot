@@ -55,6 +55,14 @@ namespace QuadroAIPilot.Managers
         }
         
         /// <summary>
+        /// TTS içeriğini güncelle (yeni metod adı)
+        /// </summary>
+        public void UpdateTtsContent(string text)
+        {
+            UpdateTTSText(text);
+        }
+        
+        /// <summary>
         /// Gelişmiş TTS çıktısı kontrolü
         /// </summary>
         public bool IsTTSOutput(string text)
@@ -263,6 +271,8 @@ namespace QuadroAIPilot.Managers
         private string _pendingText = string.Empty;
         private string _lastProcessedText = string.Empty;
         private string _lastTtsResponse = string.Empty;
+        private string _lastModeChangeCommand = string.Empty;
+        private DateTime _lastModeChangeTime = DateTime.MinValue;
         
         // TTS Output Filtering
         private readonly TTSOutputFilter _ttsFilter = new TTSOutputFilter();
@@ -276,7 +286,7 @@ namespace QuadroAIPilot.Managers
         private static WebSpeechBridge _staticWebSpeechBridge; // ServiceContainer yerine static referans
 
         // Events
-        public event EventHandler<string>? TextRecognized;
+        // TextRecognized event'i kaldırıldı - artık ModeManager üzerinden işleniyor
         public event EventHandler<DictationStateChangedEventArgs>? StateChanged;
 
         // Properties
@@ -323,29 +333,23 @@ namespace QuadroAIPilot.Managers
             {
                 _assistantIsSpeaking = true;
                 
-                // TTS metnini filtre için güncelle
-                string ttsText = TextToSpeechService.GetCurrentTTSText();
-                _ttsFilter.UpdateTTSText(ttsText);
-                
-                string shortText = ttsText.Length > 50 ? ttsText.Substring(0, 50) + "..." : ttsText;
-                LogService.LogDebug($"[DictationManager] TTS başladı - Smart Filter aktif. TTS Text: '{shortText}'");
+                // TTS başladı
+                LogService.LogInfo($"[DictationManager] TTS başladı - _assistantIsSpeaking = true, Smart Filter aktif");
             };
             
             TextToSpeechService.SpeechCompleted += (_, _) => 
             {
                 _assistantIsSpeaking = false;
-                LogService.LogDebug("[DictationManager] TTS tamamlandı");
+                LogService.LogInfo("[DictationManager] TTS tamamlandı - _assistantIsSpeaking = false");
                 
-                // Filtreyi temizle
-                _ttsFilter.Clear();
+                // Filtreyi biraz gecikmeli temizle (TTS'in yankıları için)
+                Task.Delay(1000).ContinueWith(_ => 
+                {
+                    _ttsFilter.Clear();
+                    LogService.LogDebug("[DictationManager] TTS filtresi temizlendi (1 saniye gecikme ile)");
+                });
             };
             
-            TextToSpeechService.SpeechFailed += (_, _) => 
-            {
-                _assistantIsSpeaking = false;
-                LogService.LogDebug("[DictationManager] TTS başarısız");
-                _ttsFilter.Clear();
-            };
             
             TextToSpeechService.SpeechCancelled += (_, _) => 
             {
@@ -365,23 +369,60 @@ namespace QuadroAIPilot.Managers
             
             LogService.LogInfo($"[DictationManager] Metin alındı: '{text}'");
             
+            // YAZIM MODUNDA - doğrudan aktif pencereye gönder
+            if (AppState.CurrentMode == AppState.UserMode.Writing)
+            {
+                // Sadece "komut moduna geç" kontrolü
+                if (text.ToLowerInvariant().Contains("komut moduna geç"))
+                {
+                    LogService.LogInfo($"[DictationManager] Yazı modundan komut moduna geçiş komutu: '{text}'");
+                    _lastModeChangeCommand = text;
+                    _lastModeChangeTime = DateTime.UtcNow;
+                    
+                    // Direkt mod değişikliği yap
+                    _modeManager.Switch(AppState.UserMode.Command);
+                    _ = TextToSpeechService.SpeakTextAsync("Komut moduna geçildi");
+                    return;
+                }
+                
+                // Son mod değişikliği komutunu tekrar yazmayı önle
+                if (!string.IsNullOrEmpty(_lastModeChangeCommand) && 
+                    text.Equals(_lastModeChangeCommand, StringComparison.OrdinalIgnoreCase) &&
+                    (DateTime.UtcNow - _lastModeChangeTime).TotalSeconds < 3)
+                {
+                    LogService.LogInfo($"[DictationManager] Mod değişikliği komutu tekrarı engellendi: '{text}'");
+                    return;
+                }
+                
+                // Diğer tüm metinleri WritingMode'a gönder
+                LogService.LogInfo($"[DictationManager] Yazı modunda - metin WritingMode'a gönderiliyor: '{text}'");
+                bool handled = _modeManager.RouteSpeech(text);
+                LogService.LogDebug($"[DictationManager] WritingMode.HandleSpeech sonucu: {handled}");
+                return;
+            }
+            
+            // KOMUT MODUNDA - mevcut mantık devam eder
             // TTS çıktısı mı kontrol et - ama interrupt komutlarına izin ver
             if (_assistantIsSpeaking)
             {
                 bool isTTSOutput = _ttsFilter.IsTTSOutput(text);
                 bool isInterrupt = IsInterruptCommand(text);
-                
-                LogService.LogDebug($"[DictationManager] ProcessTextChanged - TTS konuşuyor. Text: '{text}', IsTTSOutput: {isTTSOutput}, IsInterrupt: {isInterrupt}");
-                
+
+                LogService.LogInfo($"[DictationManager] ProcessTextChanged - TTS konuşuyor. Text: '{text}', IsTTSOutput: {isTTSOutput}, IsInterrupt: {isInterrupt}");
+
                 if (isTTSOutput && !isInterrupt)
                 {
-                    LogService.LogDebug($"[DictationManager] TTS output filtered: '{text}'");
+                    LogService.LogInfo($"[DictationManager] TTS output FILTERED (blocked): '{text}'");
                     return;
+                }
+                else if (!isTTSOutput)
+                {
+                    LogService.LogInfo($"[DictationManager] TTS konuşurken farklı metin algılandı, işleme devam: '{text}'");
                 }
             }
             else
             {
-                LogService.LogDebug($"[DictationManager] ProcessTextChanged - TTS konuşmuyor. Text: '{text}', Smart filter pasif");
+                LogService.LogDebug($"[DictationManager] _assistantIsSpeaking = false, normal işleme: '{text}'");
             }
             
             if (_processingDictation) 
@@ -401,15 +442,19 @@ namespace QuadroAIPilot.Managers
             string lowerText = text.ToLowerInvariant();
             if (AppConstants.ModeCommands.Any(cmd => lowerText.Contains(cmd)))
             {
+                _lastModeChangeCommand = text;
+                _lastModeChangeTime = DateTime.UtcNow;
                 StartProcessing(text);
                 return;
             }
 
             // Komut algılama
             bool shouldProcess = ShouldProcessText(text);
+            LogService.LogInfo($"[DictationManager] ShouldProcessText('{text}') = {shouldProcess}");
             
             if (shouldProcess)
             {
+                LogService.LogInfo($"[DictationManager] Komut algılandı, StartProcessing çağrılıyor: '{text}'");
                 StartProcessing(text);
                 return;
             }
@@ -438,7 +483,8 @@ namespace QuadroAIPilot.Managers
             string singleWord = text.Trim().ToLowerInvariant();
             
             // 0. Sayfa navigasyon komutlarını kontrol et (tam metin eşleşme)
-            if (text.ToLowerInvariant() == "sayfa başına git" || text.ToLowerInvariant() == "sayfa sonuna git")
+            string lowerText = text.ToLowerInvariant().TrimEnd('.');
+            if (lowerText == "sayfa başına git" || lowerText == "sayfa sonuna git")
             {
                 LogService.LogInfo($"[DictationManager] Sayfa navigasyon komutu algılandı: {text}");
                 return true;
@@ -602,7 +648,7 @@ namespace QuadroAIPilot.Managers
             {
                 "dur", "stop", "sus", "kes", "tamam", "yeter",
                 "teşekkür", "teşekkürler", "sağol", "sağ ol",
-                "komut modu", "yazı modu", "okuma modu",
+                "komut modu", "yazı modu",
                 "eposta", "e-posta", "mail",
                 "haber", "wikipedia", "twitter",
                 "ses yükselt", "ses azalt", "ses kapat",
@@ -627,11 +673,11 @@ namespace QuadroAIPilot.Managers
             _lastProcessedText = text;
             NotifyStateChanged();
             
-            // Event tetikle
-            TextRecognized?.Invoke(this, text);
+            LogService.LogInfo($"[DictationManager] StartProcessing - ModeManager.RouteSpeech çağrılıyor: '{text}'");
             
-            // Mod yönlendirmesi
-            _modeManager.RouteSpeech(text);
+            // Sadece ModeManager üzerinden yönlendir (duplicate processing önlenir)
+            bool routeResult = _modeManager.RouteSpeech(text);
+            LogService.LogInfo($"[DictationManager] ModeManager.RouteSpeech('{text}') = {routeResult}");
         }
 
         public void Stop()
@@ -792,6 +838,37 @@ namespace QuadroAIPilot.Managers
                 _lastTtsResponse = blockPhrase;
             }
         }
+        
+        /// <summary>
+        /// TTS içeriğini günceller (filtreleme için)
+        /// </summary>
+        public void UpdateTtsContent(string content)
+        {
+            if (!string.IsNullOrEmpty(content))
+            {
+                _ttsFilter.UpdateTtsContent(content);
+                LogService.LogDebug($"[DictationManager] TTS içeriği filtreleme için güncellendi: {content.Substring(0, Math.Min(50, content.Length))}...");
+            }
+        }
+        
+        /// <summary>
+        /// Mod değişikliğinde state'leri temizler
+        /// </summary>
+        public void ResetStateForModeChange()
+        {
+            lock (_lockObject)
+            {
+                _processingDictation = false;
+                _lastProcessedText = string.Empty;
+                _pendingText = string.Empty;
+                _lastModeChangeCommand = string.Empty;
+                _lastModeChangeTime = DateTime.MinValue;
+                _debounceTimer.Stop();
+            }
+            
+            LogService.LogInfo("[DictationManager] State sıfırlandı (mod değişikliği)");
+            NotifyStateChanged();
+        }
 
         private void NotifyStateChanged()
         {
@@ -801,6 +878,12 @@ namespace QuadroAIPilot.Managers
                 IsProcessing = _processingDictation,
                 IsRestarting = _isRestartingDictation
             });
+            
+            // WebView'a dikte durumunu bildir
+            if (_webViewManager != null)
+            {
+                _webViewManager.UpdateDictationState(_dictationActive);
+            }
         }
 
         /// <summary>
@@ -899,17 +982,45 @@ namespace QuadroAIPilot.Managers
             }
         }
         
-        // Kullanılmayan interface metodları (Win+H kaldırıldı)
-        public void SetWritingModeEngine(string engine)
-        {
-            // Artık kullanılmıyor - sadece Web Speech API var
-            LogService.LogDebug($"[DictationManager] SetWritingModeEngine çağrıldı ama sadece Web Speech API destekleniyor");
-        }
-        
         public void SetDictationEngine(string engine)
         {
             // Artık kullanılmıyor - sadece Web Speech API var
             LogService.LogDebug($"[DictationManager] SetDictationEngine çağrıldı ama sadece Web Speech API destekleniyor");
+        }
+
+        // IsWakeWordOnly() ve IsValidCommand() metodları kaldırıldı
+        // Wake word ve sleep command kontrolü artık JavaScript (index.html) tarafında yapılıyor
+        // JavaScript bu durumları C#'a bildirim olarak gönderiyor (wakeWordDetected, sleepCommandDetected)
+
+        /// <summary>
+        /// Levenshtein mesafesi hesaplama
+        /// </summary>
+        private int LevenshteinDistance(string s1, string s2)
+        {
+            if (string.IsNullOrEmpty(s1)) return s2?.Length ?? 0;
+            if (string.IsNullOrEmpty(s2)) return s1.Length;
+
+            int[,] d = new int[s1.Length + 1, s2.Length + 1];
+
+            for (int i = 0; i <= s1.Length; i++)
+                d[i, 0] = i;
+
+            for (int j = 0; j <= s2.Length; j++)
+                d[0, j] = j;
+
+            for (int i = 1; i <= s1.Length; i++)
+            {
+                for (int j = 1; j <= s2.Length; j++)
+                {
+                    int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost
+                    );
+                }
+            }
+
+            return d[s1.Length, s2.Length];
         }
 
         public void Dispose()

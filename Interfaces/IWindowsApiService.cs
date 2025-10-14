@@ -22,6 +22,7 @@ namespace QuadroAIPilot.Interfaces
 
         // Input operations
         void SendText(string text);
+        void SendTextToActiveWindow(string text);
         void SendKeyStrokes(string keys);
 
         // System operations

@@ -27,6 +27,7 @@ namespace QuadroAIPilot.Commands
         private readonly ILogger<CommandProcessor> _logger;
         private readonly LocalIntentDetector _intentDetector;
         private IWebViewManager _webViewManager;
+        private ModeManager _modeManager;
 
         public event EventHandler<CommandProcessResult>? CommandProcessed;
 
@@ -66,6 +67,15 @@ namespace QuadroAIPilot.Commands
             _logger.LogInformation("WebViewManager set in CommandProcessor");
         }
 
+        /// <summary>
+        /// Sets the ModeManager instance
+        /// </summary>
+        public void SetModeManager(ModeManager modeManager)
+        {
+            _modeManager = modeManager;
+            _logger.LogInformation("ModeManager set in CommandProcessor");
+        }
+
         /*--------------------------------------------------
          *  Statik tanımlar
          *-------------------------------------------------*/
@@ -87,7 +97,7 @@ namespace QuadroAIPilot.Commands
         {
             Debug.WriteLine($"[CommandProcessor] *** KOMUT BAŞLADI *** Raw: '{raw}'");
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 if (string.IsNullOrWhiteSpace(raw))
@@ -95,7 +105,25 @@ namespace QuadroAIPilot.Commands
                     _logger.LogWarning("Boş komut girişi alındı");
                     return false;
                 }
-                
+
+                // SECURITY FIX: Input validation - tehlikeli pattern kontrolü
+                if (SecurityValidator.ContainsDangerousPatterns(raw))
+                {
+                    LoggingService.LogWarning($"[SECURITY] Dangerous pattern detected in command: {raw}");
+                    _logger.LogWarning("Güvenlik tehdidi içeren komut engellendi: {Command}", raw);
+                    await TextToSpeechService.SpeakTextAsync("Bu komut güvenlik nedeniyle engellenmiştir");
+                    return false;
+                }
+
+                // SECURITY FIX: Command length validation (max 500 characters)
+                if (raw.Length > 500)
+                {
+                    LoggingService.LogWarning($"[SECURITY] Command too long: {raw.Length} characters");
+                    _logger.LogWarning("Komut çok uzun: {Length} karakter", raw.Length);
+                    await TextToSpeechService.SpeakTextAsync("Komut çok uzun");
+                    return false;
+                }
+
                 _logger.LogInformation("Komut işleme başlatıldı: {Command}", raw);
                 
                 // Tırnak işaretlerini temizle
@@ -157,6 +185,180 @@ namespace QuadroAIPilot.Commands
             }
             
             Debug.WriteLine($"[CommandProcessor] *** TXT DEĞERİ *** txt: '{txt}', uzunluk: {txt?.Length}");
+            
+            // Mod geçiş komutları
+            if (_modeManager != null)
+            {
+                // Önce özel komutları kontrol et
+                string txtWithoutPunctuation = txt.TrimEnd('.', '!', '?', ',', ';', ':');
+                if (txtWithoutPunctuation == "yaz kızım" || txtWithoutPunctuation == "yaz oğlum")
+                {
+                    Debug.WriteLine($"[CommandProcessor] Özel yazı modu komutu algılandı: {txtWithoutPunctuation}");
+                    _modeManager.Switch(AppState.UserMode.Writing);
+                    await TextToSpeechService.SpeakTextAsync("Yazı moduna geçildi");
+                    
+                    // JavaScript'e mod değişikliğini bildir
+                    if (_webViewManager != null)
+                    {
+                        try
+                        {
+                            // Önce WebView'ın hazır olduğundan emin olalım
+                            await Task.Delay(100); // Kısa gecikme
+                            
+                            var script = @"
+                                try {
+                                    if (typeof setCurrentMode === 'function') { 
+                                        setCurrentMode('writing'); 
+                                        console.log('[CommandProcessor] Mode set to writing'); 
+                                        return 'success'; 
+                                    } else { 
+                                        console.error('[CommandProcessor] setCurrentMode function not found!'); 
+                                        return 'error'; 
+                                    }
+                                } catch (e) {
+                                    console.error('[CommandProcessor] Script error:', e);
+                                    return 'script_error';
+                                }
+                            ";
+                            var result = await _webViewManager.ExecuteScriptAsync(script);
+                            Debug.WriteLine($"[CommandProcessor] JavaScript mode update result: {result}");
+                            LogService.LogInfo($"[CommandProcessor] JavaScript mode update sent: writing, result: {result}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[CommandProcessor] Failed to update JavaScript mode: {ex.Message}");
+                            LogService.LogDebug($"[CommandProcessor] JavaScript mode update error: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("[CommandProcessor] WebViewManager is null, cannot update JavaScript mode");
+                        LogService.LogDebug("[CommandProcessor] WebViewManager is null for mode update");
+                    }
+                    
+                    CommandProcessed?.Invoke(this, new CommandProcessResult
+                    {
+                        CommandText = raw,
+                        Success = true,
+                        ResultMessage = "Yazı moduna geçildi",
+                        DetectedIntent = "SwitchToWritingMode"
+                    });
+                    
+                    return true;
+                }
+                else if (txt.Contains("yazı moduna geç") || txt.Contains("yazma moduna geç") || 
+                    txt.Contains("yazım moduna geç") || txt.Contains("yazın moduna geç") ||
+                    txt.Contains("yazım oduna geç") || txt.Contains("yazın oduna geç"))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Yazı moduna geçiş komutu algılandı");
+                    _modeManager.Switch(AppState.UserMode.Writing);
+                    await TextToSpeechService.SpeakTextAsync("Yazı moduna geçildi");
+                    
+                    // JavaScript'e mod değişikliğini bildir
+                    if (_webViewManager != null)
+                    {
+                        try
+                        {
+                            // Önce WebView'ın hazır olduğundan emin olalım
+                            await Task.Delay(100); // Kısa gecikme
+                            
+                            var script = @"
+                                try {
+                                    if (typeof setCurrentMode === 'function') { 
+                                        setCurrentMode('writing'); 
+                                        console.log('[CommandProcessor] Mode set to writing'); 
+                                        return 'success'; 
+                                    } else { 
+                                        console.error('[CommandProcessor] setCurrentMode function not found!'); 
+                                        return 'error'; 
+                                    }
+                                } catch (e) {
+                                    console.error('[CommandProcessor] Script error:', e);
+                                    return 'script_error';
+                                }
+                            ";
+                            var result = await _webViewManager.ExecuteScriptAsync(script);
+                            Debug.WriteLine($"[CommandProcessor] JavaScript mode update result: {result}");
+                            LogService.LogInfo($"[CommandProcessor] JavaScript mode update sent: writing, result: {result}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[CommandProcessor] Failed to update JavaScript mode: {ex.Message}");
+                            LogService.LogDebug($"[CommandProcessor] JavaScript mode update error: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("[CommandProcessor] WebViewManager is null, cannot update JavaScript mode");
+                        LogService.LogDebug("[CommandProcessor] WebViewManager is null for mode update");
+                    }
+                    
+                    CommandProcessed?.Invoke(this, new CommandProcessResult
+                    {
+                        CommandText = raw,
+                        Success = true,
+                        ResultMessage = "Yazı moduna geçildi",
+                        DetectedIntent = "SwitchToWritingMode"
+                    });
+                    
+                    return true;
+                }
+                else if (txt.Contains("komut moduna geç"))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Komut moduna geçiş komutu algılandı");
+                    _modeManager.Switch(AppState.UserMode.Command);
+                    await TextToSpeechService.SpeakTextAsync("Komut moduna geçildi");
+                    
+                    // JavaScript'e mod değişikliğini bildir
+                    if (_webViewManager != null)
+                    {
+                        try
+                        {
+                            // Önce WebView'ın hazır olduğundan emin olalım
+                            await Task.Delay(100); // Kısa gecikme
+                            
+                            var script = @"
+                                try {
+                                    if (typeof setCurrentMode === 'function') { 
+                                        setCurrentMode('command'); 
+                                        console.log('[CommandProcessor] Mode set to command'); 
+                                        return 'success'; 
+                                    } else { 
+                                        console.error('[CommandProcessor] setCurrentMode function not found!'); 
+                                        return 'error'; 
+                                    }
+                                } catch (e) {
+                                    console.error('[CommandProcessor] Script error:', e);
+                                    return 'script_error';
+                                }
+                            ";
+                            var result = await _webViewManager.ExecuteScriptAsync(script);
+                            Debug.WriteLine($"[CommandProcessor] JavaScript mode update result: {result}");
+                            LogService.LogInfo($"[CommandProcessor] JavaScript mode update sent: command, result: {result}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[CommandProcessor] Failed to update JavaScript mode: {ex.Message}");
+                            LogService.LogDebug($"[CommandProcessor] JavaScript mode update error: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("[CommandProcessor] WebViewManager is null, cannot update JavaScript mode");
+                        LogService.LogDebug("[CommandProcessor] WebViewManager is null for mode update");
+                    }
+                    
+                    CommandProcessed?.Invoke(this, new CommandProcessResult
+                    {
+                        CommandText = raw,
+                        Success = true,
+                        ResultMessage = "Komut moduna geçildi",
+                        DetectedIntent = "SwitchToCommandMode"
+                    });
+                    
+                    return true;
+                }
+            }
             
             // Edge sesleri yükleme komutu
             if ((txt.Contains("edge") && txt.Contains("yükle")) || txt.Contains("edge seslerini yükle"))
@@ -272,9 +474,151 @@ namespace QuadroAIPilot.Commands
                     }
                 }
                 
-                // CommandFactory'yi bir kez oluştur - çoklu çağrı optimizasyonu
-                var commandFactory = new CommandFactory(_applicationService, _fileSearchService, _windowsApiService);
+                /*----------- 0.4) DİNAMİK WEB SİTESİ AÇMA KOMUTLARI -----------*/
+                // Dinamik web sitesi açma komutlarını kontrol et
+                if (DynamicWebsiteCommand.IsWebsiteCommand(txt))
+                {
+                    _logger.LogInformation("[CommandProcessor] Dinamik web sitesi açma komutu tespit edildi");
+                    
+                    var siteName = DynamicWebsiteCommand.ExtractSiteName(txt);
+                    if (!string.IsNullOrWhiteSpace(siteName))
+                    {
+                        var websiteCommand = new DynamicWebsiteCommand(txt, siteName);
+                        ok = await websiteCommand.ExecuteAsync();
+                        det = $"Web Sitesi Aç ({siteName})";
+                        
+                        Raise(raw, ok, ok ? "Web sitesi açıldı" : "Web sitesi açılamadı", det);
+                        return ok;
+                    }
+                }
                 
+                /*----------- 0.5) DOSYA VE KLASÖR BULMA KOMUTLARI - YÜKSEK ÖNCELİK -----------*/
+                // Dosya bulma/arama komutları - CommandFactory'den ÖNCE kontrol edilmeli
+                if (txt.Contains("dosyasını bul") || txt.Contains("dosyasını ara") || 
+                    txt.Contains("dosyalarını bul") || txt.Contains("dosyalarını ara") ||
+                    txt.Contains("dosyaları bul") || txt.Contains("dosyaları ara") ||
+                    txt.Contains("dosyasını listele") || txt.Contains("dosyalarını listele"))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Dosya bulma/arama komutu algılandı: '{txt}'");
+                    
+                    string cleaned = txt.Replace("dosyasını bul", "")
+                                       .Replace("dosyasını ara", "")
+                                       .Replace("dosyalarını bul", "")
+                                       .Replace("dosyalarını ara", "")
+                                       .Replace("dosyaları bul", "")
+                                       .Replace("dosyaları ara", "")
+                                       .Replace("dosyasını listele", "")
+                                       .Replace("dosyalarını listele", "")
+                                       .Trim();
+
+                    string fileType = "";
+                    string fileName = cleaned;
+
+                    // Dosya türü kelimesini bul ve çıkar
+                    foreach (var t in _knownTypes)
+                    {
+                        var match = Regex.Match(fileName, $@"\b{Regex.Escape(t)}\b", RegexOptions.IgnoreCase);
+                        if (match.Success)
+                        {
+                            fileType = t;
+                            fileName = (fileName.Remove(match.Index, match.Length)).Trim();
+                            fileName = Regex.Replace(fileName, @"\s+", " ").Trim();
+                            break;
+                        }
+                    }
+
+                    // Eğer dosya adı boşsa, tür kelimesi dosya adı olarak kullanılabilir
+                    if (string.IsNullOrWhiteSpace(fileName) && !string.IsNullOrWhiteSpace(fileType))
+                        fileName = fileType;
+
+                    // FindFileCommandMulti'yi kullan - çoklu sonuç gösterimi
+                    var findFileCmd = new FindFileCommandMulti(
+                        raw,
+                        fileName,
+                        fileType,
+                        _fileSearchService,
+                        _webViewManager,
+                        maxResults: 10
+                    );
+
+                    ok = await findFileCmd.ExecuteAsync();
+                    det = $"Dosya Arama ({fileName})";
+                    
+                    Raise(raw, ok, ok ? "" : "Dosya bulunamadı", det);
+                    return ok;
+                }
+
+                // Klasör bulma/arama komutları
+                if (txt.Contains("klasörünü bul") || txt.Contains("klasörünü ara") || 
+                    txt.Contains("klasörlerini bul") || txt.Contains("klasörlerini ara") ||
+                    txt.Contains("klasörleri bul") || txt.Contains("klasörleri ara") ||
+                    txt.Contains("klasörünü listele") || txt.Contains("klasörlerini listele"))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Klasör bulma/arama komutu algılandı: '{txt}'");
+                    
+                    string cleaned = txt.Replace("klasörünü bul", "")
+                                       .Replace("klasörünü ara", "")
+                                       .Replace("klasörlerini bul", "")
+                                       .Replace("klasörlerini ara", "")
+                                       .Replace("klasörleri bul", "")
+                                       .Replace("klasörleri ara", "")
+                                       .Replace("klasörünü listele", "")
+                                       .Replace("klasörlerini listele", "")
+                                       .Replace("klasör", "")
+                                       .Replace("klasörü", "")
+                                       .Trim();
+
+                    // FindFolderCommand'i kullan
+                    var findFolderCmd = new FindFolderCommand(
+                        raw,
+                        cleaned,
+                        _fileSearchService,
+                        _webViewManager,
+                        maxResults: 10
+                    );
+
+                    ok = await findFolderCmd.ExecuteAsync();
+                    det = $"Klasör Arama ({cleaned})";
+                    
+                    Raise(raw, ok, ok ? "" : "Klasör bulunamadı", det);
+                    return ok;
+                }
+                
+                /*----------- 0.6) DOSYA AÇMA KOMUTLARI - YÜKSEK ÖNCELİK -----------*/
+                // Dosya açma komutlarını başta kontrol et
+                if (txt.Contains("dosyasını aç") || txt.Contains("dosyası aç"))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Dosya açma komutu erken yakalandı: '{txt}'");
+                    // Direkt dosya açma bölümüne atla
+                    goto FILE_OPEN_SECTION;
+                }
+
+                /*----------- 0.7) ÖZEL SİSTEM KLASÖRLERI - YÜKSEK ÖNCELİK -----------*/
+                // Belgelerim, Resimlerim, Bilgisayarım gibi özel sistem klasörleri
+                string[] specialFolders = {
+                    "belgelerim", "belgelerimi", "belgeler", "belgeleri",
+                    "resimlerim", "resimlerimi", "resimler", "resimleri",
+                    "müziğim", "müziğimi", "müzik", "müziği",
+                    "videolarım", "videolarımı", "videolar", "videoları",
+                    "indirilenler", "indirilenleri", "downloads",
+                    "masaüstü", "masaüstünü", "desktop",
+                    "bilgisayarım", "bilgisayarımı", "this pc", "bu bilgisayar"
+                };
+
+                if (specialFolders.Any(folder => txt.Contains(folder)) &&
+                    (txt.Contains("aç") || txt.Contains("başlat") || txt.Contains("göster")))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Özel sistem klasörü komutu algılandı: '{txt}'");
+
+                    // SystemCommand'e direkt yönlendir
+                    var systemCmd = new SystemCommand(raw, txt, _windowsApiService);
+                    ok = await systemCmd.ExecuteAsync();
+                    det = "Özel Klasör Aç";
+
+                    Raise(raw, ok, ok ? "" : "Klasör açılamadı", det);
+                    return ok;
+                }
+
                 /*----------- 1) ÖZEL KOMUTLAR -----------*/
                 // Edge TTS kontrolü yukarıda yapıldı
                 
@@ -335,7 +679,7 @@ namespace QuadroAIPilot.Commands
                             Debug.WriteLine($"[CommandProcessor] TTS çıktısı uzunluğu: {webResult.VoiceOutput.Length} karakter");
                             
                             // Aktif TTS varsa durdur
-                            if (TextToSpeechService.IsSpeaking())
+                            if (TextToSpeechService.IsSpeaking)
                             {
                                 Debug.WriteLine($"[CommandProcessor] Aktif TTS kesiliyor");
                                 TextToSpeechService.StopSpeaking();
@@ -356,21 +700,7 @@ namespace QuadroAIPilot.Commands
                 
                 /*----------- 2) MAPI KOMUTLARI -----------*/
                 // Mail ve takvim komutları
-                var mapiCommand = commandFactory.CreateCommandFromText(txt);
-                if (mapiCommand != null && mapiCommand.GetType().Name == "LocalOutlookCommand")
-                {
-                    // Debug.WriteLine($"[CommandProcessor] MAPI komutu algılandı: {mapiCommand.GetType().Name}");
-                    
-                    bool mapiResult = await mapiCommand.ExecuteAsync();
-                    if (mapiResult)
-                    {
-                        ok = true;
-                        det = $"MAPI Command ({mapiCommand.GetType().Name})";
-                        Raise(raw, true, "MAPI komutu başarıyla işlendi", det);
-                        return true;
-                    }
-                    // MAPI başarısız olursa diğer komutları kontrol et
-                }
+                // NOT: Bu bölüm şu an devre dışı - MAPI komutları için gerekli nesne oluşturulması gerekiyor
 
                 /*----------- 3) TEST KOMUTLARI ----------*/
                 // Web servislerini test etmek için basit komutlar
@@ -546,6 +876,7 @@ namespace QuadroAIPilot.Commands
 
                 /*----------- 4) WEB INFO KOMUTLARI ----------*/
                 // Web komutlarını önce kontrol et (haber, wikipedia, twitter gündem vb.)
+                var commandFactory = new CommandFactory(_applicationService, _fileSearchService, _windowsApiService);
                 var webCommand = commandFactory.CreateCommandFromText(txt);
                 if (webCommand != null && webCommand.GetType().Name == "CommandWrapper")
                 {
@@ -591,7 +922,7 @@ namespace QuadroAIPilot.Commands
                                     Debug.WriteLine($"[CommandProcessor] TTS çıktısı uzunluğu: {webResult.VoiceOutput.Length} karakter");
                                     
                                     // Aktif TTS varsa durdur
-                                    if (TextToSpeechService.IsSpeaking())
+                                    if (TextToSpeechService.IsSpeaking)
                                     {
                                         Debug.WriteLine($"[CommandProcessor] Aktif TTS kesiliyor");
                                         TextToSpeechService.StopSpeaking();
@@ -628,6 +959,7 @@ namespace QuadroAIPilot.Commands
                 
                 /*----------- 5) SİSTEM KOMUTLARI ----------*/
                 // Volume, kopyala, yapıştır gibi sistem komutları  
+                // commandFactory yukarıda tanımlandı
                 var systemCommand = commandFactory.CreateCommandFromText(txt);
                 if (systemCommand != null && 
                     (systemCommand.GetType().Name == "SystemWideCommand" || 
@@ -645,7 +977,10 @@ namespace QuadroAIPilot.Commands
                     }
                 }
 
+                // Bu bölüm artık yukarı taşındı (satır 459-549)
+
                 /*----------- 5) DOSYA AÇMA --------------------------*/
+                FILE_OPEN_SECTION:
                 if (txt.Contains("dosyasını aç") || txt.Contains("dosyası aç"))
                 {
                     string cleaned = txt.Replace("dosyasını aç", "")
@@ -709,6 +1044,38 @@ namespace QuadroAIPilot.Commands
 
                     Raise(raw, false, "Dosya bulunamadı", "Dosya Bulunamadı");
                     return false;
+                }
+
+                /*----------- 3.7) SES SEVİYESİ YÜZDE AYARLAMA -----------*/
+                // "sesi yüzde 50 yap", "sesi yüzde50 yap", "sesi %50 yap", "sesi 50 yap" gibi komutlar
+                var volumePercentPattern = @"ses(i|in)?\s*(seviye|volume)?s?(ini|sini|ini|i)?\s*(yüzde\s*|%\s*)?(\d+)\s*(yap|ayarla|kur)";
+                var volumePercentMatch = Regex.Match(txt, volumePercentPattern, RegexOptions.IgnoreCase);
+
+                if (volumePercentMatch.Success && int.TryParse(volumePercentMatch.Groups[5].Value, out int volumePercent))
+                {
+                    Debug.WriteLine($"[CommandProcessor] Ses yüzde ayarlama komutu: {volumePercent}%");
+
+                    ok = await VolumeController.SetVolumePercentageAsync(volumePercent);
+                    det = $"Ses Seviyesi Ayarla ({volumePercent}%)";
+                    Raise(raw, ok, ok ? "" : "Ses seviyesi ayarlanamadı", det);
+                    return ok;
+                }
+
+                /*----------- 3.8) İSİMLİ KLASÖR OLUŞTURMA -----------*/
+                // "denemeler adında yeni klasör oluştur" gibi komutlar
+                var namedFolderPattern = @"(.+?)\s+(adında|isimli|isminde)\s+(yeni\s+)?klasör\s+(oluştur|yarat)";
+                var namedFolderMatch = Regex.Match(txt, namedFolderPattern, RegexOptions.IgnoreCase);
+
+                if (namedFolderMatch.Success)
+                {
+                    string folderName = namedFolderMatch.Groups[1].Value.Trim();
+                    Debug.WriteLine($"[CommandProcessor] İsimli klasör oluşturma komutu: '{folderName}'");
+
+                    var cmd = new CreateNamedFolderCommand(raw, folderName);
+                    ok = await cmd.ExecuteAsync();
+                    det = $"İsimli Klasör Oluştur ({folderName})";
+                    Raise(raw, ok, ok ? "" : "Klasör oluşturulamadı", det);
+                    return ok;
                 }
 
                 /*----------- 4) KLASÖR AÇMA -------------------------*/
@@ -871,6 +1238,117 @@ namespace QuadroAIPilot.Commands
                     Raise(raw, false, $"{appName} uygulaması bulunamadı",
                                  $"Uygulama Bulunamadı ({appName})");
                     return false;
+                }
+
+                /*----------- 5.4) DOSYA KAPATMA -----------*/
+                // "bilgehan excel dosyasını kapat" gibi komutlar
+                var closeFilePattern = @"(.+?)\s*dosyas?(ını|ı)\s*kapat";
+                var closeFileMatch = Regex.Match(txt, closeFilePattern, RegexOptions.IgnoreCase);
+
+                if (closeFileMatch.Success)
+                {
+                    string rawFileName = closeFileMatch.Groups[1].Value.Trim();
+                    Debug.WriteLine($"[CommandProcessor] Dosya kapatma komutu (ham): '{rawFileName}'");
+
+                    // Dosya türü kelimesini bul ve çıkar (dosya açma ile aynı mantık)
+                    string fileType = "";
+                    string fileName = rawFileName;
+
+                    foreach (var t in _knownTypes)
+                    {
+                        var match = Regex.Match(fileName, $@"\b{Regex.Escape(t)}\b", RegexOptions.IgnoreCase);
+                        if (match.Success)
+                        {
+                            fileType = t;
+                            fileName = (fileName.Remove(match.Index, match.Length)).Trim();
+                            fileName = Regex.Replace(fileName, @"\s+", " ").Trim();
+                            break;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(fileName) && !string.IsNullOrWhiteSpace(fileType))
+                        fileName = fileType;
+
+                    Debug.WriteLine($"[CommandProcessor] Dosya kapatma komutu - Dosya: '{fileName}', Tür: '{fileType}'");
+
+                    var cmd = new CloseFileCommand(raw, fileName, fileType);
+                    ok = await cmd.ExecuteAsync();
+                    det = $"Dosya Kapat ({fileName})";
+                    Raise(raw, ok, ok ? "" : $"{fileName} kapatılamadı", det);
+                    return ok;
+                }
+
+                /*----------- 5.5) KLASÖR KAPATMA -----------*/
+                // "ekran kartı klasörünü kapat" gibi komutlar
+                var closeFolderPattern = @"(.+?)\s*klasör(ünü|ü)\s*kapat";
+                var closeFolderMatch = Regex.Match(txt, closeFolderPattern, RegexOptions.IgnoreCase);
+
+                if (closeFolderMatch.Success)
+                {
+                    string folderName = closeFolderMatch.Groups[1].Value.Trim();
+                    Debug.WriteLine($"[CommandProcessor] Klasör kapatma komutu: '{folderName}'");
+
+                    var cmd = new CloseFolderCommand(raw, folderName);
+                    ok = await cmd.ExecuteAsync();
+                    det = $"Klasör Kapat ({folderName})";
+                    Raise(raw, ok, ok ? "" : $"{folderName} klasörü kapatılamadı", det);
+                    return ok;
+                }
+
+                /*----------- 5.6) BELİRLİ UYGULAMA KAPATMA -----------*/
+                // "whatsapp uygulamasını kapat", "chrome'u kapat", "excel'i kapat" gibi komutlar
+                var closeAppPattern = @"(.+?)\s*(uygulamasını|uygulamayı|programını|programı|'u|'ü|'yi|'i)\s*kapat";
+                var closeAppMatch = Regex.Match(txt, closeAppPattern, RegexOptions.IgnoreCase);
+
+                if (closeAppMatch.Success)
+                {
+                    string appName = closeAppMatch.Groups[1].Value.Trim();
+                    Debug.WriteLine($"[CommandProcessor] Belirli uygulama kapatma komutu: '{appName}'");
+
+                    var cmd = new CloseApplicationCommand(raw, appName);
+                    ok = await cmd.ExecuteAsync();
+                    det = $"Uygulama Kapat ({appName})";
+                    Raise(raw, ok, ok ? "" : $"{appName} kapatılamadı", det);
+                    return ok;
+                }
+
+                /*----------- 5.7) TARAYICI SEKMESİ KAPATMA -----------*/
+                // "hürriyet sekmesini kapat", "youtube tab kapat", "gmail site kapat" gibi komutlar
+                // "milliyet web sitesini kapat" → keyword = "milliyet" (web kelimesi opsiyonel ve non-capturing)
+                var closeTabPattern = @"(.+?)\s*(?:web\s+)?(sekme|tab|site)(sini|si)?\s*kapat";
+                var closeTabMatch = Regex.Match(txt, closeTabPattern, RegexOptions.IgnoreCase);
+
+                if (closeTabMatch.Success)
+                {
+                    string keyword = closeTabMatch.Groups[1].Value.Trim();
+                    Debug.WriteLine($"[CommandProcessor] Sekme kapatma komutu: '{keyword}'");
+
+                    try
+                    {
+                        // BrowserIntegrationService'i ServiceContainer'dan al
+                        var browserService = Infrastructure.ServiceContainer.GetOptionalService<BrowserIntegrationService>();
+
+                        if (browserService == null)
+                        {
+                            Debug.WriteLine($"[CommandProcessor] BrowserIntegrationService bulunamadı");
+                            await TextToSpeechService.SpeakTextAsync("Tarayıcı servisi bulunamadı");
+                            Raise(raw, false, "Tarayıcı servisi bulunamadı", "Sekme Kapat - Servis Hatası");
+                            return false;
+                        }
+
+                        var cmd = new CloseTabCommand(raw, keyword, browserService);
+                        ok = await cmd.ExecuteAsync();
+                        det = $"Sekme Kapat ({keyword})";
+                        Raise(raw, ok, ok ? "" : $"{keyword} sekmesi kapatılamadı", det);
+                        return ok;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[CommandProcessor] Sekme kapatma hatası: {ex.Message}");
+                        await TextToSpeechService.SpeakTextAsync("Sekme kapatılırken hata oluştu");
+                        Raise(raw, false, "Sekme kapatma hatası", "Sekme Kapat - Hata");
+                        return false;
+                    }
                 }
 
                 /*----------- 6) PENCERE KAPATMA ---------------------*/

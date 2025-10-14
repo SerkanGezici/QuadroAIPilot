@@ -47,7 +47,7 @@ namespace QuadroAIPilot.Commands
         // Çift komut işleme önleme
         private string _lastCommand = string.Empty;
         private DateTime _lastCommandTime = DateTime.MinValue;
-        private readonly TimeSpan _duplicateCommandThreshold = TimeSpan.FromMilliseconds(300); // 300ms daha uygun
+        private readonly TimeSpan _duplicateCommandThreshold = TimeSpan.FromMilliseconds(1000); // 1 saniye threshold
 
         /// <summary>
         /// CommandFactory kurucu metodu
@@ -65,6 +65,16 @@ namespace QuadroAIPilot.Commands
             _windowsApiService = windowsApiService ?? throw new ArgumentNullException(nameof(windowsApiService));
             _commandRegistry = CommandRegistry.Instance;
             _systemCommandRegistry = SystemCommandRegistry.Instance;
+        }
+        
+        /// <summary>
+        /// Mod değişikliğinde state'i temizler
+        /// </summary>
+        public void ResetState()
+        {
+            _lastCommand = string.Empty;
+            _lastCommandTime = DateTime.MinValue;
+            Debug.WriteLine("[CommandFactory] State sıfırlandı");
         }
 
         /// <summary>
@@ -107,9 +117,6 @@ namespace QuadroAIPilot.Commands
                 Debug.WriteLine($"[CommandFactory] Aynı komut çok kısa sürede tekrarlandı, işlenmiyor: '{commandText}'");
                 return null;
             }
-            
-            _lastCommand = commandText;
-            _lastCommandTime = DateTime.Now;
 
             try
             {
@@ -126,7 +133,13 @@ namespace QuadroAIPilot.Commands
                         Command = commandText,
                         Parameters = new[] { commandText }
                     };
-                    return CreateCommand(fileIntent);
+                    var command = CreateCommand(fileIntent);
+                    if (command != null)
+                    {
+                        _lastCommand = commandText;
+                        _lastCommandTime = DateTime.Now;
+                    }
+                    return command;
                 }
                 
                 if (lowerCommand.Contains("uygulamasını aç"))
@@ -138,7 +151,13 @@ namespace QuadroAIPilot.Commands
                         Command = commandText,
                         Parameters = new[] { commandText }
                     };
-                    return CreateCommand(appIntent);
+                    var command = CreateCommand(appIntent);
+                    if (command != null)
+                    {
+                        _lastCommand = commandText;
+                        _lastCommandTime = DateTime.Now;
+                    }
+                    return command;
                 }
                 
                 // Edge TTS komutu
@@ -146,6 +165,8 @@ namespace QuadroAIPilot.Commands
                 {
                     Debug.WriteLine($"[CommandFactory] Edge TTS komut algılandı: {commandText}");
                     var edgeCommand = new EdgeTTSCommand(commandText);
+                    _lastCommand = commandText;
+                    _lastCommandTime = DateTime.Now;
                     return edgeCommand;
                 }
                 
@@ -155,6 +176,8 @@ namespace QuadroAIPilot.Commands
                     Debug.WriteLine($"[CommandFactory] Test ses komutu algılandı: {commandText}");
                     var testCommand = new TestAudioCommand();
                     testCommand.SetCommandText(commandText);
+                    _lastCommand = commandText;
+                    _lastCommandTime = DateTime.Now;
                     return testCommand;
                 }
                 
@@ -163,6 +186,8 @@ namespace QuadroAIPilot.Commands
                 if (webCommand != null)
                 {
                     Debug.WriteLine($"[CommandFactory] Web komut oluşturuldu: {webCommand.GetType().Name}");
+                    _lastCommand = commandText;
+                    _lastCommandTime = DateTime.Now;
                     return webCommand;
                 }
                 
@@ -172,6 +197,8 @@ namespace QuadroAIPilot.Commands
                 {
                     Debug.WriteLine($"[CommandFactory] OutlookStatsCommand oluşturuldu: {commandText}");
                     outlookStatsCommand.SetCommandText(commandText);
+                    _lastCommand = commandText;
+                    _lastCommandTime = DateTime.Now;
                     return outlookStatsCommand;
                 }
                 
@@ -180,6 +207,8 @@ namespace QuadroAIPilot.Commands
                 if (mapiCommand != null)
                 {
                     Debug.WriteLine($"[CommandFactory] MAPI komut oluşturuldu: {mapiCommand.GetType().Name}");
+                    _lastCommand = commandText;
+                    _lastCommandTime = DateTime.Now;
                     return mapiCommand;
                 }
                 
@@ -214,6 +243,8 @@ namespace QuadroAIPilot.Commands
                         Debug.WriteLine($"[CommandFactory] Kategori bazlı haber komutu algılandı: {commandText}");
                         var webInfoCmd = new WebInfoCommand();
                         var context = new CommandContext { RawCommand = commandText };
+                        _lastCommand = commandText;
+                        _lastCommandTime = DateTime.Now;
                         return new CommandWrapper(webInfoCmd, context);
                     }
                     
@@ -222,11 +253,21 @@ namespace QuadroAIPilot.Commands
                     
                     // Eski yönteme yönlendir
                     var legacyIntent = DetermineLegacyIntent(commandText);
-                    return CreateCommand(legacyIntent);
+                    var command = CreateCommand(legacyIntent);
+                    if (command != null)
+                    {
+                        _lastCommand = commandText;
+                        _lastCommandTime = DateTime.Now;
+                    }
+                    return command;
                 }
 
                 // Meta veriye göre komut oluştur
                 Debug.WriteLine($"[CommandFactory] '{commandText}' komutu için meta veri bulundu: {metadata.CommandId} ({metadata.FocusType})");
+                
+                // Komut başarıyla oluşturulacak, _lastCommand'ı güncelle
+                _lastCommand = commandText;
+                _lastCommandTime = DateTime.Now;
                 
                 switch (metadata.FocusType)
                 {
@@ -256,7 +297,29 @@ namespace QuadroAIPilot.Commands
         /// </summary>
         private ICommand TryCreateWebCommand(string commandText)
         {
-            // Önce haber açma komutunu kontrol et
+            // ÖNCE DynamicWebsiteCommand'ı kontrol et (Google arama ile çalışan)
+            if (DynamicWebsiteCommand.IsWebsiteCommand(commandText))
+            {
+                var siteName = DynamicWebsiteCommand.ExtractSiteName(commandText);
+                if (!string.IsNullOrWhiteSpace(siteName))
+                {
+                    Debug.WriteLine($"[CommandFactory] DynamicWebsiteCommand oluşturuldu: {siteName}");
+                    return new DynamicWebsiteCommand(commandText, siteName);
+                }
+            }
+
+            // Sonra eski OpenWebsiteCommand'ı kontrol et (statik liste)
+            if (OpenWebsiteCommand.IsWebsiteCommand(commandText))
+            {
+                var siteName = OpenWebsiteCommand.ExtractSiteName(commandText);
+                if (!string.IsNullOrWhiteSpace(siteName))
+                {
+                    Debug.WriteLine($"[CommandFactory] OpenWebsiteCommand oluşturuldu: {siteName}");
+                    return new OpenWebsiteCommand(commandText, siteName);
+                }
+            }
+
+            // Haber açma komutunu kontrol et
             var openNewsCommand = new OpenNewsCommand();
             if (openNewsCommand.CanHandle(commandText))
             {
@@ -264,15 +327,14 @@ namespace QuadroAIPilot.Commands
                 var context = new CommandContext { RawCommand = commandText };
                 return new CommandWrapper(openNewsCommand, context);
             }
+
             try
             {
                 var lowerText = commandText.ToLowerInvariant();
-                // Debug.WriteLine($"[CommandFactory] Web komut kontrol ediliyor: '{lowerText}'");
-                
+
                 var webCommand = new WebInfoCommand();
                 bool canHandle = webCommand.CanHandle(lowerText);
-                // Debug.WriteLine($"[CommandFactory] WebInfoCommand.CanHandle('{lowerText}'): {canHandle}");
-                
+
                 if (canHandle)
                 {
                     var context = new CommandContext { RawCommand = commandText };
@@ -280,8 +342,7 @@ namespace QuadroAIPilot.Commands
                     Debug.WriteLine($"[CommandFactory] WebInfoCommand oluşturuldu");
                     return wrappedCommand;
                 }
-                
-                // Debug.WriteLine($"[CommandFactory] Web komutu eşleşmedi: '{lowerText}'");
+
                 return null;
             }
             catch (Exception ex)
@@ -347,14 +408,6 @@ namespace QuadroAIPilot.Commands
                 return new CommandIntentResult
                 {
                     Type = CommandIntentType.CloseApplication,
-                    Command = commandText
-                };
-            }
-            else if (lowercaseCommand.Contains("bul") || lowercaseCommand.Contains("dosya"))
-            {
-                return new CommandIntentResult
-                {
-                    Type = CommandIntentType.FindFile,
                     Command = commandText
                 };
             }
@@ -544,7 +597,8 @@ namespace QuadroAIPilot.Commands
         /// </summary>
         private ICommand TryCreateSystemCommandFromText(string commandText)
         {
-            string command = commandText.ToLowerInvariant().Trim();
+            // Nokta, ünlem, soru işareti gibi noktalama işaretlerini temizle
+            string command = commandText.ToLowerInvariant().Trim().TrimEnd('.', '!', '?', ' ');
             
             // Önce SystemCommandRegistry'den fuzzy matching ile komut ara
             string mappedCommand = _systemCommandRegistry.FindCommand(command);
@@ -574,10 +628,6 @@ namespace QuadroAIPilot.Commands
             else if (command == "yazdır")
             {
                 return new SystemCommand(commandText, "yazdır", _windowsApiService);
-            }
-            else if (command == "bul")
-            {
-                return new SystemCommand(commandText, "bul", _windowsApiService);
             }
             else if (command == "sağ")
             {

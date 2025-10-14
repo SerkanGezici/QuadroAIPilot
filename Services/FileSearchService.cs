@@ -15,6 +15,7 @@ using Windows.Storage.FileProperties;
 using Windows.System;
 using QuadroAIPilot.Services;
 using QuadroAIPilot.Interfaces;
+using QuadroAIPilot.Models;
 using Microsoft.Win32;
 
 namespace QuadroAIPilot.Services
@@ -174,30 +175,407 @@ namespace QuadroAIPilot.Services
            }
        }
 
+       /// <summary>
+       /// Birden fazla dosya bulur ve FileSearchResult listesi döner
+       /// </summary>
+       public async Task<List<FileSearchResult>> FindMultipleFilesAsync(string fileName, string extension, int maxResults = 10)
+       {
+           if (string.IsNullOrWhiteSpace(fileName)) 
+               return new List<FileSearchResult>();
+           
+           fileName = fileName.Trim();
+           var culture = new System.Globalization.CultureInfo("tr-TR");
+           fileName = fileName.ToLower(culture);
+           
+           using var cts = new CancellationTokenSource(TimeoutMs);
+           var token = cts.Token;
+           
+           var allResults = new List<FileSearchResult>();
+           
+           try
+           {
+               // 1. Windows Recent Items klasöründe ara
+               var recentResults = await SearchInWindowsRecentItemsMultipleAsync(fileName, extension, token);
+               allResults.AddRange(recentResults);
+               
+               // 2. Uygulama MRU listesinde ara
+               var mruResults = await SearchInMruMultipleAsync(fileName, extension, token);
+               allResults.AddRange(mruResults);
+               
+               // 3. Office MRU kayıtlarından ara
+               var officeResults = SearchInOfficeMruRegistryMultiple(fileName, extension);
+               allResults.AddRange(officeResults);
+               
+               // 4. En çok kullanılan klasörlerde ara (sınırlı)
+               if (allResults.Count < maxResults)
+               {
+                   var specialResults = await SearchInSpecialFoldersMultipleAsync(
+                       fileName, extension, maxResults - allResults.Count, token);
+                   allResults.AddRange(specialResults);
+               }
+               
+               // Tekrar eden dosyaları kaldır ve sırala
+               var uniqueResults = allResults
+                   .GroupBy(f => f.FilePath?.ToLowerInvariant())
+                   .Select(g => g.First())
+                   .OrderByDescending(f => f.SearchPriority) // Önce öncelik
+                   .ThenByDescending(f => f.MatchScore)      // Sonra eşleşme skoru
+                   .ThenByDescending(f => f.LastModified)    // En son değiştirme
+                   .Take(maxResults)
+                   .ToList();
+               
+               return uniqueResults;
+           }
+           catch (Exception ex)
+           {
+               LoggingService.LogError($"FindMultipleFilesAsync hatası: {ex.Message}", ex);
+               return new List<FileSearchResult>();
+           }
+       }
+
+       /// <summary>
+       /// Birden fazla klasör bulur ve FolderSearchResult listesi döner
+       /// </summary>
+       public async Task<List<FolderSearchResult>> FindMultipleFoldersAsync(string folderName, int maxResults = 10)
+       {
+           if (string.IsNullOrWhiteSpace(folderName)) 
+               return new List<FolderSearchResult>();
+           
+           folderName = folderName.Trim();
+           var culture = new System.Globalization.CultureInfo("tr-TR");
+           folderName = folderName.ToLower(culture);
+           
+           using var cts = new CancellationTokenSource(TimeoutMs);
+           var token = cts.Token;
+           
+           var allResults = new List<FolderSearchResult>();
+           
+           try
+           {
+               // Temel klasörlerde ara
+               var baseFolders = new[] {
+                   Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                   Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                   Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                   Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                   Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                   Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)
+               };
+               
+               foreach (var baseFolder in baseFolders)
+               {
+                   if (token.IsCancellationRequested || allResults.Count >= maxResults * 2) 
+                       break;
+                   
+                   if (!Directory.Exists(baseFolder)) 
+                       continue;
+                   
+                   try
+                   {
+                       // Ana klasörü kontrol et
+                       var baseDirName = Path.GetFileName(baseFolder).ToLower(culture);
+                       if (MatchesFolder(baseDirName, folderName))
+                       {
+                           var result = new FolderSearchResult(baseFolder);
+                           result.MatchScore = CalculateSimilarity(folderName, baseDirName);
+                           allResults.Add(result);
+                       }
+                       
+                       // Alt klasörleri ara (2 seviye derinlik)
+                       SearchSubFoldersRecursive(baseFolder, folderName, allResults, 2, token);
+                   }
+                   catch { }
+               }
+               
+               // Sonuçları sırala ve sınırla
+               var sortedResults = allResults
+                   .OrderByDescending(f => f.MatchScore)
+                   .ThenByDescending(f => f.LastModified)
+                   .Take(maxResults)
+                   .ToList();
+               
+               return sortedResults;
+           }
+           catch (Exception ex)
+           {
+               LoggingService.LogError($"FindMultipleFoldersAsync hatası: {ex.Message}", ex);
+               return new List<FolderSearchResult>();
+           }
+       }
+
+       private void SearchSubFoldersRecursive(string parentFolder, string searchName, 
+           List<FolderSearchResult> results, int maxDepth, CancellationToken token)
+       {
+           if (maxDepth <= 0 || token.IsCancellationRequested) 
+               return;
+           
+           try
+           {
+               var culture = new System.Globalization.CultureInfo("tr-TR");
+               foreach (var dir in Directory.GetDirectories(parentFolder))
+               {
+                   if (token.IsCancellationRequested) 
+                       break;
+                   
+                   var dirName = Path.GetFileName(dir).ToLower(culture);
+                   if (MatchesFolder(dirName, searchName) || MatchesFolderFuzzy(dirName, searchName))
+                   {
+                       var result = new FolderSearchResult(dir);
+                       result.MatchScore = CalculateSimilarity(searchName, dirName);
+                       results.Add(result);
+                   }
+                   
+                   // Recursive olarak alt klasörleri ara
+                   SearchSubFoldersRecursive(dir, searchName, results, maxDepth - 1, token);
+               }
+           }
+           catch { }
+       }
+
+       private bool MatchesFolder(string folderName, string searchTerm)
+       {
+           var culture = new System.Globalization.CultureInfo("tr-TR");
+           var searchWords = searchTerm.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+           
+           // Tüm arama kelimeleri klasör adında geçmeli
+           return searchWords.All(word => 
+               folderName.Contains(word, StringComparison.OrdinalIgnoreCase));
+       }
+
+       private bool MatchesFolderFuzzy(string folderName, string searchTerm, double threshold = 0.7)
+       {
+           var searchWords = searchTerm.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+           var folderWords = folderName.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+           
+           foreach (var searchWord in searchWords)
+           {
+               bool foundMatch = false;
+               foreach (var folderWord in folderWords)
+               {
+                   double similarity = CalculateSimilarity(searchWord, folderWord);
+                   if (similarity >= threshold)
+                   {
+                       foundMatch = true;
+                       break;
+                   }
+               }
+               if (!foundMatch) return false;
+           }
+           
+           return true;
+       }
+
+       // Windows Recent Items'dan çoklu sonuç ara
+       private async Task<List<FileSearchResult>> SearchInWindowsRecentItemsMultipleAsync(
+           string fileName, string ext, CancellationToken ct)
+       {
+           var results = new List<FileSearchResult>();
+           
+           if (!Directory.Exists(_recentItemsPath))
+               return results;
+           
+           try
+           {
+               var recentFiles = Directory.GetFiles(_recentItemsPath, "*.lnk");
+               
+               foreach (var shortcutPath in recentFiles)
+               {
+                   if (ct.IsCancellationRequested) break;
+                   
+                   try
+                   {
+                       string shortcutName = Path.GetFileNameWithoutExtension(shortcutPath).ToLowerInvariant();
+                       
+                       if (Matches(shortcutName, fileName, ext) || MatchesFuzzy(shortcutName, fileName, ext))
+                       {
+                           string? targetPath = ResolveShortcut(shortcutPath);
+                           if (!string.IsNullOrEmpty(targetPath) && File.Exists(targetPath))
+                           {
+                               var result = new FileSearchResult(targetPath);
+                               result.MatchScore = CalculateSimilarity(fileName, Path.GetFileNameWithoutExtension(targetPath));
+                               result.SearchPriority = 3; // Recent Items yüksek öncelik
+                               results.Add(result);
+                           }
+                       }
+                   }
+                   catch { }
+               }
+           }
+           catch { }
+           
+           return results;
+       }
+
+       // MRU'dan çoklu sonuç ara
+       private async Task<List<FileSearchResult>> SearchInMruMultipleAsync(
+           string fileName, string ext, CancellationToken ct)
+       {
+           var results = new List<FileSearchResult>();
+           
+           try
+           {
+               var culture = new System.Globalization.CultureInfo("tr-TR");
+               foreach (var entry in StorageApplicationPermissions.MostRecentlyUsedList.Entries)
+               {
+                   if (ct.IsCancellationRequested) break;
+                   
+                   try
+                   {
+                       StorageFile file = await StorageApplicationPermissions.MostRecentlyUsedList.GetFileAsync(entry.Token);
+                       string nameLower = file.Name.ToLower(culture);
+                       
+                       if (Matches(nameLower, fileName, ext) || MatchesFuzzy(nameLower, fileName, ext))
+                       {
+                           var result = new FileSearchResult(file.Path);
+                           result.MatchScore = CalculateSimilarity(fileName, Path.GetFileNameWithoutExtension(file.Path));
+                           result.SearchPriority = 3; // MRU yüksek öncelik
+                           results.Add(result);
+                       }
+                   }
+                   catch { }
+               }
+           }
+           catch { }
+           
+           return results;
+       }
+
+       // Office MRU'dan çoklu sonuç ara
+       private List<FileSearchResult> SearchInOfficeMruRegistryMultiple(string fileName, string ext)
+       {
+           var results = new List<FileSearchResult>();
+           
+           try
+           {
+               string[] registryPaths = {
+                   @"Software\Microsoft\Office\16.0\Word\File MRU",
+                   @"Software\Microsoft\Office\16.0\Excel\File MRU",
+                   @"Software\Microsoft\Office\16.0\PowerPoint\File MRU"
+               };
+               
+               using (RegistryKey? currentUser = Registry.CurrentUser)
+               {
+                   foreach (var regPath in registryPaths)
+                   {
+                       using (RegistryKey? key = currentUser.OpenSubKey(regPath))
+                       {
+                           if (key != null)
+                           {
+                               foreach (var valueName in key.GetValueNames())
+                               {
+                                   string? mruEntry = key.GetValue(valueName) as string;
+                                   if (!string.IsNullOrEmpty(mruEntry) && mruEntry.Contains('*'))
+                                   {
+                                       var filePath = mruEntry.Substring(mruEntry.IndexOf('*') + 1);
+                                       string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
+                                       
+                                       if (Matches(fileNameWithoutExt, fileName, ext) || MatchesFuzzy(fileNameWithoutExt, fileName, ext))
+                                       {
+                                           if (File.Exists(filePath))
+                                           {
+                                               var result = new FileSearchResult(filePath);
+                                               result.MatchScore = CalculateSimilarity(fileName, fileNameWithoutExt);
+                                               result.SearchPriority = 2; // Office MRU orta öncelik
+                                               results.Add(result);
+                                           }
+                                       }
+                                   }
+                               }
+                           }
+                       }
+                   }
+               }
+           }
+           catch { }
+           
+           return results;
+       }
+
+       // Özel klasörlerde çoklu arama (sınırlı)
+       private async Task<List<FileSearchResult>> SearchInSpecialFoldersMultipleAsync(
+           string fileName, string ext, int maxResults, CancellationToken ct)
+       {
+           var results = new List<FileSearchResult>();
+           
+           foreach (var dir in _specialFolders)
+           {
+               if (ct.IsCancellationRequested || results.Count >= maxResults) 
+                   break;
+               
+               try
+               {
+                   // Sadece ilk seviye dosyaları ara (performans için)
+                   foreach (var file in Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly))
+                   {
+                       if (ct.IsCancellationRequested || results.Count >= maxResults) 
+                           break;
+                       
+                       string fileNameOnly = Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
+                       
+                       if (Matches(Path.GetFileName(file), fileName, ext) || MatchesFuzzy(Path.GetFileName(file), fileName, ext))
+                       {
+                           var result = new FileSearchResult(file);
+                           result.MatchScore = CalculateSimilarity(fileName, fileNameOnly);
+                           result.SearchPriority = 1; // Normal öncelik
+                           results.Add(result);
+                       }
+                   }
+               }
+               catch { }
+           }
+           
+           return results;
+       }
+
        public async Task<bool> OpenFileAsync(string filePath)
        {
            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) return false;
 
-           // Güvenlik kontrolü - sadece tehlikeli dosya uzantılarını kontrol et
-           // Path kontrolünü gevşettik çünkü çok katıydı
+           // SECURITY FIX: Dosya uzantısı kontrolü
            if (!SecurityValidator.IsFileExtensionSafe(filePath))
            {
-               LoggingService.LogWarning($"Dangerous file extension blocked: {Path.GetExtension(filePath)}");
+               LoggingService.LogWarning($"[SECURITY] Dangerous file extension blocked: {Path.GetExtension(filePath)}");
+               return false;
+           }
+
+           // SECURITY FIX: Canonical path resolution (symlink/junction attack prevention)
+           string canonicalPath = SecurityValidator.GetCanonicalPath(filePath);
+           if (string.IsNullOrEmpty(canonicalPath))
+           {
+               LoggingService.LogWarning($"[SECURITY] Cannot resolve canonical path: {filePath}");
+               return false;
+           }
+
+           // SECURITY FIX: Path validation
+           if (!SecurityValidator.IsPathSafe(canonicalPath))
+           {
+               LoggingService.LogWarning($"[SECURITY] Unsafe path detected: {canonicalPath}");
+               return false;
+           }
+
+           // SECURITY FIX: File size validation (max 100 MB)
+           var fileInfo = new FileInfo(canonicalPath);
+           if (fileInfo.Length > 100 * 1024 * 1024)
+           {
+               LoggingService.LogWarning($"[SECURITY] File too large: {fileInfo.Length} bytes");
                return false;
            }
 
            try
            {
                // Dosyayı MRU listesine ekle
-               _ = AddToMruAsync(filePath);
+               _ = AddToMruAsync(canonicalPath);
 
                // Office dosyalarını açan uygulamaları kayıt defterine ekle
-               AddToOfficeMruRegistry(filePath);
+               AddToOfficeMruRegistry(canonicalPath);
 
-               if (await Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(filePath)))
+               // SECURITY FIX: Audit logging
+               LoggingService.LogVerbose($"[AUDIT] Opening file: {canonicalPath}");
+
+               if (await Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(canonicalPath)))
                    return true;
            }
-           catch (Exception ex) 
+           catch (Exception ex)
            {
                LoggingService.LogError($"LaunchFileAsync hatası: {ex.Message}", ex);
            }
@@ -206,7 +584,7 @@ namespace QuadroAIPilot.Services
            {
                Process.Start(new ProcessStartInfo
                {
-                   FileName = filePath,
+                   FileName = canonicalPath,
                    UseShellExecute = true
                });
                return true;

@@ -22,8 +22,7 @@ namespace QuadroAIPilot.State
         public enum UserMode
         {
             Command,
-            Writing,
-            Reading
+            Writing
         }
 
         private static ApplicationState _currentState = ApplicationState.Idle;
@@ -41,7 +40,9 @@ namespace QuadroAIPilot.State
                 if (_currentState != value)
                 {
                     _currentState = value;
-                    StateChanged?.Invoke(null, _currentState);
+                    // Thread-safe event invocation
+                    var handler = StateChanged;
+                    handler?.Invoke(null, _currentState);
                 }
             }
         }
@@ -54,7 +55,9 @@ namespace QuadroAIPilot.State
                 if (_currentMode != value)
                 {
                     _currentMode = value;
-                    ModeChanged?.Invoke(null, _currentMode);
+                    // Thread-safe event invocation
+                    var handler = ModeChanged;
+                    handler?.Invoke(null, _currentMode);
                 }
             }
         }

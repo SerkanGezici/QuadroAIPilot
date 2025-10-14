@@ -45,8 +45,9 @@ namespace QuadroAIPilot.Services
         public string FindCommand(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return null;
-            
-            input = input.Trim().ToLowerInvariant();
+
+            // Nokta, ünlem, soru işareti gibi noktalama işaretlerini temizle
+            input = input.Trim().TrimEnd('.', '!', '?', ' ').ToLowerInvariant();
             
             // 1. Tam eşleşme kontrolü
             if (_commandMappings.ContainsKey(input))
@@ -124,9 +125,6 @@ namespace QuadroAIPilot.Services
             _commandMappings["yazdır"] = "yazdır";
             _commandAliases["yazdır"] = new List<string> { "print", "yazdir", "yazdırr", "yazdirr" };
             
-            // Bul komutu
-            _commandMappings["bul"] = "bul";
-            _commandAliases["bul"] = new List<string> { "find", "ara", "bull", "bulu", "search" };
             
             // Enter tuşu
             _commandMappings["enter"] = "enter";

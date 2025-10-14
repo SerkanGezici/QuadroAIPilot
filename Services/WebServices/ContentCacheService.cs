@@ -201,7 +201,8 @@ namespace QuadroAIPilot.Services.WebServices
                 {
                     Models.Web.ContentType.Weather => TimeSpan.FromMinutes(30),
                     Models.Web.ContentType.TwitterTrend => TimeSpan.FromMinutes(5), // 15 dakikadan 5 dakikaya düşürüldü
-                    Models.Web.ContentType.News => TimeSpan.FromMinutes(30), // 1 saatten 30 dakikaya düşürüldü
+                    Models.Web.ContentType.News => TimeSpan.FromMinutes(2), // Haberler için çok kısa cache - neredeyse her istekte güncel
+                    Models.Web.ContentType.RSS => TimeSpan.FromMinutes(2), // RSS için de kısa cache
                     Models.Web.ContentType.Wikipedia => TimeSpan.FromDays(7),
                     _ => TimeSpan.FromHours(2)
                 };

@@ -1,0 +1,659 @@
+================================================================================
+                    QUADROAIPILOT KULLANICI TEST KILAVUZU
+                           Versiyon 1.2.0 - 2025
+================================================================================
+
+Bu kılavuz, QuadroAIPilot uygulamasının tüm özelliklerini test etmeniz için
+hazırlanmıştır. Her bölümde detaylı komutlar ve beklenen sonuçlar yer almaktadır.
+
+================================================================================
+1. BAŞLANGIÇ VE İLK KURULUM
+================================================================================
+
+1.1 Uygulamayı Başlatma
+------------------------
+• QuadroAIPilot.exe dosyasını çift tıklayarak açın
+• İlk açılışta mikrofon izni istenecektir - "İzin Ver" seçeneğini tıklayın
+• Uygulama ana penceresi açılacaktır
+
+1.2 İlk Test - Ses Kontrolü
+----------------------------
+TEST: Mikrofon çalışıyor mu?
+KOMUT: (Herhangi bir şey söyleyin)
+BEKLENEN: Alt kısımdaki ses seviye göstergesinde hareket görülmeli
+
+1.3 Ayarlar Menüsü
+------------------
+TEST: Ayarlar menüsünü açma
+İŞLEM: Sağ üst köşedeki dişli simgesine tıklayın
+KONTROL EDİN:
+  ✓ Tema seçimi (Neon Nights, Dark Elegance, Warm Sunset, Nordic Aurora)
+  ✓ TTS ses seçimi (Kadın/Erkek)
+  ✓ Animasyon hızı ayarı
+
+================================================================================
+2. DİKTE SİSTEMİ BAŞLATMA VE DURDURMA
+================================================================================
+
+2.1 Dikteyi UYANDIRMA (Wake Word)
+----------------------------------
+KOMUTLAR:
+□ "Hey Quadro"
+□ "Hey Asistan"
+□ "Hey Kuadro"
+□ "Hey Assistant"
+
+BEKLENEN: Uygulama "Dinleniyor..." mesajı göstermeli ve ses tanıma aktif olmalı
+
+2.2 Dikteyi UYUTMA/DURDURMA (Sleep Commands)
+----------------------------------------------
+KOMUTLAR:
+□ "Quadro bekle"
+□ "Quadro uyu"
+□ "Asistan bekle"
+□ "Asistan uyu"
+□ "Kuadro bekle"
+□ "Kuadro uyu"
+□ "Assistant bekle"
+□ "Assistant uyu"
+
+BEKLENEN: Dikte durmalı ve bekleme moduna geçmeli
+
+2.3 Alternatif Başlatma
+------------------------
+• Klavye Kısayolu: Ctrl + Shift + Q (Global hotkey - toggleDikte çalıştırır)
+• Manuel: Uygulama arayüzünden mikrofon butonuna tıklayın
+
+================================================================================
+3. MOD DEĞİŞTİRME
+================================================================================
+
+QuadroAIPilot 2 ana modda çalışır:
+
+3.1 KOMUT MODU (Varsayılan)
+----------------------------
+AKTIFLEŞTIRME: "komut modu" veya "komut moduna geç" deyin
+KULLANIM: Sistem komutlarını çalıştırır
+TEST KOMUTLARI:
+  • "not defteri aç"
+  • "hesap makinesi aç"
+  • "excel aç"
+
+3.2 YAZI MODU
+-------------
+AKTIFLEŞTIRME:
+  • "yazı modu"
+  • "yaz kızım"
+  • "yaz oğlum"
+  • "yazma modu"
+  • "yazım modu"
+  • "yazın modu"
+  • "yazı moduna geç"
+  • "yazma moduna geç"
+
+KULLANIM: Söylediklerinizi metin olarak yazar
+
+TEST:
+  1. Bir metin editörü açın (Notepad)
+  2. "yazı modu" deyin
+  3. "Merhaba dünya bu bir test mesajıdır" deyin
+  4. Metin otomatik yazılacak (her kelimeden sonra boşluk eklenir)
+
+YAZI MODU KOMUTLARI:
+  • "yeni satır" veya "enter" veya "alt satır" - Alt satıra geçer
+  • "sil" veya "geri al" - Son karakteri siler (Backspace)
+  • "kelimeyi sil" veya "son kelimeyi sil" - Son kelimeyi siler (Ctrl+Backspace)
+  • "hepsini sil" veya "tümünü sil" - Tüm metni siler
+  • "tab" veya "sekme" - Tab ekler
+  • "boşluk" - Ekstra boşluk ekler
+
+NAVİGASYON (Yazı Modunda):
+  • "yukarı" veya "yukarı git" - Yukarı ok
+  • "aşağı" veya "aşağı git" veya "aşağı geç" - Aşağı ok
+  • "sağ" veya "sağa" veya "sağa git" - Sağ ok
+  • "sol" veya "sola" veya "sola git" - Sol ok
+  • "sayfa aşağı" veya "sayfa aşağıya" - Page Down
+  • "sayfa yukarı" veya "sayfa yukarıya" - Page Up
+  • "başa git" veya "başa" veya "satır başı" - Home tuşu
+  • "sona git" veya "sona" veya "satır sonu" - End tuşu
+  • "belge başı" veya "dosya başı" - Ctrl+Home
+  • "belge sonu" veya "dosya sonu" - Ctrl+End
+
+NOT: Yazı modunda noktalama işaretleri için özel komut YOK.
+     Nokta, virgül vb. söylendiğinde kelime olarak yazılır.
+     Otomatik olarak her kelime sonrasına boşluk eklenir.
+
+================================================================================
+4. DOSYA VE KLASÖR İŞLEMLERİ
+================================================================================
+
+4.1 Dosya Arama ve Açma (FindFileCommand)
+------------------------------------------
+KOMUT FORMATI: "[dosya adı] [dosya türü] dosyasını aç"
+
+TEST ÖRNEKLERİ:
+□ "bütçe excel dosyasını aç"
+□ "rapor word dosyasını aç"
+□ "sunum powerpoint dosyasını aç"
+□ "[dosya adı] pdf dosyasını aç"
+
+DESTEKLENEN DOSYA TÜRLERİ:
+• Excel: xls, xlsx, csv, xlsm
+• Word: doc, docx, rtf
+• PowerPoint: ppt, pptx
+• PDF: pdf
+• Resim: jpg, png, gif, bmp
+• Video: mp4, avi, mkv, mov
+• Müzik: mp3, wav, flac
+• Metin: txt, log
+• Kod: cs, js, html, css, json, xml
+
+4.2 Özel Klasörler (SystemCommandRegistry)
+-------------------------------------------
+TEST KOMUTLARI:
+□ "belgeler aç" veya "belgelerim aç" veya "belgeler klasörünü aç"
+□ "resimler aç" veya "resimlerim aç" veya "resimler klasörünü aç"
+□ "müzik aç" veya "müziğim aç" veya "müzik klasörünü aç"
+□ "videolar aç" veya "videolarım aç" veya "videolar klasörünü aç"
+□ "indirilenler aç" veya "downloads aç" veya "indirilenler klasörünü aç"
+□ "masaüstü aç" veya "masaüstünü aç" veya "masaüstü klasörünü aç"
+□ "dosya gezginini aç" veya "explorer aç"
+
+4.3 Dosya Arama Stratejileri
+-----------------------------
+Uygulama 3 aşamalı arama yapar:
+1. Tam eşleşme (FindFileAsync)
+2. İçeren arama (FindFileAsyncContains)
+3. Fuzzy/benzer arama (FindFileAsyncFuzzy)
+
+4.4 Çoklu Dosya Arama (FindFileCommandMulti)
+---------------------------------------------
+Birden fazla konumda aynı anda arama yapar
+
+4.5 Klasör Arama (FindFolderCommand)
+------------------------------------
+Klasör arama ve açma için özelleştirilmiş komut
+
+================================================================================
+5. UYGULAMA AÇMA KOMUTLARI (OpenApplicationCommand)
+================================================================================
+
+5.1 Microsoft Office Uygulamaları
+----------------------------------
+□ "excel aç" veya "microsoft excel aç"
+□ "word aç" veya "microsoft word aç"
+□ "powerpoint aç" veya "power point aç" veya "powerpnt aç"
+□ "outlook aç" veya "microsoft outlook aç"
+
+5.2 Windows Sistem Uygulamaları
+--------------------------------
+□ "not defteri aç" veya "notepad aç"
+□ "hesap makinesi aç" veya "calculator aç" veya "calc aç"
+□ "paint aç"
+
+5.3 Tarayıcılar
+---------------
+□ "chrome aç" veya "google chrome aç"
+□ "edge aç" veya "microsoft edge aç" veya "msedge aç"
+□ "firefox aç"
+□ "tarayıcı aç" veya "browser aç" veya "internet aç"
+
+5.4 Diğer Uygulamalar
+----------------------
+□ "visual studio code aç" veya "vs code aç" veya "vscode aç" veya "code aç"
+
+================================================================================
+6. WINDOWS YÖNETİM KOMUTLARI (SystemCommand)
+================================================================================
+
+6.1 Pencere Kontrolü
+--------------------
+□ "pencereyi kapat" veya "pencere kapat" veya "kapat"
+□ "uygulamayı kapat" veya "uygulama kapat" veya "app kapat" veya "programı kapat"
+□ "pencereyi sağa hizala" veya "sağa hizala" veya "pencere sağa"
+□ "pencereyi sola hizala" veya "sola hizala" veya "pencere sola"
+□ "masaüstünü göster" veya "masaüstü göster" veya "desktop göster"
+
+6.2 Ses Kontrolü (HotkeySender)
+--------------------------------
+□ "sesi artır" veya "sesi arttır" veya "ses artır" veya "ses arttır"
+□ "sesi azalt" veya "ses azalt" veya "sesi düşür" veya "ses düşür"
+□ "sesi kapat" veya "ses kapat" veya "sesi kapa" veya "ses kapa" veya "mute"
+□ "sesi aç" veya "ses aç" veya "unmute"
+
+6.3 Sistem İşlemleri
+--------------------
+□ "bilgisayarı kilitle" veya "bilgisayari kilitle" veya "pc kilitle" veya "kilitle"
+□ "ekran görüntüsü al" veya "screenshot" veya "ss al" veya "ekran yakala" (Win+Shift+S)
+
+6.4 Klavye Kısayolları (HotkeySender ile)
+------------------------------------------
+□ "kopyala" - Ctrl+C
+□ "yapıştır" - Ctrl+V
+□ "kes" - Ctrl+X
+□ "kaydet" - Ctrl+S
+□ "geri al" - Ctrl+Z
+□ "ileri al" - Ctrl+Y
+□ "tümünü seç" - Ctrl+A
+□ "yazdır" - Ctrl+P
+□ "yenile" - F5
+□ "enter"
+□ "escape" veya "esc" veya "iptal" veya "vazgeç"
+□ "tab"
+□ "boşluk" veya "space"
+
+6.5 Navigasyon Komutları (SystemCommandRegistry)
+-------------------------------------------------
+□ "sağ" veya "sag" veya "right"
+□ "sol" veya "left"
+□ "yukarı" veya "yukari" veya "up"
+□ "aşağı" veya "asagi" veya "down"
+□ "sayfayı aşağı kaydır" veya "sayfa aşağı" veya "page down"
+□ "sayfayı yukarı kaydır" veya "sayfa yukarı" veya "page up"
+□ "sayfa başına git" veya "sayfa başı" veya "home" veya "en üst"
+□ "sayfa sonuna git" veya "sayfa sonu" veya "end" veya "en alt"
+
+6.6 Tarayıcı Navigasyonu
+------------------------
+□ "tarayıcıda geri git" veya "geri" veya "back" veya "önceki sayfa"
+□ "tarayıcıda ileri git" veya "ileri" veya "forward" veya "sonraki sayfa"
+
+================================================================================
+7. E-POSTA (OUTLOOK) İŞLEMLERİ
+================================================================================
+
+ÖN KOŞUL: Microsoft Outlook kurulu ve yapılandırılmış olmalı
+
+7.1 E-posta Okuma (LocalOutlookCommand + RealOutlookReader)
+------------------------------------------------------------
+□ "maillerimi oku" veya "mailleri oku" veya "e-postalarımı oku"
+□ "son maili oku" veya "son gelen maili oku"
+□ "bugünkü mailleri oku" veya "bugün gelen mailleri oku"
+□ "okunmamış mailleri oku"
+□ "önemli mailleri oku"
+
+7.2 Gönderenden Filtreleme
+---------------------------
+□ "[kişi adı]'dan gelen mailleri oku"
+  Örnek: "Ahmet'ten gelen mailleri oku"
+□ "[kişi adı]'nın maillerini göster"
+  Örnek: "Ayşe'nin maillerini göster"
+
+7.3 Konuya Göre Arama
+----------------------
+□ "[konu] hakkındaki mailleri bul"
+  Örnek: "toplantı hakkındaki mailleri bul"
+□ "[kelime] içeren mailleri göster"
+  Örnek: "fatura içeren mailleri göster"
+
+7.4 Akıllı Mail Komutları (SmartMailCommandParser + SmartMailFilter)
+--------------------------------------------------------------------
+□ "müdürden gelen mailleri oku"
+□ "IT'den gelen mailleri göster"
+□ "bugün toplantı var mı"
+□ "yarın için randevum var mı"
+□ "bu hafta kimlerle toplantım var"
+
+7.5 Mail İstatistikleri (OutlookStatsCommand)
+----------------------------------------------
+□ "mail istatistiklerimi göster"
+□ "kaç okunmamış mailim var"
+□ "bugün kaç mail geldi"
+
+7.6 Debug Komutları (DebugOutlookAccountsCommand)
+-------------------------------------------------
+□ "outlook hesaplarını göster" (Debug amaçlı)
+
+7.7 Outlook Toplantı Oluşturma
+-------------------------------
+□ Outlook'ta Ctrl+Shift+Q ile yeni toplantı oluşturulur
+
+================================================================================
+8. WEB SİTESİ AÇMA
+================================================================================
+
+8.1 Dinamik Web Sitesi Açma (DynamicWebsiteCommand)
+----------------------------------------------------
+KOMUT FORMATI: "[site adı] web sitesini aç" veya "[site adı] sitesini aç"
+
+Bu komut Google üzerinden arama yaparak siteyi bulur (WebSearchService).
+Herhangi bir web sitesi için çalışır, önceden tanımlı olması gerekmez.
+
+8.2 Statik Web Sitesi Açma (OpenWebsiteCommand)
+------------------------------------------------
+Önceden tanımlanmış popüler siteler için hızlı erişim (WebsiteRegistry)
+
+8.3 Akıllı Site Adı Düzeltme (NormalizeWebsiteName)
+----------------------------------------------------
+Sistem, yanlış telaffuzları otomatik düzeltir:
+• "oda tv" → "odatv"
+• "hepsi burada" → "hepsiburada"
+• "sahi binden" → "sahibinden"
+• "gitti gidiyor" → "gittigidiyor"
+• "face book" → "facebook"
+• "you tube" → "youtube"
+• "linked in" → "linkedin"
+
+================================================================================
+9. HABER OKUMA VE GÖRÜNTÜLEME
+================================================================================
+
+9.1 Ana Haber Komutları (WebInfoCommand)
+-----------------------------------------
+□ "haberleri oku" veya "haberleri göster"
+□ "yeni haberleri oku" veya "yeni haberleri göster"
+□ "tüm haberleri oku" veya "tüm haberleri göster"
+□ "günün haberlerini göster"
+
+9.2 Kategoriye Göre Haberler
+-----------------------------
+□ "spor haberleri oku" veya "spor haberlerini oku"
+□ "ekonomi haberleri oku" veya "ekonomi haberlerini oku"
+□ "teknoloji haberleri oku" veya "teknoloji haberlerini oku"
+□ "sağlık haberleri oku" veya "sağlık haberlerini oku"
+□ "dünya haberleri oku" veya "dünya haberlerini oku"
+□ "magazin haberleri oku" veya "magazin haberlerini oku"
+□ "siyaset haberleri oku" veya "siyaset haberlerini oku"
+□ "finans haberleri oku" veya "finans haberlerini oku"
+□ "borsa haberleri oku" veya "borsa haberlerini oku"
+□ "bilim haberleri oku" veya "bilim haberlerini oku"
+□ "kültür haberleri oku" veya "kültür haberlerini oku"
+□ "sanat haberleri oku" veya "sanat haberlerini oku"
+□ "eğitim haberleri oku" veya "eğitim haberlerini oku"
+□ "otomobil haberleri oku" veya "otomobil haberlerini oku"
+□ "emlak haberleri oku" veya "emlak haberlerini oku"
+□ "turizm haberleri oku" veya "turizm haberlerini oku"
+□ "yerel haberleri oku" veya "yerel haberlerini oku"
+
+9.3 Özel Sorgular
+-----------------
+□ "haberlerde yeni ne var"
+□ "spor haberlerinde yeni ne var"
+□ "ekonomi haberlerinde yeni ne var"
+
+9.4 Haber Açma (OpenNewsCommand)
+---------------------------------
+□ "3. haberi aç" veya "3 numaralı haberi göster"
+□ "5. haberi tarayıcıda aç"
+□ "[başlık] haberini aç"
+
+9.5 RSS Kaynakları (RSSProvider)
+---------------------------------
+Sistem birden fazla haber kaynağından haberleri toplar:
+• Hürriyet, Milliyet, Sabah, Sözcü, CNN Türk, NTV, T24
+• Spor: beIN Sports, Fanatik, Fotomac
+• Ekonomi: Bloomberg HT, Dünya
+• Teknoloji: ShiftDelete, Webrazzi
+
+Haberlerde yeni içerik varsa "YENİ" etiketi ile gösterilir (NewsMemoryService).
+
+================================================================================
+10. TTS (TEXT-TO-SPEECH) ÖZELLİKLERİ
+================================================================================
+
+================================================================================
+11. SİSTEM KOMUTLARI VE REGISTRY
+================================================================================
+
+11.1 SystemCommandRegistry
+---------------------------
+Tüm sistem komutlarının merkezi kaydı
+• Fuzzy matching ile %80 benzerlik kontrolü
+• Alias desteği (alternatif komutlar)
+• CalculateSimilarity ile akıllı eşleştirme
+
+11.2 Onay/İptal Komutları
+--------------------------
+□ "kabul et" veya "kabul" veya "onayla" veya "tamam" veya "evet"
+□ "vazgeç" veya "vazgec" veya "iptal" veya "iptal et" veya "hayır"
+
+11.3 Özel Sistem Komutları
+---------------------------
+□ "çalıştır penceresini aç" - Win+R
+□ "görev görünümünü aç" - Win+Tab
+
+================================================================================
+12. ÖZEL KOMUT TÜRLERİ
+================================================================================
+
+12.1 Odak Farkındalığı (FocusAwareCommand)
+-------------------------------------------
+Aktif pencereye göre komut davranışı değişir
+
+12.2 Aktif Pencere Komutları (ActiveWindowCommand)
+--------------------------------------------------
+Mevcut aktif pencerede işlem yapar
+
+12.3 Sistem Geneli Komutlar (SystemWideCommand)
+------------------------------------------------
+Tüm sistemde geçerli komutlar (ses kontrolü vb.)
+
+12.4 Belirli Uygulama Komutları (SpecificAppCommand)
+-----------------------------------------------------
+Belirli bir uygulamaya özel komutlar
+
+================================================================================
+13. SORUN GİDERME
+================================================================================
+
+SORUN: Mikrofon beni duymuyor
+ÇÖZÜM:
+1. Windows Ayarlar → Gizlilik → Mikrofon iznini kontrol edin
+2. Ses ayarlarından doğru mikrofonu seçin
+3. Mikrofon ses seviyesini artırın
+
+SORUN: "Hey Quadro" çalışmıyor
+ÇÖZÜM:
+1. Net ve anlaşılır söyleyin
+2. "Hey Kuadro" veya "Hey Asistan" alternatiflerini deneyin
+3. Sessiz ortamda deneyin
+4. Web Speech API desteklendiğinden emin olun
+
+SORUN: Ctrl+Shift+Q hotkey çalışmıyor
+ÇÖZÜM:
+1. Uygulamayı yönetici olarak çalıştırın
+2. Başka bir uygulama aynı hotkey'i kullanıyor olabilir
+
+SORUN: Komutlar çalışmıyor
+ÇÖZÜM:
+1. Doğru modda olduğunuzdan emin olun (Komut/Yazı)
+2. Komutu net ve anlaşılır söyleyin
+3. Komuttan sonra kısa bir duraklama yapın
+
+SORUN: Outlook komutları çalışmıyor
+ÇÖZÜM:
+1. Outlook'un açık olduğundan emin olun
+2. Outlook'ta en az bir e-posta hesabı yapılandırılmış olmalı
+3. MAPI bağlantısı için uygulamayı yönetici olarak çalıştırın
+
+SORUN: Web siteleri açılmıyor
+ÇÖZÜM:
+1. İnternet bağlantınızı kontrol edin
+2. Varsayılan tarayıcınızın ayarlı olduğundan emin olun
+3. Site adını daha net telaffuz edin
+
+SORUN: Yazı modunda yanlış yazıyor
+ÇÖZÜM:
+1. Türkçe dil paketi kurulu olduğundan emin olun
+2. Kelimeleri daha yavaş ve net söyleyin
+3. Sessiz ortamda kullanın
+4. WindowsApiService.SendTextToActiveWindow doğru çalışıyor mu kontrol edin
+
+================================================================================
+14. PERFORMANS İPUÇLARI
+================================================================================
+
+1. HIZLI KULLANIM:
+   • Kısa ve net komutlar kullanın
+   • Gereksiz kelimeleri eklemeyin
+   • Wake word'leri net telaffuz edin
+
+2. VERİMLİLİK:
+   • Mod değiştirmelerini minimize edin
+   • Benzer işlemler için aynı modda kalın
+   • Sleep komutlarını kullanarak gereksiz tanımaları önleyin
+
+3. DOĞRULUK:
+   • Sessiz ortamda kullanın
+   • Mikrofonunuzu ağzınıza yakın tutun
+   • Net ve standart Türkçe telaffuz kullanın
+
+================================================================================
+15. LOG DOSYALARI VE DEBUG
+================================================================================
+
+Log Konumları:
+• Ana log: ./Logs/quadroai-{tarih}.log
+• LoggingService ve LogService sınıfları ile yönetilir
+
+Debug Özellikleri:
+• [TTSOutputFilter] - TTS metin filtreleme
+• [DictationManager] - Dikte yönetimi
+• [CommandFactory] - Komut işleme
+• [CommandProcessor] - Komut işleme detayları
+• [LocalOutlookCommand] - Outlook işlemleri
+• [WebInfoCommand] - Haber işlemleri
+• [WritingMode] - Yazı modu işlemleri
+• [MainWindow] - Hotkey ve ana pencere
+
+================================================================================
+16. TEST SENARYOLARI
+================================================================================
+
+SENARYO 1: Temel Wake/Sleep Testi
+----------------------------------
+1. "Hey Quadro" deyin
+2. Uygulama dinlemeye başlamalı
+3. "not defteri aç" deyin
+4. Not defteri açılmalı
+5. "Quadro bekle" deyin
+6. Dikte durmalı
+
+SENARYO 2: Yazı Modu Testi
+---------------------------
+1. Not defteri açın
+2. "Hey Quadro" deyin
+3. "yazı modu" deyin
+4. "Merhaba Dünya" deyin
+5. Metin yazılmalı (otomatik boşluk ile)
+6. "yeni satır" deyin
+7. "Test mesajı" deyin
+8. "komut moduna geç" deyin
+9. "Quadro uyu" deyin
+
+SENARYO 3: Haber Okuma Testi
+-----------------------------
+1. "Hey Asistan" deyin
+2. "haberleri göster" deyin
+3. Haberler yüklenmeli (RSS'den)
+4. "spor haberleri oku" deyin
+5. Spor haberleri görüntülenmeli ve okunmalı
+6. "3. haberi aç" deyin
+7. 3. haber tarayıcıda açılmalı
+8. "Asistan bekle" deyin
+
+SENARYO 4: Outlook Testi
+------------------------
+1. Outlook'u açın
+2. "Hey Quadro" deyin
+3. "son maili oku" deyin
+4. Son mail okunmalı (RealOutlookReader ile)
+5. "okunmamış mailleri göster" deyin
+6. Liste görüntülenmeli
+7. "Quadro uyu" deyin
+
+SENARYO 5: Web Sitesi Testi
+---------------------------
+1. "Hey Kuadro" deyin
+2. "youtube sitesini aç" deyin
+3. YouTube açılmalı (Google arama ile)
+4. "odatv sitesini aç" deyin (veya "oda tv sitesini aç")
+5. OdaTV açılmalı (otomatik düzeltme)
+6. "Kuadro bekle" deyin
+
+SENARYO 6: Hotkey Testi
+-----------------------
+1. Herhangi bir uygulamada çalışırken
+2. Ctrl + Shift + Q tuşlarına basın
+3. Dikte toggle olmalı (açık/kapalı)
+
+================================================================================
+17. GELİŞTİRİCİ NOTLARI
+================================================================================
+
+Kod Yapısı:
+• Commands/ - Tüm komut implementasyonları
+• Modes/ - CommandMode ve WritingMode
+• Managers/ - DictationManager, WindowController, EventCoordinator
+• Services/ - TTS, FileSearch, Web, MAPI servisleri
+• Assets/index.html - Web arayüzü ve wake word tanıma
+
+Wake Word Tanıma:
+• Assets/index.html içinde JavaScript ile
+• Web Speech API kullanılıyor
+• checkForWakeWords() ve checkForSleepCommands() fonksiyonları
+• startDikte() ve toggleDikte() fonksiyonları
+
+Komut İşleme:
+• CommandFactory.cs - Ana komut fabrikası
+• CommandProcessor.cs - Komut işleme pipeline'ı
+• SystemCommandRegistry.cs - Sistem komutları registry
+• Fuzzy matching ile %80 benzerlik kontrolü
+
+TTS Filtreleme:
+• TTSOutputFilter sınıfı
+• TTS metinlerini tanımadan filtreler
+• 5 saniyelik zaman penceresi
+• ttsTextBuffer ile history tutulur
+
+Global Hotkey:
+• MainWindow.xaml.cs içinde RegisterHotKey
+• Ctrl+Shift+Q (HOTKEY_ID = 9000)
+• WndProc ile mesaj yakalama
+
+================================================================================
+18. NOTLAR VE KISITLAMALAR
+================================================================================
+
+• Outlook özellikleri için Outlook kurulu olmalıdır
+• Web komutları internet bağlantısı gerektirir
+• Bazı sistem komutları yönetici yetkisi gerektirebilir
+• Türkçe dil paketi kurulu olmalıdır
+• Mikrofon kalitesi tanıma doğruluğunu etkiler
+• Gürültülü ortamlar tanıma performansını düşürür
+• Wake word tanıma Web Speech API'ye bağlıdır
+• Edge TTS için Python ve edge-tts modülü gerekir
+• Yazı modunda noktalama işaretleri için özel komut yoktur
+
+================================================================================
+                            TEST KONTROL LİSTESİ
+================================================================================
+
+□ Wake word'ler çalışıyor (Hey Quadro, Hey Asistan)
+□ Sleep komutları çalışıyor (Quadro bekle, Asistan uyu)
+□ Ctrl+Shift+Q hotkey çalışıyor
+□ Komut ve Yazı modu arası geçiş yapılabiliyor
+□ Yazı modunda metin girişi ve navigasyon çalışıyor
+□ Temel uygulamalar açılıyor (Notepad, Calculator, Excel, vb.)
+□ Dosya arama ve açma çalışıyor (3 aşamalı)
+□ Klasör navigasyonu çalışıyor
+□ Web siteleri açılıyor (dinamik Google arama ile)
+□ Haber okuma çalışıyor (RSS'den kategorilere göre)
+□ Haberi tarayıcıda açma çalışıyor (OpenNewsCommand)
+□ Outlook entegrasyonu çalışıyor (MAPI/RealOutlookReader)
+□ Ses kontrol komutları çalışıyor (VolumeUp/Down/Mute)
+□ Pencere yönetimi komutları çalışıyor
+□ Klavye kısayolları çalışıyor (HotkeySender)
+□ Hatalı telaffuzlar düzeltiliyor (odatv, hepsiburada vb.)
+□ TTS (Edge sesleri) çalışıyor
+□ SystemCommandRegistry fuzzy matching çalışıyor
+
+================================================================================
+                                  SON NOTLAR
+================================================================================
+
+Bu kılavuz, QuadroAIPilot v1.2.0 için hazırlanmıştır.
+Gerçek kod tabanından alınan ve doğrulanan komutları içerir.
+Tüm testleri sırayla uygulayarak uygulamanın düzgün çalıştığını doğrulayabilirsiniz.
+
+İyi testler!

@@ -9,7 +9,7 @@
 	<Identity
 	  Name="com.quadro.aipilot"
 	  Publisher="CN=QuadroAIPilot"
-	  Version="1.0.0.0" />
+	  Version="1.2.0.0" />
 
 	<Properties>
 		<DisplayName>Quadro AI Pilot</DisplayName>
@@ -22,7 +22,8 @@
 	</Dependencies>
 
 	<Resources>
-		<Resource Language="x-generate"/>
+		<Resource Language="tr-TR"/>
+		<Resource Language="en-US"/>
 	</Resources>
 
 	<Applications>

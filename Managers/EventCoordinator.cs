@@ -82,7 +82,7 @@ namespace QuadroAIPilot.Managers
                 _webViewManager.TextareaPositionChanged += OnTextareaPositionChanged;
                 
                 // Dictation events
-                _dictationManager.TextRecognized += OnSpeechRecognizedRoute;
+                // TextRecognized artık kullanılmıyor - ModeManager üzerinden işleniyor
                 _dictationManager.StateChanged += OnDictationStateChanged;
 
                     _eventsAttached = true;
@@ -121,7 +121,7 @@ namespace QuadroAIPilot.Managers
                 _webViewManager.TextareaPositionChanged -= OnTextareaPositionChanged;
                 
                 // Dictation events
-                _dictationManager.TextRecognized -= OnSpeechRecognizedRoute;
+                // TextRecognized artık kullanılmıyor - ModeManager üzerinden işleniyor
                 _dictationManager.StateChanged -= OnDictationStateChanged;
 
                     _eventsAttached = false;
@@ -182,23 +182,40 @@ namespace QuadroAIPilot.Managers
         /// </summary>
         private void OnAppStateChanged(object? sender, AppState.ApplicationState e)
         {
-            // Use Task.Run to handle async work safely in event handler
-            _ = Task.Run(async () =>
+            ErrorHandler.SafeExecute(() =>
             {
-                await ErrorHandler.SafeExecuteAsync(async () =>
+                var currentMode = AppState.CurrentMode;
+                
+                // Sadece gerçek mod değişimlerinde mesaj göster
+                if (_lastMode != currentMode.ToString())
                 {
-                    var currentMode = AppState.CurrentMode;
+                    _lastMode = currentMode.ToString();
                     
-                    // Sadece gerçek mod değişimlerinde mesaj göster
-                    if (_lastMode != currentMode.ToString())
+                    // WebView'a mod değişikliğini hemen bildir (UI thread'de)
+                    LogService.LogInfo($"[EventCoordinator] Notifying WebView of mode change: {currentMode}");
+                    
+                    var message = new
                     {
-                        _lastMode = currentMode.ToString();
-                        await _uiManager.ShowInfoMessageAsync($"Mod değişti: {currentMode}");
-                    }
+                        action = "modeChanged",
+                        mode = currentMode.ToString()
+                    };
                     
-                    //($"[EventCoordinator] App state changed to: {currentMode}");
-                }, "OnAppStateChanged");
-            });
+                    _webViewManager.SendMessage(message);
+                    
+                    LogService.LogInfo($"[EventCoordinator] Mode change message sent to WebView");
+                    
+                    // UI'da bilgi mesajı göster (async)
+                    _ = Task.Run(async () =>
+                    {
+                        await ErrorHandler.SafeExecuteAsync(async () =>
+                        {
+                            await _uiManager.ShowInfoMessageAsync($"Mod değişti: {currentMode}");
+                        }, "OnAppStateChanged - ShowInfoMessage");
+                    });
+                }
+                
+                //($"[EventCoordinator] App state changed to: {currentMode}");
+            }, "OnAppStateChanged");
         }
 
         #endregion
@@ -300,6 +317,38 @@ namespace QuadroAIPilot.Managers
                             }
                         }
                         break;
+                        
+                    case "widgetClicked":
+                        if (root.TryGetProperty("widgetType", out var clickedWidgetTypeElement))
+                        {
+                            var clickedWidgetType = clickedWidgetTypeElement.GetString();
+                            if (!string.IsNullOrEmpty(clickedWidgetType))
+                            {
+                                _dispatcherQueue.TryEnqueue(() => HandleWidgetClick(clickedWidgetType));
+                            }
+                        }
+                        break;
+                        
+                    case "speakText":
+                        if (root.TryGetProperty("text", out var speakTextElement))
+                        {
+                            var textToSpeak = speakTextElement.GetString();
+                            if (!string.IsNullOrEmpty(textToSpeak))
+                            {
+                                // DictationManager'a TTS metnini HEMEN bildir (async blok dışında)
+                                if (_dictationManager != null)
+                                {
+                                    _dictationManager.UpdateTtsContent(textToSpeak);
+                                    LogService.LogInfo($"[EventCoordinator] TTS metni DictationManager'a ÖNCELİKLE bildirildi: {textToSpeak.Substring(0, Math.Min(50, textToSpeak.Length))}...");
+                                }
+                                
+                                _dispatcherQueue.TryEnqueue(async () =>
+                                {
+                                    await TextToSpeechService.SpeakTextAsync(textToSpeak);
+                                });
+                            }
+                        }
+                        break;
 
                     case "textChanged":
                         if (root.TryGetProperty("text", out var changedTextElement))
@@ -314,6 +363,86 @@ namespace QuadroAIPilot.Managers
 
                     case "stopTts":
                         _dispatcherQueue.TryEnqueue(() => HandleStopTts());
+                        break;
+
+                    case "openFile":
+                        if (root.TryGetProperty("filePath", out var filePathElement))
+                        {
+                            var filePath = filePathElement.GetString();
+                            if (!string.IsNullOrEmpty(filePath) && System.IO.File.Exists(filePath))
+                            {
+                                _dispatcherQueue.TryEnqueue(async () =>
+                                {
+                                    LogService.LogInfo($"[EventCoordinator] Opening file from search result: {filePath}");
+                                    
+                                    // FileSearchService kullanarak dosyayı aç
+                                    var fileService = ServiceContainer.GetService<FileSearchService>();
+                                    if (fileService != null)
+                                    {
+                                        var result = await fileService.OpenFileAsync(filePath);
+                                        if (result)
+                                        {
+                                            var fileName = System.IO.Path.GetFileName(filePath);
+                                            await TextToSpeechService.SpeakTextAsync($"{fileName} açılıyor");
+                                        }
+                                        else
+                                        {
+                                            await TextToSpeechService.SpeakTextAsync("Dosya açılamadı");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Alternatif yöntem
+                                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                                        {
+                                            FileName = filePath,
+                                            UseShellExecute = true
+                                        });
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                _dispatcherQueue.TryEnqueue(async () =>
+                                {
+                                    LogService.LogInfo($"[EventCoordinator] File not found: {filePath}");
+                                    await TextToSpeechService.SpeakTextAsync("Dosya bulunamadı");
+                                });
+                            }
+                        }
+                        break;
+
+                    case "openFolder":
+                        if (root.TryGetProperty("folderPath", out var folderPathElement))
+                        {
+                            var folderPath = folderPathElement.GetString();
+                            if (!string.IsNullOrEmpty(folderPath) && System.IO.Directory.Exists(folderPath))
+                            {
+                                _dispatcherQueue.TryEnqueue(async () =>
+                                {
+                                    LogService.LogInfo($"[EventCoordinator] Opening folder from search result: {folderPath}");
+                                    
+                                    // Windows Explorer'da klasörü aç
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                                    {
+                                        FileName = "explorer.exe",
+                                        Arguments = $"\"{folderPath}\"",
+                                        UseShellExecute = true
+                                    });
+                                    
+                                    var folderName = System.IO.Path.GetFileName(folderPath);
+                                    await TextToSpeechService.SpeakTextAsync($"{folderName} klasörü açılıyor");
+                                });
+                            }
+                            else
+                            {
+                                _dispatcherQueue.TryEnqueue(async () =>
+                                {
+                                    LogService.LogInfo($"[EventCoordinator] Folder not found: {folderPath}");
+                                    await TextToSpeechService.SpeakTextAsync("Klasör bulunamadı");
+                                });
+                            }
+                        }
                         break;
 
                     case "voiceChanged":
@@ -365,6 +494,19 @@ namespace QuadroAIPilot.Managers
                         }
                         break;
 
+                    case "webSpeechResult":
+                        if (root.TryGetProperty("text", out var speechTextElement) && 
+                            root.TryGetProperty("isFinal", out var isFinalElement))
+                        {
+                            var speechText = speechTextElement.GetString();
+                            var isFinal = isFinalElement.GetBoolean();
+                            if (!string.IsNullOrEmpty(speechText))
+                            {
+                                _dispatcherQueue.TryEnqueue(() => HandleWebSpeechResult(speechText, isFinal));
+                            }
+                        }
+                        break;
+
                     default:
                         //($"[EventCoordinator] Unknown WebView action: {action}");
                         break;
@@ -392,27 +534,7 @@ namespace QuadroAIPilot.Managers
 
         #region Dictation Events
 
-        /// <summary>
-        /// Routes speech recognition to command processing
-        /// </summary>
-        private void OnSpeechRecognizedRoute(object? sender, string recognizedText)
-        {
-            // Use Task.Run to handle async work safely in event handler
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandler.SafeExecuteAsync(async () =>
-                {
-                    //($"[EventCoordinator] Speech recognized: {recognizedText}");
-                    
-                    _uiManager.SetProcessingState(true);
-                    
-                    // Process the recognized speech as a command
-                    await _commandProcessor.ProcessCommandAsync(recognizedText);
-                    
-                    _uiManager.SetProcessingState(false);
-                }, "OnSpeechRecognizedRoute");
-            });
-        }
+        // OnSpeechRecognizedRoute metodu kaldırıldı - artık ModeManager üzerinden işleniyor
 
         /// <summary>
         /// Handles dictation manager state changes
@@ -546,6 +668,42 @@ namespace QuadroAIPilot.Managers
                 });
             }, "HandleWidgetRequest");
         }
+        
+        /// <summary>
+        /// Handles widget click events
+        /// </summary>
+        private void HandleWidgetClick(string widgetType)
+        {
+            ErrorHandler.SafeExecute(() =>
+            {
+                LogService.LogInfo($"[EventCoordinator] Widget clicked: {widgetType}");
+                
+                string commandText = widgetType.ToLowerInvariant() switch
+                {
+                    "meetings" => "bugünkü toplantıları oku",
+                    "mails" => "okunmamış maillerimi oku",
+                    _ => null
+                };
+                
+                if (!string.IsNullOrEmpty(commandText))
+                {
+                    LogService.LogInfo($"[EventCoordinator] Executing command for widget: {commandText}");
+                    
+                    // Komutu çalıştır
+                    _ = Task.Run(async () =>
+                    {
+                        await ErrorHandler.SafeExecuteAsync(async () =>
+                        {
+                            // Önce UI feedback ver
+                            await _uiManager.ShowInfoMessageAsync($"🔊 {(widgetType == "meetings" ? "Toplantılar" : "Mailler")} okunuyor...");
+                            
+                            // Komutu çalıştır
+                            await _commandProcessor.ProcessCommandAsync(commandText);
+                        }, "HandleWidgetClick_ProcessCommand");
+                    });
+                }
+            }, "HandleWidgetClick");
+        }
 
         /// <summary>
         /// Processes widget data request and sends response
@@ -652,31 +810,55 @@ namespace QuadroAIPilot.Managers
         {
             try
             {
+                LogService.LogInfo("[EventCoordinator] HandleMeetingsWidget başladı");
+                
                 var realOutlookReader = new Services.RealOutlookReader();
                 bool connected = await realOutlookReader.ConnectAsync();
+                
+                LogService.LogInfo($"[EventCoordinator] HandleMeetingsWidget - Outlook bağlantı durumu: {connected}");
                 
                 if (connected)
                 {
                     // TTS'siz sadece toplantı sayısını al
                     var meetingCount = await realOutlookReader.GetTodayMeetingCountOnlyAsync();
+                    
+                    LogService.LogInfo($"[EventCoordinator] HandleMeetingsWidget - Toplantı sayısı: {meetingCount}");
+                    
                     var widgetData = new
                     {
                         count = meetingCount,
                         lastUpdated = DateTime.Now
                     };
                     
-                    _webViewManager.SendWidgetUpdate("meetings", widgetData);
+                    // UI thread'de çalıştığından emin olmak için
+                    _dispatcherQueue.TryEnqueue(() =>
+                    {
+                        _webViewManager.SendWidgetUpdate("meetings", widgetData);
+                    });
+                    
                     realOutlookReader.Disconnect();
+                    
+                    LogService.LogInfo("[EventCoordinator] HandleMeetingsWidget - Widget güncellendi");
                 }
                 else
                 {
-                    _webViewManager.SendWidgetUpdate("meetings", new { count = 0, lastUpdated = DateTime.Now });
+                    LogService.LogInfo("[EventCoordinator] HandleMeetingsWidget - Outlook bağlantısı başarısız");
+                    
+                    _dispatcherQueue.TryEnqueue(() =>
+                    {
+                        _webViewManager.SendWidgetUpdate("meetings", new { count = 0, lastUpdated = DateTime.Now });
+                    });
                 }
             }
             catch (Exception ex)
             {
                 LogService.LogDebug($"[EventCoordinator] Meetings widget error: {ex.Message}");
-                _webViewManager.SendWidgetUpdate("meetings", new { count = 0, lastUpdated = DateTime.Now });
+                LogService.LogDebug($"[EventCoordinator] Meetings widget stack trace: {ex.StackTrace}");
+                
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    _webViewManager.SendWidgetUpdate("meetings", new { count = 0, lastUpdated = DateTime.Now });
+                });
             }
         }
 
@@ -692,25 +874,14 @@ namespace QuadroAIPilot.Managers
                     Services.NewsMemoryService.GetAllNews().Take(10).ToList() : 
                     new List<QuadroAIPilot.Models.Web.RSSItem>();
                 
-                // Eğer veri yoksa, haber komutunu tetikle
+                // Eğer veri yoksa, haber komutunu sessizce çalıştır (UI'da görünmeyecek)
                 if (newsItems.Count == 0)
                 {
-                    LogService.LogInfo("[EventCoordinator] NewsMemoryService'te haber yok, haber çekiliyor...");
+                    LogService.LogInfo("[EventCoordinator] NewsMemoryService'te haber yok, sessizce haber çekiliyor...");
                     
                     try
                     {
-                        // CommandProcessor üzerinden WebInfoCommand'ı çalıştır (TTS için)
-                        var commandProcessor = ServiceContainer.GetService<ICommandProcessor>();
-                        if (commandProcessor != null)
-                        {
-                            LogService.LogInfo("[EventCoordinator] CommandProcessor ile son haberler çekiliyor...");
-                            await commandProcessor.ProcessCommandAsync("son haberler");
-                            
-                            // CommandProcessor kendi içinde TTS'i handle ediyor, sonuç kontrolü için kısa bekleme
-                            await Task.Delay(1000);
-                        }
-                        
-                        // Eski direkt WebInfoCommand çağrısı (fallback olarak bırakıldı)
+                        // WebInfoCommand'ı direkt çağır (UI'da görünmeyecek)
                         var webInfoCommand = new Commands.WebInfoCommand();
                         var context = new QuadroAIPilot.Models.CommandContext
                         {
@@ -809,7 +980,14 @@ namespace QuadroAIPilot.Managers
         {
             ErrorHandler.SafeExecute(() =>
             {
-                //($"[EventCoordinator] Text changed: {text}");
+                // Yazı modunda textChanged event'lerini işleme
+                if (State.AppState.CurrentMode == State.AppState.UserMode.Writing)
+                {
+                    LogService.LogDebug($"[EventCoordinator] HandleTextChanged - Writing mode, ignoring textChanged event: '{text}'");
+                    return;
+                }
+                
+                LogService.LogDebug($"[EventCoordinator] HandleTextChanged - Command mode, processing text: '{text}'");
                 _dictationManager.HandleTextChanged(text);
             }, "HandleTextChanged");
         }
@@ -822,7 +1000,7 @@ namespace QuadroAIPilot.Managers
             await ErrorHandler.SafeExecuteAsync(async () =>
             {
                 //("[EventCoordinator] Stop TTS requested");
-                await TextToSpeechService.StopSpeakingAsync();
+                TextToSpeechService.StopSpeaking();
                 _uiManager.AppendFeedback("🔇 TTS durduruldu");
             }, "HandleStopTts");
         }
@@ -836,8 +1014,7 @@ namespace QuadroAIPilot.Managers
             {
                 //("[EventCoordinator] TTS started (from WebView)");
                 
-                // Smart TTS VAD'ini duraklat - TTS sesini algılamasın
-                TextToSpeechService.PauseSmartTTSVAD();
+                // TTS başladı
                 
                 // YENI STRATEJI: Win+H'ı KAPATMA!
                 // DictationManager zaten smart filtering kullanıyor
@@ -854,13 +1031,13 @@ namespace QuadroAIPilot.Managers
             {
                 //("[EventCoordinator] TTS ended (from WebView)");
                 
-                // Smart TTS VAD'ini devam ettir
-                TextToSpeechService.ResumeSmartTTSVAD();
+                // TTS bitti
                 
-                // Edge TTS durumunu sıfırla
-                TextToSpeechService.ResetEdgeTTSState();
                 // TTS bittiğinde otomatik dikte başlatma YAPMA
                 // Kullanıcı tekrar konuş butonuna basana kadar bekle
+                
+                // WebView'a dikte durumunu güncelle (pasif)
+                _webViewManager.UpdateDictationState(_dictationManager.IsActive);
             }, "HandleTtsEnded");
         }
 
@@ -874,25 +1051,31 @@ namespace QuadroAIPilot.Managers
                 //($"[EventCoordinator] Voice changed to: {voice}");
                 
                 // Voice değerine göre TextToSpeechService'i güncelle
+                string voiceName = "Emel"; // Varsayılan
+                
                 switch (voice)
                 {
                     case "automatic":
-                        TextToSpeechService.SelectedVoice = TextToSpeechService.VoiceType.Automatic;
+                        TextToSpeechService.CurrentEdgeVoice = "tr-TR-EmelNeural";
+                        voiceName = "Emel";
                         //("[EventCoordinator] Otomatik ses seçimi aktif");
                         break;
                         
                     case "edge-emel":
-                        TextToSpeechService.SelectedVoice = TextToSpeechService.VoiceType.EdgeEmel;
+                        TextToSpeechService.CurrentEdgeVoice = "tr-TR-EmelNeural";
+                        voiceName = "Emel";
                         //("[EventCoordinator] Edge Emel sesi seçildi");
                         break;
                         
                     case "edge-ahmet":
-                        TextToSpeechService.SelectedVoice = TextToSpeechService.VoiceType.EdgeAhmet;
+                        TextToSpeechService.CurrentEdgeVoice = "tr-TR-AhmetNeural";
+                        voiceName = "Ahmet";
                         //("[EventCoordinator] Edge Ahmet sesi seçildi");
                         break;
                         
                     case "windows-tolga":
-                        TextToSpeechService.SelectedVoice = TextToSpeechService.VoiceType.WindowsTolga;
+                        TextToSpeechService.CurrentEdgeVoice = "tr-TR-EmelNeural"; // Tolga artık sadece fallback
+                        voiceName = "Tolga";
                         //("[EventCoordinator] Windows Tolga sesi seçildi");
                         break;
                         
@@ -900,6 +1083,15 @@ namespace QuadroAIPilot.Managers
                         //($"[EventCoordinator] Bilinmeyen ses tipi: {voice}");
                         break;
                 }
+                
+                // JavaScript'e ses değişikliğini bildir
+                _webViewManager?.SendMessage(new
+                {
+                    action = "updateVoiceSetting",
+                    voiceName = voiceName
+                });
+                
+                LogService.LogDebug($"[EventCoordinator] JavaScript'e ses değişikliği gönderildi: {voiceName}");
             }, "HandleVoiceChanged");
         }
 
@@ -1049,6 +1241,40 @@ namespace QuadroAIPilot.Managers
             }
         }
 
+        /// <summary>
+        /// Handles Web Speech API result from JavaScript
+        /// </summary>
+        private void HandleWebSpeechResult(string text, bool isFinal)
+        {
+            ErrorHandler.SafeExecute(() =>
+            {
+                LogService.LogDebug($"[EventCoordinator] Web Speech Result received - Text: '{text}', Final: {isFinal}");
+                
+                if (!isFinal || string.IsNullOrWhiteSpace(text))
+                {
+                    return;
+                }
+                
+                // Use Task.Run to handle async work safely
+                _ = Task.Run(async () =>
+                {
+                    await ErrorHandler.SafeExecuteAsync(async () =>
+                    {
+                        // WebSpeechBridge'e gönder
+                        var webSpeechBridge = DictationManager.GetWebSpeechBridge();
+                        if (webSpeechBridge != null)
+                        {
+                            await webSpeechBridge.HandleWebSpeechResult(text, isFinal);
+                        }
+                        else
+                        {
+                            LogService.LogDebug("[EventCoordinator] WebSpeechBridge not initialized yet!");
+                        }
+                    }, "HandleWebSpeechResult_Process");
+                });
+            }, "HandleWebSpeechResult");
+        }
+
         #endregion
 
         #region IDisposable Implementation
@@ -1059,20 +1285,33 @@ namespace QuadroAIPilot.Managers
             GC.SuppressFinalize(this);
         }
 
+        ~EventCoordinator()
+        {
+            Dispose(false);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed && disposing)
+            if (!_disposed)
             {
                 try
                 {
-                    DetachEvents();
+                    if (disposing)
+                    {
+                        // Managed resources cleanup
+                        DetachEvents();
+
+                        // Clear any pending tasks
+                        System.Diagnostics.Debug.WriteLine("[EventCoordinator] Disposed - all events detached");
+                    }
+
+                    // Unmanaged resources cleanup (if any)
+
                     _disposed = true;
-                    
-                    //("[EventCoordinator] Disposed");
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //($"[EventCoordinator] Dispose error: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[EventCoordinator] Dispose error: {ex.Message}");
                 }
             }
         }

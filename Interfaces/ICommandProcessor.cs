@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using QuadroAIPilot.Modes;
 
 namespace QuadroAIPilot.Interfaces
 {
@@ -13,6 +14,9 @@ namespace QuadroAIPilot.Interfaces
         
         // WebView management
         void SetWebViewManager(IWebViewManager webViewManager);
+        
+        // Mode management
+        void SetModeManager(ModeManager modeManager);
         
         // Events
         event EventHandler<CommandProcessResult>? CommandProcessed;

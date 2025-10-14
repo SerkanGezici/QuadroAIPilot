@@ -163,6 +163,11 @@ namespace QuadroAIPilot.Services
                 _logger.LogInformation("Dosyaya yazılıyor...");
                 await File.WriteAllBytesAsync(_profileFilePath, encryptedData);
                 
+                // Ayrıca düz JSON olarak da kaydet (UserNameHelper için)
+                var plainJsonPath = Path.Combine(_profileDirectory, "profile.json");
+                await File.WriteAllTextAsync(plainJsonPath, json);
+                _logger.LogInformation("Düz JSON da kaydedildi: {0}", plainJsonPath);
+                
                 // Dosyanın oluşturulduğunu kontrol et
                 var fileExists = File.Exists(_profileFilePath);
                 _logger.LogInformation("Dosya oluşturuldu mu: {0}", fileExists);
@@ -207,6 +212,13 @@ namespace QuadroAIPilot.Services
                 if (File.Exists(_profileFilePath))
                 {
                     File.Delete(_profileFilePath);
+                }
+                
+                // Düz JSON dosyasını da sil
+                var plainJsonPath = Path.Combine(_profileDirectory, "profile.json");
+                if (File.Exists(plainJsonPath))
+                {
+                    File.Delete(plainJsonPath);
                 }
 
                 // Profil fotoğrafını sil

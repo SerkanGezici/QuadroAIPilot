@@ -57,15 +57,24 @@ namespace QuadroAIPilot.Services.WebServices
             {
                 Debug.WriteLine($"[WebContentService] Processing request: {request.Query}");
 
-                // Check cache first
+                // Check cache first (skip for news content)
                 var cacheKey = GenerateCacheKey(request);
-                var (found, cachedContent) = await _cache.TryGetAsync<WebContent>(cacheKey);
                 
-                if (found && cachedContent != null)
+                // Haber içeriği için cache'i atla
+                if (request.PreferredType != ContentType.News)
                 {
-                    Debug.WriteLine($"[WebContentService] Cache hit for: {request.Query}");
-                    cachedContent.IsFromCache = true;
-                    return cachedContent;
+                    var (found, cachedContent) = await _cache.TryGetAsync<WebContent>(cacheKey);
+                    
+                    if (found && cachedContent != null)
+                    {
+                        Debug.WriteLine($"[WebContentService] Cache hit for: {request.Query}");
+                        cachedContent.IsFromCache = true;
+                        return cachedContent;
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"[WebContentService] Cache skipped for news content: {request.Query}");
                 }
 
                 // Find suitable provider
@@ -95,8 +104,11 @@ namespace QuadroAIPilot.Services.WebServices
                                 new SummaryOptions { MaxSentences = 3 });
                         }
 
-                        // Cache the result
-                        await _cache.SetAsync(cacheKey, content);
+                        // Cache the result (skip for news content)
+                        if (content.Type != ContentType.News)
+                        {
+                            await _cache.SetAsync(cacheKey, content);
+                        }
                         
                         return content;
                     }

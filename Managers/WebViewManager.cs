@@ -287,8 +287,7 @@ namespace QuadroAIPilot.Managers
                         var source = root.TryGetProperty("source", out var sourceElement) ? sourceElement.GetString() : "unknown";
                         LogService.LogDebug($"[WebViewManager] TTS completed notification received from: {source}");
                         
-                        // TTS state'i sıfırla
-                        TextToSpeechService.ResetEdgeTTSState();
+                        // TTS state'i otomatik olarak SpeechCompleted event'inde sıfırlanır
                         
                         // SpeechCompleted event'ini tetikle
                         _ = Task.Run(() => 
@@ -307,15 +306,15 @@ namespace QuadroAIPilot.Managers
                     if (action == "webSpeechResult")
                     {
                         LogService.LogDebug("[WebViewManager] webSpeechResult action alındı");
-                        
-                        if (root.TryGetProperty("text", out var textProp) && 
+
+                        if (root.TryGetProperty("text", out var textProp) &&
                             root.TryGetProperty("isFinal", out var isFinalProp))
                         {
                             var text = textProp.GetString();
                             var isFinal = isFinalProp.GetBoolean();
-                            
+
                             LogService.LogDebug($"[WebViewManager] webSpeechResult - Text: '{text}', IsFinal: {isFinal}");
-                            
+
                             // WebSpeechBridge'e ilet
                             var webSpeechBridge = DictationManager.GetWebSpeechBridge();
                             if (webSpeechBridge != null)
@@ -323,7 +322,7 @@ namespace QuadroAIPilot.Managers
                                 if (!string.IsNullOrWhiteSpace(text))
                                 {
                                     LogService.LogDebug("[WebViewManager] WebSpeechBridge'e gönderiliyor");
-                                    _ = Task.Run(async () => 
+                                    _ = Task.Run(async () =>
                                         await webSpeechBridge.HandleWebSpeechResult(text, isFinal));
                                 }
                                 else
@@ -343,16 +342,6 @@ namespace QuadroAIPilot.Managers
                         return;
                     }
                     
-                    // Web Speech API fallback isteği
-                    if (action == "fallbackToWinH")
-                    {
-                        var dictationManager = ServiceContainer.GetService<IDictationManager>();
-                        if (dictationManager != null)
-                        {
-                            dictationManager.StartDictation();
-                        }
-                        return;
-                    }
                     
                     // Execute command from Web Speech
                     if (action == "executeCommand")
@@ -368,6 +357,94 @@ namespace QuadroAIPilot.Managers
                                     _ = Task.Run(async () => 
                                         await commandProcessor.ProcessCommandAsync(text));
                                 }
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // Speak action - JavaScript'ten gelen TTS isteği
+                    if (action == "speak")
+                    {
+                        if (root.TryGetProperty("text", out var textProp))
+                        {
+                            var text = textProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                LogService.LogDebug($"[WebViewManager] Speak action received: {text}");
+                                
+                                // TextToSpeechService kullan
+                                _ = Task.Run(async () => 
+                                {
+                                    await TextToSpeechService.SpeakTextAsync(text);
+                                });
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // SpeakTextWithUserName action - Kullanıcı adıyla TTS
+                    if (action == "speakTextWithUserName")
+                    {
+                        if (root.TryGetProperty("text", out var textProp))
+                        {
+                            var text = textProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                // Kullanıcı adıyla formatla
+                                bool includeComma = true;
+                                if (root.TryGetProperty("includeComma", out var commaProp))
+                                {
+                                    includeComma = commaProp.GetBoolean();
+                                }
+                                
+                                var formattedText = Helpers.UserNameHelper.FormatMessageWithUserName(text, includeComma);
+                                LogService.LogDebug($"[WebViewManager] SpeakTextWithUserName: {formattedText}");
+                                
+                                // TextToSpeechService kullan
+                                _ = Task.Run(async () => 
+                                {
+                                    await TextToSpeechService.SpeakTextAsync(formattedText);
+                                });
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // Ready sound action - Uyandırma/uyuma sesleri için
+                    if (action == "speakReadySound")
+                    {
+                        if (root.TryGetProperty("text", out var textProp) &&
+                            root.TryGetProperty("soundType", out var soundTypeProp))
+                        {
+                            var text = textProp.GetString();
+                            var soundType = soundTypeProp.GetString();
+                            
+                            // Kullanıcı adı eklenecek mi kontrol et
+                            var useUserName = false;
+                            if (root.TryGetProperty("useUserName", out var useUserNameProp))
+                            {
+                                useUserName = useUserNameProp.GetBoolean();
+                            }
+                            
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                // Uyandırma metinlerine kullanıcı adını ekle
+                                if (useUserName && soundType == "wake")
+                                {
+                                    text = Helpers.UserNameHelper.FormatMessageWithUserName(text, false);
+                                }
+                                
+                                LogService.LogDebug($"[WebViewManager] Ready sound TTS: {soundType} - {text}");
+                                
+                                // TextToSpeechService kullan
+                                _ = Task.Run(async () => 
+                                {
+                                    await TextToSpeechService.SpeakTextAsync(text);
+                                    
+                                    // TTS bittiğinde JavaScript'e callback yap
+                                    await Task.Delay(500); // Kısa bekleme
+                                    SendMessage(new { action = "readySoundCompleted", soundType });
+                                });
                             }
                         }
                         return;
@@ -389,12 +466,16 @@ namespace QuadroAIPilot.Managers
             {
                 var json = JsonSerializer.Serialize(message);
                 
-                // Mesaj loglama - sadece özet bilgi
-                // Mesaj loglama devre dışı - sadece kritik hatalar loglanacak
+                // Mod değişikliği mesajlarını logla
+                if (json.Contains("modeChanged"))
+                {
+                    LogService.LogInfo($"[WebViewManager] Sending modeChanged message: {json}");
+                }
                 
                 // UI thread'inde olduğundan emin olalım
                 if (_dispatcherQueue?.HasThreadAccess == false)
                 {
+                    LogService.LogDebug("[WebViewManager] Not on UI thread, enqueueing message");
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         try
@@ -406,10 +487,15 @@ namespace QuadroAIPilot.Managers
                                 return;
                             }
                             _webView.CoreWebView2.PostWebMessageAsString(json);
+                            
+                            if (json.Contains("modeChanged"))
+                            {
+                                LogService.LogInfo("[WebViewManager] modeChanged message posted to WebView");
+                            }
                         }
                         catch (Exception ex)
                         {
-                            LogService.LogDebug($" UI thread mesaj gönderme hatası: {ex.Message}");
+                            LogService.LogError($"[WebViewManager] UI thread mesaj gönderme hatası: {ex.Message}");
                         }
                     });
                 }
@@ -422,11 +508,16 @@ namespace QuadroAIPilot.Managers
                         return;
                     }
                     _webView.CoreWebView2.PostWebMessageAsString(json);
+                    
+                    if (json.Contains("modeChanged"))
+                    {
+                        LogService.LogInfo($"[WebViewManager] modeChanged message posted to WebView (main thread): {json}");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogService.LogDebug($" Mesaj gönderme hatası: {ex.Message}");
+                LogService.LogError($"[WebViewManager] Mesaj gönderme hatası: {ex.Message}");
             }
         }
 
@@ -543,6 +634,11 @@ namespace QuadroAIPilot.Managers
         {
             try
             {
+                // UI thread'de olduğumuzdan emin olalım
+                if (_dispatcherQueue?.HasThreadAccess == false)
+                {
+                    LogService.LogDebug("[WebViewManager] PerformSpeakWithEdgeTTSAsync UI thread'de değil!");
+                }
                 
                 // Mevcut Edge sesini belirle
                 string voiceName = "Emel"; // Varsayılan
@@ -555,7 +651,7 @@ namespace QuadroAIPilot.Managers
                     voiceName = "Emel";
                 }
                 
-                // ÇÖZÜM: Sadece SendMessage kullan, ExecuteScript çağrısını kaldır
+                // ÇÖZÜM: UI thread kontrolü yapıldı, güvenli şekilde SendMessage kullan
                 // JavaScript'e speakWithEdge mesajı gönder
                 SendMessage(new { action = "speakWithEdge", text = text, voice = voiceName });
                 
@@ -577,10 +673,10 @@ namespace QuadroAIPilot.Managers
             // Audio data'yı base64'e çevir
             string base64Audio = Convert.ToBase64String(audioData);
             
-            // Eğer text verilmemişse TextToSpeechService'den al
+            // Text boşsa boş string kullan
             if (string.IsNullOrEmpty(text))
             {
-                text = TextToSpeechService.GetCurrentTTSText();
+                text = "";
             }
 
             // UI thread'inde olduğundan emin olalım
@@ -651,6 +747,19 @@ namespace QuadroAIPilot.Managers
             catch (Exception ex)
             {
                 LogService.LogDebug($" PerformClearTextForceAsync hatası: {ex.Message}");
+            }
+        }
+        
+        public void StopTTS()
+        {
+            try
+            {
+                LogService.LogDebug("[WebViewManager] StopTTS çağrıldı");
+                SendMessage(new { action = "stopTTS" });
+            }
+            catch (Exception ex)
+            {
+                LogService.LogError($"[WebViewManager] StopTTS hatası: {ex.Message}");
             }
         }
         
@@ -769,7 +878,21 @@ namespace QuadroAIPilot.Managers
         {
             return await ErrorHandler.SafeExecuteAsync(async () =>
             {
-                if (_disposed || _webView?.CoreWebView2 == null) return string.Empty;
+                if (_disposed) return string.Empty;
+
+                // SECURITY FIX: Script validation
+                if (!SecurityValidator.IsScriptSafe(script))
+                {
+                    LogService.LogWarning("[SECURITY] Unsafe script blocked in ExecuteScriptAsync");
+                    return string.Empty;
+                }
+
+                // WebView veya CoreWebView2 null kontrolü
+                if (_webView == null)
+                {
+                    LogService.LogDebug("[WebViewManager] ExecuteScriptAsync: _webView is null");
+                    return string.Empty;
+                }
                 
                 // UI thread'inde olduğundan emin olalım
                 if (_dispatcherQueue?.HasThreadAccess == false)
@@ -777,27 +900,88 @@ namespace QuadroAIPilot.Managers
                     // TaskCompletionSource kullanarak senkron bekle
                     var tcs = new TaskCompletionSource<string>();
                     
-                    _dispatcherQueue.TryEnqueue(async () =>
+                    bool enqueued = _dispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, async () =>
                     {
                         try
                         {
+                            // UI thread'de tekrar kontrol
+                            if (_disposed || _webView == null) 
+                            {
+                                tcs.SetResult(string.Empty);
+                                return;
+                            }
+                            
+                            // CoreWebView2 kontrolü
+                            if (_webView.CoreWebView2 == null)
+                            {
+                                LogService.LogDebug("[WebViewManager] ExecuteScriptAsync: CoreWebView2 is null in UI thread");
+                                tcs.SetResult(string.Empty);
+                                return;
+                            }
+                            
                             var result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
-                            tcs.SetResult(result);
+                            
+                            // JSON string'i parse et ve log'la
+                            if (!string.IsNullOrEmpty(result) && result != "null" && result != "undefined")
+                            {
+                                try
+                                {
+                                    // JSON string'inden tırnak işaretlerini kaldır
+                                    var cleanResult = result.Trim('"');
+                                    LogService.LogInfo($"[WebViewManager] ExecuteScriptAsync result (UI thread): {cleanResult}");
+                                }
+                                catch
+                                {
+                                    LogService.LogInfo($"[WebViewManager] ExecuteScriptAsync raw result (UI thread): {result}");
+                                }
+                            }
+                            
+                            tcs.SetResult(result ?? string.Empty);
                         }
                         catch (Exception ex)
                         {
-                            LogService.LogDebug($" ExecuteScriptAsync hatası: {ex.Message}");
-                            tcs.SetException(ex);
+                            LogService.LogDebug($"[WebViewManager] ExecuteScriptAsync hatası: {ex.Message}");
+                            tcs.SetResult(string.Empty); // Exception yerine empty string dön
                         }
                     });
+                    
+                    if (!enqueued)
+                    {
+                        LogService.LogDebug("[WebViewManager] ExecuteScriptAsync: Failed to enqueue to UI thread");
+                        return string.Empty;
+                    }
                     
                     return await tcs.Task;
                 }
                 else
                 {
-                    return await _webView.CoreWebView2.ExecuteScriptAsync(script);
+                    // Zaten UI thread'deyiz
+                    if (_webView.CoreWebView2 == null)
+                    {
+                        LogService.LogDebug("[WebViewManager] ExecuteScriptAsync: CoreWebView2 is null");
+                        return string.Empty;
+                    }
+                    
+                    var result = await _webView.CoreWebView2.ExecuteScriptAsync(script) ?? string.Empty;
+                    
+                    // JSON string'i parse et ve log'la
+                    if (!string.IsNullOrEmpty(result) && result != "null" && result != "undefined")
+                    {
+                        try
+                        {
+                            // JSON string'inden tırnak işaretlerini kaldır
+                            var cleanResult = result.Trim('"');
+                            LogService.LogInfo($"[WebViewManager] ExecuteScriptAsync result: {cleanResult}");
+                        }
+                        catch
+                        {
+                            LogService.LogInfo($"[WebViewManager] ExecuteScriptAsync raw result: {result}");
+                        }
+                    }
+                    
+                    return result;
                 }
-            }, "WebViewManager.ExecuteScriptAsync");
+            }, "WebViewManager.ExecuteScriptAsync", string.Empty);
         }
 
         [DllImport("user32.dll")]

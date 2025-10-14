@@ -128,15 +128,15 @@ namespace QuadroAIPilot.Commands
                     int mailIndex = ExtractMailIndexFromCommand(text, 1);
                     return await DetailedMailRead(reader, mailIndex);
                 }
-                else if (text.Contains("bugünkü toplantılarım neler") ||
-                         text.Contains("bugünkü toplantıların neler") ||
-                         text.Contains("bugün toplantı"))
+                // ESNEK TOPLANTI KONTROLLERI
+                else if ((text.Contains("bugün") || text.Contains("bu gün")) && text.Contains("toplantı"))
                 {
+                    Debug.WriteLine("[LocalOutlookCommand] Bugünkü toplantı komutu algılandı (esnek)");
                     return await GetTodayMeetings(reader);
                 }
-                else if (text.Contains("bu haftaki toplantılarım neler") ||
-                         text.Contains("bu hafta toplantı"))
+                else if ((text.Contains("hafta") || text.Contains("haftalık")) && text.Contains("toplantı"))
                 {
+                    Debug.WriteLine("[LocalOutlookCommand] Haftalık toplantı komutu algılandı (esnek)");
                     return await GetWeekMeetings(reader);
                 }
                 
@@ -235,8 +235,7 @@ namespace QuadroAIPilot.Commands
             try
             {
                 
-                // Edge TTS'i zorla ve Emel sesini kullan
-                TextToSpeechService.UseEdgeTTS = true;
+                // Emel sesini kullan
                 TextToSpeechService.CurrentEdgeVoice = "tr-TR-EmelNeural";
                 await TextToSpeechService.SpeakTextAsync("E postalarınızı analiz ediyorum...");
                 
@@ -251,8 +250,6 @@ namespace QuadroAIPilot.Commands
                 
                 if (!recentEmails.Any() && !unreadEmails.Any())
                 {
-                    // Edge TTS'i zorla ve Emel sesini kullan
-                    TextToSpeechService.UseEdgeTTS = true;
                     TextToSpeechService.CurrentEdgeVoice = "tr-TR-EmelNeural";
                     await TextToSpeechService.SpeakTextAsync("E posta bulunamadı.");
                     return true;
@@ -265,8 +262,7 @@ namespace QuadroAIPilot.Commands
                 string voiceSummary = CreateVoiceSummary(prioritizedEmails);
                 
                 // OPTIMIZASYON: TTS başlat ama bekleme, detaylı listeyi hazırla
-                // Edge TTS'i zorla ve Emel sesini kullan
-                TextToSpeechService.UseEdgeTTS = true;
+                // Emel sesini kullan
                 TextToSpeechService.CurrentEdgeVoice = "tr-TR-EmelNeural";
                 var ttsTask = TextToSpeechService.SpeakTextAsync(voiceSummary);
                 
@@ -1384,6 +1380,7 @@ namespace QuadroAIPilot.Commands
                 {
                     await TextToSpeechService.SpeakTextAsync("Okunmamış e postanız yok.");
                     TextToSpeechService.SendToOutput(CleanForOutput("📧 Okunmamış E Posta Yok"));
+                    TextToSpeechService.SendToOutput(CleanForOutput($"ℹ️ Toplam {unreadEmails.Count} okunmamış e-posta"));
                     return true;
                 }
                 
@@ -1723,7 +1720,46 @@ namespace QuadroAIPilot.Commands
                 return true;
             }
             
-            // 2. Ana komutlar (fuzzy matching için)
+            // 2. ESNEK KONTROLLER - Kombinasyon bazlı
+            // Bugün + toplantı kombinasyonu
+            if ((text.Contains("bugün") || text.Contains("bu gün")) && text.Contains("toplantı"))
+            {
+                return true;
+            }
+            
+            // Hafta + toplantı kombinasyonu
+            if ((text.Contains("hafta") || text.Contains("haftalık")) && text.Contains("toplantı"))
+            {
+                return true;
+            }
+            
+            // Yarın + toplantı kombinasyonu
+            if (text.Contains("yarın") && text.Contains("toplantı"))
+            {
+                return true;
+            }
+            
+            // Mail/e-posta + göster/oku kombinasyonu
+            if ((text.Contains("mail") || text.Contains("e-posta") || text.Contains("e posta") || text.Contains("eposta")) &&
+                (text.Contains("göster") || text.Contains("oku") || text.Contains("listele") || text.Contains("getir") || text.Contains("bak")))
+            {
+                return true;
+            }
+            
+            // Okunmamış + mail kombinasyonu
+            if (text.Contains("okunmamış") && (text.Contains("mail") || text.Contains("e-posta") || text.Contains("e posta")))
+            {
+                return true;
+            }
+            
+            // Gönderilen/Gönderilmiş + mail kombinasyonu
+            if ((text.Contains("gönderilen") || text.Contains("gönderilmiş") || text.Contains("gönderdiğim")) && 
+                (text.Contains("mail") || text.Contains("e-posta") || text.Contains("e posta")))
+            {
+                return true;
+            }
+            
+            // 3. Ana komutlar (fuzzy matching için)
             var coreCommands = new[] {
                 "maillerimi göster",
                 "toplantılarım neler",
@@ -1731,7 +1767,7 @@ namespace QuadroAIPilot.Commands
                 "gönderilmiş mailleri göster"
             };
             
-            // Bilinen varyasyonlar (exact matching için)
+            // 4. Bilinen varyasyonlar (exact matching için - geriye uyumluluk)
             var variations = new[] {
                 "okunmamış maillerimi göster",
                 "okunmamış maillerini göster",
@@ -1755,7 +1791,7 @@ namespace QuadroAIPilot.Commands
                 "yarınki toplantılarım neler"
             };
             
-            // 1. Önce variations'da exact match ara
+            // Önce variations'da exact match ara
             foreach (var variation in variations)
             {
                 if (text.Contains(variation))
@@ -1764,7 +1800,7 @@ namespace QuadroAIPilot.Commands
                 }
             }
             
-            // 2. Core commands'da fuzzy match ara (daha katı threshold)
+            // Core commands'da fuzzy match ara (daha katı threshold)
             // Ancak özel kelimeler varsa fuzzy matching yapmayız
             if (!text.Contains("gönderilmiş") && !text.Contains("gönderilen") && !text.Contains("okunmamış"))
             {

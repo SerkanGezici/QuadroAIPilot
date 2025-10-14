@@ -8,13 +8,13 @@ namespace QuadroAIPilot.Commands
 {
     public class EdgeTTSCommand : ICommand
     {
-        private readonly EdgeTTSService _edgeTTSService;
+        private readonly EdgeTTSPythonBridge _edgeTTSPythonBridge;
         public string CommandText { get; }
         
         public EdgeTTSCommand(string commandText)
         {
             CommandText = commandText;
-            _edgeTTSService = new EdgeTTSService();
+            _edgeTTSPythonBridge = new EdgeTTSPythonBridge();
         }
         
         public async Task<bool> ExecuteAsync()
@@ -40,7 +40,7 @@ namespace QuadroAIPilot.Commands
                 
                 // Ses adını belirle
                 string voiceName;
-                if (EdgeTTSService.Voices.All.TryGetValue(voiceType, out var mappedVoice))
+                if (EdgeTTSPythonBridge.Voices.All.TryGetValue(voiceType, out var mappedVoice))
                 {
                     voiceName = mappedVoice;
                 }
@@ -67,9 +67,9 @@ namespace QuadroAIPilot.Commands
                 TextToSpeechService.SendToOutput($"🔊 Edge TTS başlatılıyor: {displayName}");
                 await webViewManager.AppendFeedback($"[Edge TTS] {displayName} sesi ile konuşuluyor...");
                 
-                // Edge TTS ile sesi üret
-                Debug.WriteLine($"[EdgeTTSCommand] TTS başlatılıyor - Ses: {voiceName}, Metin: {text}");
-                var audioData = await _edgeTTSService.SynthesizeSpeechAsync(text, voiceName);
+                // Python Edge TTS ile sesi üret
+                Debug.WriteLine($"[EdgeTTSCommand] Python TTS başlatılıyor - Ses: {voiceName}, Metin: {text}");
+                var audioData = await _edgeTTSPythonBridge.SynthesizeSpeechAsync(text, voiceName);
                 
                 if (audioData == null || audioData.Length == 0)
                 {

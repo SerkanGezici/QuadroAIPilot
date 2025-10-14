@@ -16,7 +16,6 @@ namespace QuadroAIPilot.Interfaces
         
         // Configuration
         void SetWebViewManager(IWebViewManager webViewManager);
-        void SetWritingModeEngine(string engine);
 
         // Control methods
         void StartDictation();
@@ -34,9 +33,11 @@ namespace QuadroAIPilot.Interfaces
         // State management
         void SetProcessingComplete();
         void UpdateTtsResponse(string response);
+        void UpdateTtsContent(string content);
+        void ResetStateForModeChange();
 
         // Events
-        event EventHandler<string>? TextRecognized;
+        // TextRecognized event'i kaldırıldı - artık ModeManager üzerinden işleniyor
         event EventHandler<DictationStateChangedEventArgs>? StateChanged;
     }
 

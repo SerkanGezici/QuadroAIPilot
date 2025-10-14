@@ -136,6 +136,28 @@ namespace QuadroAIPilot.Infrastructure
         {
             try
             {
+                // EntryPointNotFoundException için özel işlem
+                if (exception is EntryPointNotFoundException entryEx)
+                {
+                    _logger?.LogWarning("EntryPointNotFoundException in {Context}: {Message}", context, entryEx.Message);
+                    SimpleCrashLogger.LogException(entryEx, $"EntryPointNotFound-{context}");
+                    
+                    // Stack trace'den hangi API çağrısından geldiğini bulmaya çalış
+                    var stackTrace = exception.StackTrace;
+                    if (!string.IsNullOrEmpty(stackTrace))
+                    {
+                        if (stackTrace.Contains("WindowsApiService"))
+                            _logger?.LogWarning("Missing WinAPI function in WindowsApiService");
+                        else if (stackTrace.Contains("NativeMAPIService"))
+                            _logger?.LogWarning("Missing MAPI function in NativeMAPIService");
+                        else if (stackTrace.Contains("DwmExtendFrameIntoClientArea"))
+                            _logger?.LogWarning("Missing DWM API function - Windows version might not support DWM");
+                    }
+                    
+                    // Bu tip hatalar genellikle kritik değil, devam edilebilir
+                    return;
+                }
+                
                 LoggingService.LogUnhandledException(exception, context);
                 _logger?.LogError(exception, "Exception handled manually in context: {Context}", context);
             }

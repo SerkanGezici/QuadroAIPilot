@@ -386,7 +386,8 @@ namespace QuadroAIPilot.Services
             try
             {
                 uint volumeLevel = (uint)Math.Round(level);
-                AudioDuckingManager.SetMicrophoneVolume(volumeLevel);
+                // AudioDuckingManager kaldırıldı - Windows zaten echo cancellation yapıyor
+                // AudioDuckingManager.SetMicrophoneVolume(volumeLevel);
                 
                 LogService.LogVerbose($"[SmartMicrophoneAdjuster] Mikrofon seviyesi ayarlandı: {volumeLevel}%");
             }
@@ -424,7 +425,8 @@ namespace QuadroAIPilot.Services
                 // Mikrofonu normale döndür
                 try
                 {
-                    AudioDuckingManager.SetMicrophoneVolume((uint)NORMAL_MIC_LEVEL);
+                    // AudioDuckingManager kaldırıldı - Windows zaten echo cancellation yapıyor
+                    // AudioDuckingManager.SetMicrophoneVolume((uint)NORMAL_MIC_LEVEL);
                 }
                 catch
                 {

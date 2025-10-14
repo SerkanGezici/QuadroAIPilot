@@ -9,6 +9,8 @@
     "128": "icon128.png"
   },
   "permissions": [
+    "tabs",
+    "activeTab",
     "contextMenus",
     "clipboardWrite",
     "notifications",

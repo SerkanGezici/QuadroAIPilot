@@ -3,6 +3,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -197,23 +198,47 @@ namespace QuadroAIPilot.Services
         {
             try
             {
+                Debug.WriteLine("[HotkeySender] LockComputer çağrıldı");
+
                 // Windows'un yerleşik kilitleme API'si
-                if (!LockWorkStation())
+                bool lockResult = LockWorkStation();
+                Debug.WriteLine($"[HotkeySender] LockWorkStation() sonucu: {lockResult}");
+
+                if (!lockResult)
                 {
+                    int error = Marshal.GetLastWin32Error();
+                    Debug.WriteLine($"[HotkeySender] LockWorkStation() başarısız! Win32 Error: {error}");
+                    Debug.WriteLine($"[HotkeySender] Fallback: Win+L tuş kombinasyonu gönderiliyor");
+
                     // Eğer başarısız olursa Win+L ile deneyelim
                     keybd_event(VK_LWIN, 0, 0, 0);
+                    Thread.Sleep(50);
                     keybd_event(VK_L, 0, 0, 0);
+                    Thread.Sleep(50);
                     keybd_event(VK_L, 0, KEYEVENTF_KEYUP, 0);
+                    Thread.Sleep(50);
                     keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
+                    Debug.WriteLine($"[HotkeySender] Win+L gönderildi");
+                }
+                else
+                {
+                    Debug.WriteLine($"[HotkeySender] Bilgisayar başarıyla kilitlendi (LockWorkStation API)");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"[HotkeySender] LockComputer exception: {ex.Message}");
+                Debug.WriteLine($"[HotkeySender] Son çare: Win+L tuş kombinasyonu gönderiliyor");
+
                 // Son çare olarak yine Win+L
                 keybd_event(VK_LWIN, 0, 0, 0);
+                Thread.Sleep(50);
                 keybd_event(VK_L, 0, 0, 0);
+                Thread.Sleep(50);
                 keybd_event(VK_L, 0, KEYEVENTF_KEYUP, 0);
+                Thread.Sleep(50);
                 keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
+                Debug.WriteLine($"[HotkeySender] Win+L gönderildi (exception fallback)");
             }
         }
 
@@ -629,14 +654,29 @@ namespace QuadroAIPilot.Services
         {
             try
             {
-                // Güvenlik kontrolü - path traversal ve güvenli olmayan yollar
+                // CLSID kontrolü - Windows özel klasörleri için (örn: ::{20D04FE0-3AEA-1069-A2D8-08002B30309D})
+                if (folderPath.StartsWith("::"))
+                {
+                    Debug.WriteLine($"[HotkeySender] CLSID algılandı: {folderPath}");
+                    // CLSID için doğru syntax: explorer.exe shell:::{CLSID}
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = folderPath, // Doğrudan CLSID'yi argüman olarak geç
+                        UseShellExecute = true
+                    });
+                    Debug.WriteLine($"[HotkeySender] CLSID klasörü açıldı: {folderPath}");
+                    return;
+                }
+
+                // Güvenlik kontrolü - path traversal ve güvenli olmayan yollar (normal yollar için)
                 if (!string.IsNullOrWhiteSpace(folderPath) && !SecurityValidator.IsPathSafe(folderPath))
                 {
                     LoggingService.LogWarning($"Unsafe folder path blocked: {folderPath}");
                     return;
                 }
 
-                // Sadece explorer.exe ile aç, açık pencereyi öne getirme WinUI 3 ve .NET 8 ile desteklenmiyor
+                // Normal klasörler için explorer.exe ile aç
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "explorer.exe",
@@ -658,18 +698,13 @@ namespace QuadroAIPilot.Services
             {
                 string path = folderName.ToLowerInvariant() switch
                 {
-                    "belgelerim" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "belgeler" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "resimlerim" => Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-                    "resimler" => Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-                    "müziklerim" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
-                    "müzik" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
-                    "videolarım" => Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
-                    "videolar" => Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
-                    "indirilenler" => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
-                    "downloads" => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
-                    "masaüstü" => Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    "desktop" => Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "belgelerim" or "belgelerimi" or "belgeler" or "belgeleri" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "resimlerim" or "resimlerimi" or "resimler" or "resimleri" => Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                    "müziklerim" or "müziğim" or "müziğimi" or "müzik" or "müziği" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                    "videolarım" or "videolarımı" or "videolar" or "videoları" => Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
+                    "indirilenler" or "indirilenleri" or "downloads" => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                    "masaüstü" or "masaüstünü" or "desktop" => Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "bilgisayarım" or "bilgisayarımı" or "this pc" or "bu bilgisayar" => "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}",
                     _ => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
                 };
 
@@ -1286,6 +1321,54 @@ namespace QuadroAIPilot.Services
                         case "pgdn":
                         case "sayfa aşağı":
                             mainKey = VK_PGDN;
+                            break;
+                        // Fonksiyon tuşları
+                        case "f1":
+                            mainKey = 0x70;
+                            break;
+                        case "f2":
+                            mainKey = VK_F2;
+                            break;
+                        case "f3":
+                            mainKey = 0x72;
+                            break;
+                        case "f4":
+                            mainKey = VK_F4;
+                            break;
+                        case "f5":
+                            mainKey = VK_F5;
+                            break;
+                        case "f6":
+                            mainKey = 0x75;
+                            break;
+                        case "f7":
+                            mainKey = 0x76;
+                            break;
+                        case "f8":
+                            mainKey = 0x77;
+                            break;
+                        case "f9":
+                            mainKey = VK_F9;
+                            break;
+                        case "f10":
+                            mainKey = 0x79;
+                            break;
+                        case "f11":
+                            mainKey = 0x7A;
+                            break;
+                        case "f12":
+                            mainKey = 0x7B;
+                            break;
+                        // Delete tuşu
+                        case "delete":
+                        case "del":
+                        case "sil":
+                            mainKey = VK_DELETE;
+                            break;
+                        case "insert":
+                        case "ins":
+                        case "ekle":
+                            mainKey = VK_INSERT;
                             break;
                         // Tek karakter tuşlar
                         default:

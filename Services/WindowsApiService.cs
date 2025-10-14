@@ -71,6 +71,9 @@ namespace QuadroAIPilot.Services
         [DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
         [DllImport("user32.dll")]
         private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
@@ -110,6 +113,59 @@ namespace QuadroAIPilot.Services
             public int Y;
         }
 
+        // SendInput için gerekli yapılar
+        [StructLayout(LayoutKind.Sequential)]
+        private struct INPUT
+        {
+            public int type;
+            public InputUnion u;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        private struct InputUnion
+        {
+            [FieldOffset(0)]
+            public MOUSEINPUT mi;
+            [FieldOffset(0)]
+            public KEYBDINPUT ki;
+            [FieldOffset(0)]
+            public HARDWAREINPUT hi;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HARDWAREINPUT
+        {
+            public uint uMsg;
+            public ushort wParamL;
+            public ushort wParamH;
+        }
+
+        // SendInput sabitleri
+        private const int INPUT_KEYBOARD = 1;
+        private const uint KEYEVENTF_UNICODE = 0x0004;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
+
         // Fare olayları için sabitler
         public const int MOUSEEVENTF_LEFTDOWN = 0x02;
         public const int MOUSEEVENTF_LEFTUP = 0x04;
@@ -118,7 +174,6 @@ namespace QuadroAIPilot.Services
 
         // Klavye olayları için sabitler
         private const int KEYEVENTF_EXTENDEDKEY = 0x01;
-        private const int KEYEVENTF_KEYUP = 0x02;
         private const byte VK_ESCAPE = 0x1B;        // Pencere davranışı için sabitler
         private const int SW_SHOW = 5;
         private const int SW_RESTORE = 9;
@@ -738,7 +793,7 @@ namespace QuadroAIPilot.Services
             try
             {
                 keybd_event(VK_ESCAPE, 0, KEYEVENTF_EXTENDEDKEY, 0);
-                keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0);
+                keybd_event(VK_ESCAPE, 0, (int)KEYEVENTF_KEYUP, 0);
                 // LogService.LogDebug("[WindowsApiService] ESC tuşu gönderildi");
             }
             catch
@@ -1129,15 +1184,80 @@ namespace QuadroAIPilot.Services
 
         public void SendText(string text)
         {
+            SendTextToActiveWindow(text);
+        }
+
+        /// <summary>
+        /// Aktif pencereye metin gönderir (Unicode destekli)
+        /// </summary>
+        public void SendTextToActiveWindow(string text)
+        {
             try
             {
-                // Implementation for sending text
-                // LogService.LogDebug($"[WindowsApiService] Sending text: {text}");
-                // Add actual text sending implementation here
+                if (string.IsNullOrEmpty(text))
+                    return;
+
+                LogService.LogDebug($"[WindowsApiService] Sending text to active window: {text}");
+
+                // Her karakter için INPUT array oluştur (down + up = 2 input per char)
+                var inputs = new List<INPUT>();
+
+                foreach (char c in text)
+                {
+                    // Key down
+                    var inputDown = new INPUT
+                    {
+                        type = INPUT_KEYBOARD,
+                        u = new InputUnion
+                        {
+                            ki = new KEYBDINPUT
+                            {
+                                wVk = 0,
+                                wScan = c,
+                                dwFlags = KEYEVENTF_UNICODE,
+                                time = 0,
+                                dwExtraInfo = IntPtr.Zero
+                            }
+                        }
+                    };
+                    inputs.Add(inputDown);
+
+                    // Key up
+                    var inputUp = new INPUT
+                    {
+                        type = INPUT_KEYBOARD,
+                        u = new InputUnion
+                        {
+                            ki = new KEYBDINPUT
+                            {
+                                wVk = 0,
+                                wScan = c,
+                                dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP,
+                                time = 0,
+                                dwExtraInfo = IntPtr.Zero
+                            }
+                        }
+                    };
+                    inputs.Add(inputUp);
+                }
+
+                // Tüm inputları gönder
+                if (inputs.Count > 0)
+                {
+                    uint result = SendInput((uint)inputs.Count, inputs.ToArray(), Marshal.SizeOf(typeof(INPUT)));
+                    if (result != inputs.Count)
+                    {
+                        LogService.LogDebug($"[WindowsApiService] SendInput partial success: {result}/{inputs.Count} inputs sent");
+                    }
+                    else
+                    {
+                        LogService.LogDebug($"[WindowsApiService] Text sent successfully: {text.Length} characters");
+                    }
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // LogService.LogDebug($"[WindowsApiService] SendText error: {ex.Message}");
+                LogService.LogError($"[WindowsApiService] SendTextToActiveWindow error: {ex.Message}", ex);
             }
         }
 
@@ -1330,34 +1450,34 @@ namespace QuadroAIPilot.Services
         private const byte LWA_COLORKEY = 0x01;
         private const byte LWA_ALPHA = 0x02;
         
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+        private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
         
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongW", SetLastError = true)]
+        private static extern int GetWindowLong32(IntPtr hWnd, int nIndex);
+        
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+        private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+        
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongW", SetLastError = true)]
+        private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
         
         // 32-bit uyumluluk için
         private static IntPtr GetWindowLongPtrWrapper(IntPtr hWnd, int nIndex)
         {
             if (IntPtr.Size == 8) // 64-bit
-                return GetWindowLongPtr(hWnd, nIndex);
+                return GetWindowLongPtr64(hWnd, nIndex);
             else // 32-bit
-                return new IntPtr(GetWindowLong(hWnd, nIndex));
+                return new IntPtr(GetWindowLong32(hWnd, nIndex));
         }
         
         private static IntPtr SetWindowLongPtrWrapper(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
         {
             if (IntPtr.Size == 8) // 64-bit
-                return SetWindowLongPtr(hWnd, nIndex, dwNewLong);
+                return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
             else // 32-bit
-                return new IntPtr(SetWindowLong(hWnd, nIndex, dwNewLong.ToInt32()));
+                return new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
         }
-        
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-        
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
         
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);

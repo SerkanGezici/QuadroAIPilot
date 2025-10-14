@@ -55,20 +55,6 @@ namespace QuadroAIPilot.Managers
         {
             _themeColors.Clear();
             
-            // Gradient Paradise (En Popüler 2025)
-            _themeColors.Add(AppTheme.GradientParadise, new ThemeColors
-            {
-                BackgroundGradient = "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
-                BackgroundColor = "#667eea", // Fallback color
-                BackgroundOpacity = 1.0, // Solid gradient
-                PrimaryColor = "#8b5cf6",
-                SecondaryColor = "rgba(255, 255, 255, 0.1)",
-                TextColor = "#ffffff",
-                BorderColor = "rgba(255, 255, 255, 0.2)",
-                GlowIntensity = 0.2,
-                BlurAmount = 30
-            });
-            
             // Dark Elegance (Koyu & Şık)
             _themeColors.Add(AppTheme.DarkElegance, new ThemeColors
             {
@@ -193,7 +179,7 @@ namespace QuadroAIPilot.Managers
         private ThemeColors GetThemeColors(AppTheme theme)
         {
             // Yeni tema sisteminde System tema yok
-            var colors = _themeColors.ContainsKey(theme) ? _themeColors[theme].Clone() : _themeColors[AppTheme.GradientParadise].Clone();
+            var colors = _themeColors.ContainsKey(theme) ? _themeColors[theme].Clone() : _themeColors[AppTheme.DarkElegance].Clone();
             
             // Kullanıcı ayarlarına göre dinamik değerleri güncelle
             var settings = _settingsManager.Settings;

@@ -174,8 +174,20 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            padding: 10px 150px 10px 60px;
+            padding: 10px 60px;
             min-height: 50px;
+        }
+        
+        .logo-title-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .app-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
         }
         
         h1 {
@@ -296,6 +308,19 @@
         #txtCikti:hover {
             border-color: var(--accent-color);
         }
+        
+        /* Output area mail item hover fix - güçlü kurallar */
+        #outputArea > div:hover,
+        #outputArea > div:active,
+        #outputArea > div:focus {
+            background: none !important;
+            background-color: transparent !important;
+            background-image: none !important;
+        }
+        
+        #outputArea div {
+            background: transparent !important;
+        }
 
         textarea::placeholder {
             color: var(--text-tertiary);
@@ -390,32 +415,66 @@
             margin-top: 6px;
             padding: 4px 8px;
             min-height: 32px;
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             border-radius: 10px;
             box-shadow: var(--elevation-1);
             position: relative;
             z-index: 10;
         }
         
-        .action-left, .action-right {
+        .action-left {
             flex: 1;
             display: flex;
+            justify-content: flex-start;
             align-items: center;
         }
         
-        .action-left {
-            justify-content: flex-start;
-        }
-        
         .action-center {
-            flex: 0 0 auto;
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         
         .action-right {
+            flex: 1;
+            display: flex;
             justify-content: flex-end;
+            align-items: center;
+        }
+        
+        /* Mod göstergesi stilleri */
+        .mode-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(59, 66, 82, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            opacity: 0.8;
+        }
+        
+        .mode-indicator .mode-icon {
+            font-size: 16px;
+        }
+        
+        /* Dikte durumu göstergesi stilleri */
+        .dictation-state-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(59, 66, 82, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            opacity: 0.8;
+        }
+        
+        .dictation-state-indicator .state-icon {
+            font-size: 16px;
         }
         
         /* Inline TTS controls */
@@ -429,24 +488,25 @@
             display: flex !important;
         }
         
+        /* Dikte button specific styles */
+        #dikteButton {
+            min-width: 110px;
+            padding: 6px 14px;
+            height: 32px;
+        }
+        
         /* Recording state */
         #dikteButton.recording {
             background: #dc3545 !important;
             color: white;
             animation: recording-pulse 1.5s ease-in-out infinite;
             position: relative;
-            min-width: 140px;
-            padding: 6px 12px;
         }
         
         #dikteButton.recording:hover {
             background: #c82333 !important;
         }
         
-        /* Execute button */
-        #executeButton {
-            min-width: 100px;
-        }
         
         /* Scrollbar styles */
         ::-webkit-scrollbar {
@@ -698,7 +758,10 @@
     <div class="ai-container">
         <!-- Header Section -->
         <div class="ai-header">
-            <h1>QuadroAI Pilot</h1>
+            <div class="logo-title-container">
+                <img src="icon128.png" alt="QuadroAI Logo" class="app-logo">
+                <h1>QuadroAI Pilot</h1>
+            </div>
             <button id="settingsButton" class="icon-only" onclick="openSettings()">
                 <span class="icon">⚙️</span>
             </button>
@@ -718,13 +781,13 @@
                 <div class="widget-label" id="weatherLabel">Yükleniyor...</div>
             </div>
             
-            <div class="widget" id="meetingsWidget">
+            <div class="widget" id="meetingsWidget" onclick="handleWidgetClick('meetings')" style="cursor: pointer;">
                 <div class="widget-icon">📅</div>
                 <div class="widget-value" id="meetingsValue">0</div>
                 <div class="widget-label">Bugünkü Toplantılar</div>
             </div>
             
-            <div class="widget" id="mailsWidget">
+            <div class="widget" id="mailsWidget" onclick="handleWidgetClick('mails')" style="cursor: pointer;">
                 <div class="widget-icon">📧</div>
                 <div class="widget-value" id="mailsValue">0</div>
                 <div class="widget-label">Okunmamış Mail</div>
@@ -748,47 +811,326 @@
             
             <!-- Unified action buttons bar -->
             <div class="action-bar">
-                <!-- Sol: Çalıştır butonu -->
+                <!-- Sol: Mod göstergesi -->
                 <div class="action-left">
-                    <button id="executeButton" onclick="executeCommand()" disabled>
-                        <span class="icon">▶️</span>
-                        <span>Çalıştır</span>
-                    </button>
+                    <div id="modeIndicator" class="mode-indicator">
+                        <span class="mode-icon">💬</span>
+                        <span class="mode-text">Komut Modu</span>
+                    </div>
                 </div>
                 
                 <!-- Orta: Dikte butonu -->
                 <div class="action-center">
                     <button id="dikteButton" class="primary-action" onclick="toggleDikte()">
-                        <span class="icon" id="dikteIcon">🎙️</span>
-                        <span id="dikteText">Dikte</span>
+                        <span class="icon" id="dikteIcon">🎤</span>
+                        <span id="dikteText">Bekliyor</span>
                     </button>
                 </div>
                 
                 <!-- Sağ: TTS kontrolleri -->
                 <div class="action-right">
                     <div id="ttsControls" class="inline-controls">
-                        <span id="ttsStatus" style="margin-right: 10px; font-size: 14px; color: var(--text-primary);"></span>
+                        <span id="ttsStatus" style="margin-left: 15px; margin-right: 10px; font-size: 14px; color: var(--text-primary);"></span>
                         <button id="ttsPauseBtn" class="icon-only tts-btn" onclick="togglePauseTTS()" title="Duraklat/Devam">
                             <span class="icon">⏸️</span>
                         </button>
-                        <button class="icon-only tts-btn" onclick="stopTTS()" title="Durdur">
+                        <button id="ttsStopBtn" class="icon-only tts-btn" onclick="stopTTS()" title="Durdur">
                             <span class="icon">⏹️</span>
                         </button>
                     </div>
                 </div>
+                
             </div>
         </div>
     </div>
 
     <script>
+        // Dosya açma fonksiyonu - Arama sonuçlarından
+        window.openFileFromSearch = function(filePath) {
+            console.log('[FileSearch] Opening file:', filePath);
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    action: 'openFile',
+                    filePath: filePath
+                }));
+            } else {
+                console.error('[FileSearch] WebView API not available');
+            }
+        };
+
+        // Klasör açma fonksiyonu - Arama sonuçlarından
+        window.openFolderFromSearch = function(folderPath) {
+            console.log('[FolderSearch] Opening folder:', folderPath);
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    action: 'openFolder',
+                    folderPath: folderPath
+                }));
+            } else {
+                console.error('[FolderSearch] WebView API not available');
+            }
+        };
+
         let debounceTimer;
         let currentUtterance = null;
         let selectedVoice = 'automatic';
         let edgeVoices = [];
         let currentAudio = null;
+        
+        // Merkezi dinleme durumu yönetimi - GLOBAL SCOPE
+        const ListeningState = {
+            NONE: 'none',
+            PASSIVE: 'passive',    // Wake word dinleme
+            ACTIVE: 'active',      // Komut dinleme
+            TTS_PLAYING: 'tts',    // TTS konuşuyor
+            WAITING: 'waiting'     // Bekleme modunda
+        };
+        
+        let currentListeningState = ListeningState.NONE;
+        
+        // İnaktivite timeout değişkenleri
+        let lastActivityTime = Date.now();
+        let inactivityCheckInterval = null;
+        const INACTIVITY_TIMEOUT = 60000; // 60 saniye
+        const INACTIVITY_CHECK_INTERVAL = 10000; // Her 10 saniyede bir kontrol
+        
+        // Aktivite zamanını güncelle
+        function updateActivityTime() {
+            lastActivityTime = Date.now();
+            console.log('[Activity] Aktivite zamanı güncellendi');
+        }
+        
+        // İnaktivite kontrolü
+        function checkInactivity() {
+            if (currentListeningState !== ListeningState.ACTIVE) {
+                return; // Sadece aktif dinlemedeyken kontrol et
+            }
+            
+            const now = Date.now();
+            const inactiveTime = now - lastActivityTime;
+            
+            if (inactiveTime >= INACTIVITY_TIMEOUT) {
+                console.log('[Inactivity] 60 saniye boyunca aktivite yok, bekleme moduna geçiliyor');
+                
+                // ÖNEMLİ: Dikte durumunu HEMEN false yap (TTS bitmeden önce)
+                isDictationActive = false;
+                dikteMode.isActive = false;
+                dikteMode.source = null;
+                window.isInactivityTransition = true; // İnaktivite geçişi flag'i
+                
+                // TTS ile bildirim (kullanıcı adıyla)
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'speakTextWithUserName',
+                        text: 'ben bekleme moduna geçiyorum. İhtiyacınız olduğunda bana seslenebilirsiniz.',
+                        includeComma: true
+                    }));
+                }
+                
+                // Toggle'ı kaldırdık, TTS bitince otomatik pasif moda geçecek
+            }
+        }
+        
+        // İnaktivite kontrolünü başlat/durdur
+        function startInactivityCheck() {
+            if (!inactivityCheckInterval) {
+                inactivityCheckInterval = setInterval(checkInactivity, INACTIVITY_CHECK_INTERVAL);
+                console.log('[Inactivity] Kontrol başlatıldı');
+            }
+        }
+        
+        function stopInactivityCheck() {
+            if (inactivityCheckInterval) {
+                clearInterval(inactivityCheckInterval);
+                inactivityCheckInterval = null;
+                console.log('[Inactivity] Kontrol durduruldu');
+            }
+        }
+        
+        // Merkezi dinleme durumu yönetimi
+        function setListeningState(newState) {
+            if (currentListeningState === newState) return;
+            
+            console.log(`[ListeningState] Değişiyor: ${currentListeningState} → ${newState}`);
+            
+            // Önce tüm dinlemeleri durdur
+            stopAllListening();
+            
+            // Yeni duruma geç
+            currentListeningState = newState;
+            
+            // UI'ı güncelle
+            updateListeningStateUI(newState);
+            
+            // Dikte butonunu da güncelle
+            updateDikteButtonState(newState);
+            
+            switch(newState) {
+                case ListeningState.PASSIVE:
+                    console.log('[ListeningState] Wake word dinlemesi başlatılacak');
+                    stopInactivityCheck();
+                    // startWakeWordListening fonksiyonu daha sonra tanımlanacak
+                    if (typeof startWakeWordListening === 'function') {
+                        startWakeWordListening();
+                    } else {
+                        setTimeout(() => {
+                            if (typeof startWakeWordListening === 'function') {
+                                startWakeWordListening();
+                            }
+                        }, 1000);
+                    }
+                    break;
+                case ListeningState.ACTIVE:
+                    console.log('[ListeningState] Aktif dinleme başlatılacak');
+                    updateActivityTime(); // Aktivite zamanını sıfırla
+                    startInactivityCheck(); // İnaktivite kontrolünü başlat
+                    // startWebSpeechRecognition fonksiyonu daha sonra tanımlanacak
+                    if (typeof startWebSpeechRecognition === 'function') {
+                        startWebSpeechRecognition();
+                    } else {
+                        setTimeout(() => {
+                            if (typeof startWebSpeechRecognition === 'function') {
+                                startWebSpeechRecognition();
+                            }
+                        }, 1000);
+                    }
+                    break;
+                case ListeningState.TTS_PLAYING:
+                    // Hiçbir dinleme yapma
+                    stopInactivityCheck();
+                    break;
+                case ListeningState.NONE:
+                    // Hiçbir şey yapma
+                    stopInactivityCheck();
+                    break;
+            }
+        }
+        
+        // Tüm dinlemeleri durdur
+        function stopAllListening() {
+            console.log('[ListeningState] Tüm dinlemeler durduruluyor...');
+            
+            // Web Speech'i durdur
+            if (typeof recognition !== 'undefined' && recognition && typeof isWebSpeechActive !== 'undefined' && isWebSpeechActive) {
+                try {
+                    recognition.abort();
+                    isWebSpeechActive = false;
+                } catch (e) {
+                    console.error('[ListeningState] Web Speech durdurma hatası:', e);
+                }
+            }
+            
+            // Wake Word'ü durdur
+            if (typeof wakeWordRecognition !== 'undefined' && wakeWordRecognition && typeof isWakeWordListening !== 'undefined' && isWakeWordListening) {
+                try {
+                    isWakeWordListening = false; // Flag'i önce false yap
+                    wakeWordRecognition.abort();
+                } catch (e) {
+                    console.error('[ListeningState] Wake Word durdurma hatası:', e);
+                }
+            }
+        }
+        
+        // Dinleme durumu UI güncellemesi
+        function updateListeningStateUI(state) {
+            const stateMessages = {
+                [ListeningState.PASSIVE]: '🎤 Uyandırma dinlemesi aktif',
+                [ListeningState.ACTIVE]: '🎙️ Dikte aktif', 
+                [ListeningState.TTS_PLAYING]: '🔊 Konuşuyor...',
+                [ListeningState.NONE]: '💤 Dinleme kapalı',
+                [ListeningState.WAITING]: '😴 Bekleme modunda'
+            };
+            
+            const message = stateMessages[state] || 'Durum bilinmiyor';
+            console.log('[ListeningState] UI güncelleniyor:', message);
+            
+            // feedbackArea'yı doğrudan güncelle
+            const feedbackDiv = document.getElementById('feedbackArea');
+            if (feedbackDiv) {
+                feedbackDiv.textContent = message;
+                console.log('[ListeningState] feedbackArea güncellendi:', message);
+            } else {
+                console.error('[ListeningState] feedbackArea bulunamadı!');
+            }
+            
+            // Dikte durumu artık buton üzerinde gösteriliyor
+        }
+        
+        
+        // Mod göstergesini güncelle
+        function updateModeIndicator(mode) {
+            console.log('[updateModeIndicator] Called with mode:', mode);
+            
+            const indicator = document.getElementById('modeIndicator');
+            if (!indicator) {
+                console.error('[updateModeIndicator] modeIndicator element not found!');
+                return;
+            }
+            
+            const modeIcon = indicator.querySelector('.mode-icon');
+            const modeText = indicator.querySelector('.mode-text');
+            
+            if (!modeIcon || !modeText) {
+                console.error('[updateModeIndicator] mode-icon or mode-text not found!');
+                return;
+            }
+            
+            console.log('[updateModeIndicator] Before update - text:', modeText.textContent);
+            
+            switch(mode) {
+                case 'command':
+                case 'Command':
+                    modeIcon.textContent = '💬';
+                    modeText.textContent = 'Komut Modu';
+                    break;
+                case 'writing':
+                case 'Writing':
+                    modeIcon.textContent = '✍️';
+                    modeText.textContent = 'Yazı Modu';
+                    break;
+                default:
+                    modeIcon.textContent = '❓';
+                    modeText.textContent = 'Bilinmeyen Mod';
+                    console.warn('[updateModeIndicator] Unknown mode:', mode);
+            }
+            
+            console.log('[updateModeIndicator] After update - text:', modeText.textContent);
+        }
+        
+        // TTS başladığında çağrılacak
+        function onTTSStarted() {
+            console.log('[TTS] TTS başladı, dinleme durumu: TTS_PLAYING');
+            setListeningState(ListeningState.TTS_PLAYING);
+        }
+        
+        // TTS bittiğinde çağrılacak
+        function onTTSCompleted() {
+            console.log('[TTS] TTS tamamlandı, dinleme durumunu belirle...');
+            console.log('[TTS] Mevcut durum - isDictationActive:', typeof isDictationActive !== 'undefined' ? isDictationActive : 'tanımsız', 'dikteMode:', typeof dikteMode !== 'undefined' ? dikteMode : 'tanımsız');
+            
+            // İnaktivite geçişi kontrolü - EN ÖNCELİKLİ
+            if (window.isInactivityTransition) {
+                console.log('[TTS] İnaktivite geçişi tespit edildi, pasif moda geçiliyor');
+                window.isInactivityTransition = false; // Flag'i temizle
+                setListeningState(ListeningState.PASSIVE);
+                return;
+            }
+            
+            // Dikte aktifse (hangi modda olursa olsun) aktif dinlemeye devam et
+            if (typeof isDictationActive !== 'undefined' && isDictationActive) {
+                console.log('[TTS] Dikte aktif, aktif dinlemeye devam');
+                setListeningState(ListeningState.ACTIVE);
+            } else {
+                // Dikte aktif değilse pasif dinlemeye dön
+                console.log('[TTS] Dikte aktif değil, pasif dinlemeye dön');
+                setListeningState(ListeningState.PASSIVE);
+            }
+        }
+        
         let currentAudioUrl = null;
         let ttsIsPaused = false;
         let isPlayingAudio = false;
+        let isManualStop = false; // Manuel durdurma flag'i
         let isPlayingEdgeTTS = false; // Edge TTS çalışıyor mu kontrolü için
         let ttsTextBuffer = []; // TTS metinlerini saklamak için buffer
         let isTTSPlaying = false; // Genel TTS durumu
@@ -818,11 +1160,224 @@
         // Buffer temizleme işlemini her 2 saniyede bir çalıştır
         setInterval(cleanTTSBuffer, 2000);
         let isDictationActive = false;
+        let isFromWakeWord = false; // Wake word'den mi başlatıldı
+        let shouldStartDikteAfterTTS = false; // TTS bitince dikte başlatılmalı mı
+        
+        // Dikte mod yönetimi için bayraklar
+        const dikteMode = {
+            isActive: false,
+            isPaused: false,
+            shouldResumeAfterTTS: false,
+            source: null // 'wakeword', 'button', 'command'
+        };
+        
+        // TTS ses yükleme mekanizması
+        let voicesLoaded = false;
+        let voicesLoadPromise = null;
+        
+        function loadVoices() {
+            if (voicesLoadPromise) return voicesLoadPromise;
+            
+            voicesLoadPromise = new Promise((resolve) => {
+                let retryCount = 0;
+                const maxRetries = 10;
+                const retryDelay = 500; // 500ms aralıklarla dene
+                let voicesChangedHandled = false;
+                
+                function tryLoadVoices() {
+                    const voices = window.speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        voicesLoaded = true;
+                        voicesChangedHandled = true;
+                        console.log('[loadVoices] Sesler yüklendi, ses sayısı:', voices.length);
+                        
+                        // Türkçe sesleri logla
+                        const turkishVoices = voices.filter(v => v.lang.startsWith('tr-TR'));
+                        console.log('[loadVoices] Türkçe sesler:', turkishVoices.map(v => v.name).join(', '));
+                        
+                        // Edge Neural sesleri kontrol et
+                        const edgeVoices = voices.filter(voice => 
+                            voice.name.includes('Microsoft') && 
+                            (voice.name.includes('Emel') || voice.name.includes('Ahmet'))
+                        );
+                        
+                        if (edgeVoices.length > 0) {
+                            console.log(`[loadVoices] Edge Neural sesler bulundu: ${edgeVoices.map(v => v.name).join(', ')}`);
+                            window.edgeVoicesAvailable = true;
+                            window.availableEdgeVoices = edgeVoices;
+                        } else {
+                            console.log('[loadVoices] Edge Neural sesler bulunamadı, fallback kullanılacak');
+                            window.edgeVoicesAvailable = false;
+                        }
+                        
+                        resolve(voices);
+                    } else if (retryCount < maxRetries) {
+                        retryCount++;
+                        console.log(`[loadVoices] Sesler henüz yüklenmemiş, retry ${retryCount}/${maxRetries}...`);
+                        setTimeout(tryLoadVoices, retryDelay);
+                    } else {
+                        console.error('[loadVoices] Sesler yüklenemedi, maksimum deneme sayısına ulaşıldı');
+                        voicesLoaded = false;
+                        voicesChangedHandled = true;
+                        
+                        // Fallback: Boş array döndür ama uyarı ver
+                        console.warn('[loadVoices] Fallback: TTS sesleri yüklenemedi, Tolga sesine geçilecek');
+                        resolve([]);
+                    }
+                }
+                
+                // voiceschanged event'ini de dinle
+                window.speechSynthesis.onvoiceschanged = () => {
+                    if (!voicesChangedHandled) {
+                        const loadedVoices = window.speechSynthesis.getVoices();
+                        if (loadedVoices.length > 0) {
+                            voicesLoaded = true;
+                            voicesChangedHandled = true;
+                            console.log('[loadVoices] Sesler voiceschanged event ile yüklendi, ses sayısı:', loadedVoices.length);
+                            resolve(loadedVoices);
+                        }
+                    }
+                };
+                
+                // İlk deneme
+                tryLoadVoices();
+                
+                // Agresif yükleme: speechSynthesis.speak() ile zorla
+                try {
+                    const utterance = new SpeechSynthesisUtterance('');
+                    utterance.volume = 0;
+                    window.speechSynthesis.speak(utterance);
+                    window.speechSynthesis.cancel();
+                    console.log('[loadVoices] Agresif yükleme denemesi yapıldı');
+                } catch (e) {
+                    console.log('[loadVoices] Agresif yükleme hatası:', e);
+                }
+            });
+            
+            return voicesLoadPromise;
+        }
+        
+        // Hazır ses dosyalarını çalma fonksiyonu
+        function playReadySound(soundType, voiceName) {
+            // soundType: 'wake' veya 'sleep'
+            // voiceName: 'emel' veya 'ahmet'
+            
+            // Uyandırma/uyuma metinleri
+            const wakePhrases = [
+                "Buyur",
+                "Dinliyorum",
+                "Evet",
+                "Ne istemiştiniz",
+                "Emrinizdeyim",
+                "Size nasıl yardımcı olabilirim?"
+            ];
+            
+            const sleepPhrases = [
+                "Beklemedeyim",
+                "İhtiyacınız olduğunda buradayım",
+                "Tamam, bekliyorum"
+            ];
+            
+            // Rastgele metin seç
+            let selectedText;
+            if (soundType === 'wake') {
+                selectedText = wakePhrases[Math.floor(Math.random() * wakePhrases.length)];
+            } else {
+                selectedText = sleepPhrases[Math.floor(Math.random() * sleepPhrases.length)];
+            }
+            
+            console.log(`[playReadySound] ${soundType} için seçilen metin:`, selectedText);
+            appendFeedback(`🔊 ${soundType === 'wake' ? 'Uyandırma' : 'Uyku'} sesi: "${selectedText}"`);
+            
+            // Wake word dinlemeyi durdur
+            if (wakeWordRecognition && isWakeWordListening) {
+                stopWakeWordListening();
+            }
+            
+            // C#'a TTS isteği gönder
+            if (window.chrome && window.chrome.webview) {
+                // Uyandırma metinleri için kullanıcı adını ekle
+                if (soundType === 'wake') {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'speakReadySound',
+                        soundType: soundType,
+                        text: selectedText,
+                        voice: voiceName,
+                        useUserName: true  // Kullanıcı adını ekle
+                    }));
+                } else {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'speakReadySound',
+                        soundType: soundType,
+                        text: selectedText,
+                        voice: voiceName
+                    }));
+                }
+            }
+            
+            // TTS bittiğinde yapılacak işlemler için callback ayarla
+            window.readySoundCallback = () => {
+                console.log('[playReadySound] TTS tamamlandı:', selectedText);
+                
+                // Ses tipine göre işlem yap
+                if (soundType === 'wake') {
+                    // Wake sesi bittiğinde dikteyi başlat
+                    dikteMode.isActive = true;
+                    dikteMode.source = 'wakeword';
+                    isDictationActive = true; // ÖNEMLİ: Bu flag'i de ayarla!
+                    setListeningState(ListeningState.ACTIVE);
+                } else if (soundType === 'sleep') {
+                    // Sleep sesi bittiğinde wake word dinlemeyi başlat
+                    dikteMode.isActive = false;
+                    dikteMode.source = null;
+                    isDictationActive = false;
+                    setListeningState(ListeningState.PASSIVE);
+                }
+            };
+        }
         
         // Web Speech API değişkenleri
         let recognition = null;
         let isWebSpeechActive = false;
         let currentMode = 'command'; // command | writing
+        let isWakeWordListening = false;
+        let wakeWordRecognition = null;
+        
+        // Eski dinleme durumu tanımlamaları kaldırıldı - artık global scope'da
+        
+        // TTS fonksiyonları artık global scope'da tanımlı
+        
+        // Mod değiştirme fonksiyonu
+        window.setCurrentMode = function(mode) {
+            const previousMode = currentMode;
+            currentMode = mode;
+            console.log('[Mode] Current mode changed from', previousMode, 'to:', mode);
+            appendFeedback(`[Mode] Mod değişti: ${previousMode} → ${mode}`);
+            
+            // UI göstergesini güncelle
+            updateModeIndicator(mode);
+            
+            // Textarea davranışını güncelle
+            const textarea = document.getElementById('txtCikti');
+            if (textarea) {
+                if (mode === 'writing') {
+                    console.log('[Mode] Writing mode - disabling textarea updates');
+                    textarea.setAttribute('data-mode', 'writing');
+                } else {
+                    console.log('[Mode] Command mode - enabling textarea updates');
+                    textarea.setAttribute('data-mode', 'command');
+                }
+            }
+            
+            // Yazı modundayken dinleme devam etmeli
+            if (mode === 'writing' && isDictationActive && !isWebSpeechActive) {
+                console.log('[Mode] Writing mode activated, restarting speech recognition...');
+                startWebSpeechRecognition();
+            }
+            
+            // Debug için mevcut modu göster
+            console.log('[Mode] Mode update complete. Current mode:', currentMode);
+        };
         
         // F5 tema kontrolü için global değişkenler
         let isThemeInitialized = false;
@@ -899,38 +1454,80 @@
             }
         }
         
-        // Dikte Button State Functions
-        function updateDikteButtonState(isRecording, text = 'Dikte') {
+        // Dikte Button State Functions - Artık listening state ile senkronize
+        function updateDikteButtonState(state) {
             const dikteBtn = document.getElementById('dikteButton');
             
             if (!dikteBtn) {
                 return;
             }
             
+            let iconHTML = '';
+            let textContent = '';
+            let isRecording = false;
+            
+            switch(state) {
+                case ListeningState.PASSIVE:
+                    iconHTML = '<span class="icon" id="dikteIcon">🎤</span>';
+                    textContent = 'Bekliyor';
+                    isRecording = false;
+                    break;
+                case ListeningState.ACTIVE:
+                    iconHTML = `
+                        <div class="sound-wave">
+                            <div class="sound-wave-bar"></div>
+                            <div class="sound-wave-bar"></div>
+                            <div class="sound-wave-bar"></div>
+                            <div class="sound-wave-bar"></div>
+                            <div class="sound-wave-bar"></div>
+                        </div>
+                    `;
+                    textContent = 'Dinliyor';
+                    isRecording = true;
+                    break;
+                case ListeningState.TTS_PLAYING:
+                    iconHTML = '<span class="icon" id="dikteIcon">🔊</span>';
+                    textContent = 'Konuşuyor...';
+                    isRecording = false;
+                    break;
+                case ListeningState.WAITING:
+                    iconHTML = '<span class="icon" id="dikteIcon">😴</span>';
+                    textContent = 'Bekleme Modu';
+                    isRecording = false;
+                    break;
+                default:
+                    iconHTML = '<span class="icon" id="dikteIcon">💤</span>';
+                    textContent = 'Dinleme Kapalı';
+                    isRecording = false;
+            }
+            
+            dikteBtn.innerHTML = iconHTML + `<span id="dikteText">${textContent}</span>`;
+            
             if (isRecording) {
-                const soundWaveHTML = `
-                    <div class="sound-wave">
-                        <div class="sound-wave-bar"></div>
-                        <div class="sound-wave-bar"></div>
-                        <div class="sound-wave-bar"></div>
-                        <div class="sound-wave-bar"></div>
-                        <div class="sound-wave-bar"></div>
-                    </div>
-                `;
-                
-                dikteBtn.innerHTML = soundWaveHTML + `<span>${text}</span>`;
                 dikteBtn.classList.add('recording');
             } else {
-                dikteBtn.innerHTML = `<span class="icon" id="dikteIcon">🎙️</span><span id="dikteText">Dikte</span>`;
                 dikteBtn.classList.remove('recording');
+            }
+        }
+        
+        // Eski updateDikteButtonState çağrılarını handle etmek için wrapper
+        function updateDikteButtonStateOld(isRecording, text) {
+            // Eski çağrıları yeni sisteme yönlendir
+            if (isRecording) {
+                updateDikteButtonState(ListeningState.ACTIVE);
+            } else {
+                updateDikteButtonState(ListeningState.PASSIVE);
             }
         }
         
         // Web Speech API Fonksiyonları
         function initializeWebSpeechAPI() {
+            console.log('[Web Speech API] initializeWebSpeechAPI called');
+            
+            
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                 console.warn('[Web Speech API] Tarayıcı desteklemiyor');
-                appendFeedback('[WARNING] Web Speech API desteklenmiyor');
+                appendFeedback('[WARNING] Ses tanıma desteklenmiyor');
                 return false;
             }
             
@@ -947,21 +1544,34 @@
                 recognition.onstart = function() {
                     isWebSpeechActive = true;
                     console.log('[Web Speech API] Dinleme başladı');
-                    appendFeedback('🎤 Web Speech API dinliyor...');
-                    updateDikteButtonState(true, 'Dinleniyor...');
+                    // Buton durumu setListeningState tarafından yönetiliyor
                 };
                 
                 recognition.onend = function() {
                     isWebSpeechActive = false;
                     console.log('[Web Speech API] Dinleme sona erdi');
+                    console.log('[Web Speech API] Current mode:', currentMode);
+                    console.log('[Web Speech API] isDictationActive:', isDictationActive);
+                    
+                    // TTS oynatılıyor mu kontrol et
+                    if (currentListeningState === ListeningState.TTS_PLAYING) {
+                        console.log('[Web Speech API] TTS oynatılıyor, bekleniyor...');
+                        return;
+                    }
                     
                     // Otomatik yeniden başlatma (sürekli dinleme için)
-                    if (isDictationActive) {
+                    // Yazı modunda da dinleme devam etmeli
+                    if (isDictationActive || currentMode === 'writing') {
                         setTimeout(() => {
-                            if (isDictationActive) {
+                            if (isDictationActive || currentMode === 'writing') {
+                                console.log('[Web Speech API] Restarting recognition...');
                                 startWebSpeechRecognition();
                             }
                         }, 500);
+                    } else {
+                        // Dikte aktif değilse pasif dinlemeye geç
+                        console.log('[Web Speech API] Dikte aktif değil, pasif dinlemeye geçiliyor');
+                        setListeningState(ListeningState.PASSIVE);
                     }
                 };
                 
@@ -988,16 +1598,52 @@
                     const textarea = document.getElementById('txtCikti');
                     if (finalTranscript) {
                         const trimmedText = finalTranscript.trim();
-                        textarea.value = trimmedText;
-                        checkButtonStates();
                         
-                        // Input event'ini manuel olarak tetikle
-                        const inputEvent = new Event('input', {
-                            bubbles: true,
-                            cancelable: true
-                        });
-                        textarea.dispatchEvent(inputEvent);
-                        console.log('[Web Speech API] Input event dispatched');
+                        // Wake word kontrolü - wake word'leri C#'a gönderme
+                        if (checkForWakeWords(trimmedText.toLowerCase())) {
+                            console.log('[Web Speech API] Wake word algılandı, C#\'a gönderilmeyecek:', trimmedText);
+                            updateActivityTime(); // Wake word algılandı, aktivite zamanını güncelle
+                            return; // Wake word'leri işleme
+                        }
+                        
+                        // Sleep command kontrolü
+                        if (checkForSleepCommands(trimmedText)) {
+                            console.log('[Web Speech API] Sleep command detected:', trimmedText);
+
+                            // Önce bekleme durumuna geç
+                            setListeningState(ListeningState.WAITING);
+
+                            // Mevcut ses seçimine göre voice belirle
+                            const currentVoice = window.currentEdgeVoiceName || 'Emel';
+                            const voiceName = currentVoice.toLowerCase().includes('ahmet') ? 'ahmet' : 'emel';
+
+                            // Hazır ses dosyasını oynat
+                            playReadySound('sleep', voiceName);
+
+                            // Bir süre bekledikten sonra pasif dinlemeye geç
+                            setTimeout(() => {
+                                stopDikte();
+                                // Bekleme modunda kalma süresi (örn: 30 saniye)
+                                setTimeout(() => {
+                                    if (currentListeningState === ListeningState.WAITING) {
+                                        setListeningState(ListeningState.PASSIVE);
+                                    }
+                                }, 30000);
+                            }, 100);
+                            return; // Komutu textarea'ya yazma
+                        }
+                        
+                        // Yazı modunda textarea'ya yazmayı durdur (çift yazma sorununu önlemek için)
+                        if (currentMode !== 'writing') {
+                            textarea.value = trimmedText;
+                            checkButtonStates();
+                            
+                            // Input event'ini manuel olarak TETİKLEME - duplicate command'lara neden oluyor
+                            // Zaten Web Speech sonucu C# tarafına gönderiliyor
+                            console.log('[Web Speech API] Text updated, NOT dispatching input event to prevent duplicates');
+                        } else {
+                            console.log('[Web Speech API] Writing mode - skipping textarea update to prevent double text');
+                        }
                         
                         console.log('[Web Speech API] Final transcript:', trimmedText);
                         console.log('[Web Speech API] Current mode:', currentMode);
@@ -1007,8 +1653,25 @@
                         console.log('[Web Speech Filtreleme] TTS Buffer boyutu:', ttsTextBuffer.length);
                         console.log('[Web Speech Filtreleme] isTTSPlaying:', isTTSPlaying);
                         
+                        // Wake word yanıtlarını kontrol et
+                        const wakeResponseList = [
+                            "buyurun", "dinliyorum", "evet efendim", "efendim", 
+                            "size nasıl yardımcı olabilirim",
+                            "beklemedeyim", "ihtiyacınız olduğunda buradayım", 
+                            "tamam bekliyorum", "tamam, bekliyorum"
+                        ];
+                        
+                        const lowerText = trimmedText.toLowerCase().replace(/[.,!?]/g, '');
+                        
+                        // Wake word yanıtı kontrolü
+                        for (let response of wakeResponseList) {
+                            if (lowerText === response || lowerText.includes(response)) {
+                                console.log('[Web Speech Filtreleme] 🔇 Wake word yanıtı filtrelendi:', trimmedText);
+                                return; // Wake word yanıtını işleme
+                            }
+                        }
+                        
                         if (isTTSPlaying || ttsTextBuffer.length > 0) {
-                            const lowerText = trimmedText.toLowerCase();
                             let isTTSText = false;
                             let matchedTTS = null;
                             
@@ -1016,24 +1679,34 @@
                             
                             // TTS buffer'daki metinlerle karşılaştır
                             for (let item of ttsTextBuffer) {
-                                // Kısmi eşleşme kontrolü (TTS metninin ilk 20 karakteri)
-                                const ttsPrefix = item.text.substring(0, Math.min(20, item.text.length));
-                                if (lowerText.includes(ttsPrefix) && ttsPrefix.length > 10) {
+                                const ttsLower = item.text.toLowerCase();
+                                
+                                // Benzerlik kontrolü - kelime bazlı
+                                const inputWords = lowerText.split(' ').filter(w => w.length > 2);
+                                const ttsWords = ttsLower.split(' ').filter(w => w.length > 2);
+                                
+                                let matchCount = 0;
+                                for (let word of inputWords) {
+                                    if (ttsWords.some(ttsWord => ttsWord.includes(word) || word.includes(ttsWord))) {
+                                        matchCount++;
+                                    }
+                                }
+                                
+                                // %60 veya daha fazla kelime eşleşmesi varsa TTS metni kabul et
+                                const matchRatio = inputWords.length > 0 ? matchCount / inputWords.length : 0;
+                                if (matchRatio >= 0.6) {
                                     isTTSText = true;
                                     matchedTTS = item.text;
-                                    console.log('[Web Speech Filtreleme] ✅ TTS metni prefix ile filtrelendi');
-                                    console.log('[Web Speech Filtreleme] Gelen:', lowerText);
-                                    console.log('[Web Speech Filtreleme] TTS Prefix:', ttsPrefix);
+                                    console.log('[Web Speech Filtreleme] ✅ TTS metni kelime benzerliği ile filtrelendi (oran: ' + (matchRatio * 100).toFixed(0) + '%)');
                                     break;
                                 }
                                 
-                                // Tam eşleşme kontrolü
-                                if (item.text.includes(lowerText) || lowerText.includes(item.text)) {
+                                // Kısmi eşleşme kontrolü (TTS metninin ilk 15 karakteri)
+                                const ttsPrefix = ttsLower.substring(0, Math.min(15, ttsLower.length));
+                                if (lowerText.includes(ttsPrefix) && ttsPrefix.length > 8) {
                                     isTTSText = true;
                                     matchedTTS = item.text;
-                                    console.log('[Web Speech Filtreleme] ✅ TTS metni tam eşleşme ile filtrelendi');
-                                    console.log('[Web Speech Filtreleme] Gelen:', lowerText);
-                                    console.log('[Web Speech Filtreleme] TTS Metin:', item.text);
+                                    console.log('[Web Speech Filtreleme] ✅ TTS metni prefix ile filtrelendi');
                                     break;
                                 }
                             }
@@ -1042,7 +1715,6 @@
                                 console.log('[Web Speech Filtreleme] 🔇 TTS metni filtrelendi - işleme alınmayacak');
                                 console.log('[Web Speech Filtreleme] Filtrelenen metin:', trimmedText);
                                 console.log('[Web Speech Filtreleme] Eşleşen TTS:', matchedTTS);
-                                appendFeedback(`🔇 TTS metni filtrelendi: "${trimmedText}"`);
                                 return; // TTS metnini işleme
                             } else {
                                 console.log('[Web Speech Filtreleme] ✅ Metin TTS değil - işleme devam');
@@ -1056,6 +1728,7 @@
                         // TÜM sonuçları C#'a gönder - WebSpeechBridge karar verecek
                         if (window.chrome && window.chrome.webview) {
                             console.log('[Web Speech API] Sending webSpeechResult to C#');
+                            updateActivityTime(); // Anlamlı bir komut gönderiliyor, aktivite zamanını güncelle
                             window.chrome.webview.postMessage(JSON.stringify({
                                 action: 'webSpeechResult',
                                 text: trimmedText,
@@ -1084,7 +1757,7 @@
                     } else if (event.error === 'aborted') {
                         // Kullanıcı tarafından iptal edildi
                     } else if (event.error === 'service-not-allowed') {
-                        appendFeedback('[ERROR] Web Speech API servisi kullanılamıyor');
+                        appendFeedback('[ERROR] Ses tanıma servisi kullanılamıyor');
                     } else {
                         appendFeedback('[ERROR] Ses tanıma hatası: ' + event.error);
                     }
@@ -1094,6 +1767,11 @@
                     console.log('[Web Speech API] Eşleşme bulunamadı');
                 };
                 
+                console.log('[Web Speech API] Initialized successfully. Recognition:', recognition);
+                
+                // Wake word listener'ı başlat
+                initializeWakeWordListener();
+                
                 return true;
             } catch (e) {
                 console.error('[Web Speech API] Başlatma hatası:', e);
@@ -1101,16 +1779,19 @@
             }
         }
         
-        function startWebSpeechRecognition() {
+        
+        async function startWebSpeechRecognition() {
             console.log('[Web Speech API] startWebSpeechRecognition called');
             console.log('[Web Speech API] Recognition object exists:', !!recognition);
             console.log('[Web Speech API] Is active:', isWebSpeechActive);
+            
             
             if (!recognition) {
                 console.log('[Web Speech API] Recognition object not found, initializing...');
                 if (!initializeWebSpeechAPI()) {
                     console.error('[Web Speech API] Initialization failed');
-                    appendFeedback('❌ Web Speech API başlatılamadı');
+                    appendFeedback('❌ Ses tanıma başlatılamadı');
+                    
                     return;
                 }
             }
@@ -1119,14 +1800,15 @@
                 try {
                     console.log('[Web Speech API] Starting recognition...');
                     recognition.start();
-                    appendFeedback('🎤 Web Speech API başlatıldı');
+                    appendFeedback('🎤 Quadro dinliyor...');
                 } catch (e) {
                     if (e.name === 'InvalidStateError') {
                         console.log('[Web Speech API] Recognition already started');
                         // Zaten başlamış, sessizce devam et
                     } else {
                         console.error('[Web Speech API] Başlatma hatası:', e);
-                        appendFeedback('❌ Web Speech API başlatılamadı: ' + e.message);
+                        appendFeedback('❌ Ses tanıma başlatılamadı: ' + e.message);
+                        
                     }
                 }
             } else {
@@ -1139,6 +1821,8 @@
                 try {
                     recognition.stop();
                     isWebSpeechActive = false;
+                    console.log('[Web Speech API] Durduruldu');
+                    // setTimeout kaldırıldı - merkezi durum yönetimi kullanılacak
                 } catch (e) {
                     console.error('[Web Speech API] Durdurma hatası:', e);
                 }
@@ -1146,24 +1830,197 @@
         }
         
         
+        // Wake word'den dikte başlatma
+        function startDikteFromWakeWord() {
+            isFromWakeWord = true;
+            toggleDikte();
+        }
+        
         // Dikte toggle fonksiyonu
         function toggleDikte() {
-            if (isDictationActive) {
+            console.log('[toggleDikte] Current listening state:', currentListeningState);
+            
+            // Mevcut dinleme durumuna göre geçiş yap
+            if (currentListeningState === ListeningState.ACTIVE) {
+                // Aktif dinlemedeyse -> Pasif dinlemeye (wake word) geç
+                console.log('[toggleDikte] Switching from ACTIVE to PASSIVE...');
                 stopDikte();
-            } else {
-                startDikte();
+            } else if (currentListeningState === ListeningState.PASSIVE || currentListeningState === ListeningState.NONE) {
+                // Pasif dinlemedeyse veya dinleme kapalıysa -> Aktif dinlemeye geç
+                console.log('[toggleDikte] Switching from PASSIVE/NONE to ACTIVE...');
+                
+                // Mevcut ses seçimine göre voice belirle
+                const currentVoice = window.currentEdgeVoiceName || 'Emel';
+                const voiceName = currentVoice.toLowerCase().includes('ahmet') ? 'ahmet' : 'emel';
+                
+                // C#'a başlatma mesajı gönder
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ action: 'startDikte' }));
+                }
+                
+                // Bayrakları ayarla
+                dikteMode.source = 'button';
+                
+                // TTS durumuna geç ve hazır ses dosyasını oynat
+                onTTSStarted();
+                playReadySound('wake', voiceName);
+            } else if (currentListeningState === ListeningState.TTS_PLAYING) {
+                // TTS oynatılıyorsa bir şey yapma
+                console.log('[toggleDikte] TTS playing, ignoring toggle');
+            } else if (currentListeningState === ListeningState.WAITING) {
+                // Bekleme modundaysa aktif dinlemeye geç
+                console.log('[toggleDikte] Switching from WAITING to ACTIVE...');
+                
+                // Mevcut ses seçimine göre voice belirle
+                const currentVoice = window.currentEdgeVoiceName || 'Emel';
+                const voiceName = currentVoice.toLowerCase().includes('ahmet') ? 'ahmet' : 'emel';
+                
+                // C#'a başlatma mesajı gönder
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ action: 'startDikte' }));
+                }
+                
+                // Bayrakları ayarla
+                dikteMode.source = 'button';
+                
+                // TTS durumuna geç ve hazır ses dosyasını oynat
+                onTTSStarted();
+                playReadySound('wake', voiceName);
             }
         }
         
         // Dikteyi durdur
         function stopDikte() {
+            // Tüm flag'leri temizle
             isDictationActive = false;
+            dikteMode.isActive = false;
+            dikteMode.isPaused = false;
+            dikteMode.shouldResumeAfterTTS = false;
+            dikteMode.source = null;
             
-            // Web Speech API'yi durdur
-            stopWebSpeechRecognition();
+            // Pasif dinlemeye geç
+            setListeningState(ListeningState.PASSIVE);
             
-            updateDikteButtonState(false);
+            // C#'a durdurma mesajı gönder
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ action: 'stopDikte' }));
+            }
+            
+            // Buton durumu setListeningState tarafından yönetiliyor
             appendFeedback('🎙️ Dikte durduruldu');
+        }
+        
+        // Wake Word Listener Fonksiyonları
+        function initializeWakeWordListener() {
+            console.log('[Wake Word] Initializing wake word listener...');
+            
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.warn('[Wake Word] Speech recognition not supported');
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            wakeWordRecognition = new SpeechRecognition();
+            
+            wakeWordRecognition.continuous = true;
+            wakeWordRecognition.interimResults = false;
+            wakeWordRecognition.lang = 'tr-TR';
+            wakeWordRecognition.maxAlternatives = 1;
+            
+            wakeWordRecognition.onresult = function(event) {
+                const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                console.log('[Wake Word] Heard:', transcript);
+                
+                if (checkForWakeWords(transcript)) {
+                    console.log('[Wake Word] Wake word detected! Playing wake sound...');
+                    
+                    // Önce TTS durumuna geç
+                    onTTSStarted();
+                    
+                    // Mevcut ses seçimine göre voice belirle
+                    const currentVoice = window.currentEdgeVoiceName || 'Emel';
+                    const voiceName = currentVoice.toLowerCase().includes('ahmet') ? 'ahmet' : 'emel';
+                    
+                    // Hazır ses dosyasını oynat
+                    playReadySound('wake', voiceName);
+                    appendFeedback('🎤 Wake word algılandı!');
+                }
+            };
+            
+            wakeWordRecognition.onerror = function(event) {
+                console.error('[Wake Word] Error:', event.error);
+                if (event.error === 'not-allowed') {
+                    console.log('[Wake Word] Microphone permission denied');
+                    isWakeWordListening = false;
+                }
+            };
+            
+            wakeWordRecognition.onend = function() {
+                console.log('[Wake Word] Recognition ended');
+                
+                // TTS çalıyorsa otomatik yeniden başlatma
+                if (currentListeningState === ListeningState.TTS_PLAYING) {
+                    console.log('[Wake Word] TTS çalıyor, otomatik başlatma yapılmıyor');
+                    return;
+                }
+                
+                if (isWakeWordListening) {
+                    // Otomatik yeniden başlat
+                    setTimeout(() => {
+                        if (isWakeWordListening && !isWebSpeechActive) {
+                            startWakeWordListening();
+                        }
+                    }, 1000);
+                }
+            };
+            
+            // Başlangıçta wake word dinlemeyi merkezi sistem üzerinden başlat
+            console.log('[Wake Word] Wake word initialization completed');
+            console.log('[Wake Word] wakeWordRecognition object created:', !!wakeWordRecognition);
+        }
+        
+        function startWakeWordListening() {
+            // Merkezi durum kontrolü kullanılıyor, eski kontroller kaldırıldı
+            if (!wakeWordRecognition) {
+                console.log('[Wake Word] Recognition object not found');
+                return;
+            }
+            
+            try {
+                isWakeWordListening = true;
+                wakeWordRecognition.start();
+                console.log('[Wake Word] Started listening for wake words...');
+            } catch (e) {
+                console.error('[Wake Word] Start error:', e);
+                isWakeWordListening = false;
+            }
+        }
+        
+        function stopWakeWordListening() {
+            if (wakeWordRecognition) {
+                try {
+                    // Flag'i hemen false yap
+                    isWakeWordListening = false;
+                    // Abort et ki onend olayı restart yapmaya çalışmasın
+                    wakeWordRecognition.abort();
+                    console.log('[Wake Word] Stopped listening');
+                } catch (e) {
+                    // Hata olsa bile flag'i false yap
+                    isWakeWordListening = false;
+                    console.error('[Wake Word] Stop error:', e);
+                }
+            }
+        }
+        
+        function checkForWakeWords(transcript) {
+            const wakeWords = ['hey quadro', 'hey asistan', 'hey kuadro', 'hey assistant'];
+            return wakeWords.some(word => transcript.includes(word));
+        }
+        
+        function checkForSleepCommands(transcript) {
+            const sleepCommands = ['quadro bekle', 'quadro uyu', 'asistan bekle', 'asistan uyu', 
+                                  'kuadro bekle', 'kuadro uyu', 'assistant bekle', 'assistant uyu'];
+            return sleepCommands.some(cmd => transcript.toLowerCase().includes(cmd));
         }
         
         function startDikte() {
@@ -1175,22 +2032,14 @@
                     window.speechSynthesis.cancel();
                 }
                 
-                // Mevcut C# audio stream varsa durdur
-                if (currentAudio) {
+                // Mevcut C# audio stream varsa duraklatmak (durdurmak değil)
+                if (currentAudio && !currentAudio.paused) {
                     currentAudio.pause();
-                    currentAudio.currentTime = 0;
-                    currentAudio = null;
-                    
-                    if (currentAudioUrl && typeof currentAudioUrl === 'string' && !currentAudioUrl.includes('null')) {
-                        try {
-                            URL.revokeObjectURL(currentAudioUrl);
-                        } catch (e) {
-                            console.warn('[JavaScript] URL temizleme hatası:', e);
-                        }
-                        currentAudioUrl = null;
-                    }
-                    
-                    hideTTSControls();
+                    ttsIsPaused = true;
+                    appendFeedback('[TTS] Ses duraklatıldı - dikte başlatıldı');
+                    updateTTSStatus('Duraklatıldı');
+                    updatePauseButton();
+                    // Not: currentAudio ve URL'yi null yapmıyoruz, böylece kullanıcı devam ettirebilir
                 }
                 
                 // C#'a TTS durdurma mesajı gönder
@@ -1204,7 +2053,7 @@
                 textarea.click();
                 
                 // Web Speech API kullan
-                updateDikteButtonState(true, 'Dinleniyor...');
+                // Buton durumu setListeningState tarafından yönetiliyor
                 startWebSpeechRecognition();
             } catch (error) {
                 console.error("[JavaScript] startDikte hatası:", error);
@@ -1212,10 +2061,13 @@
         }
 
         // Edge Neural TTS ile konuşma
-        function speakWithEdgeVoice(text) {
+        async function speakWithEdgeVoice(text) {
             if (!text || !text.trim()) {
                 return;
             }
+            
+            // TTS başlıyor - merkezi durum yönetimine bildir
+            onTTSStarted();
             
             // ÇÖZÜM: TTS metnini buffer'a ekle
             const ttsItem = {
@@ -1233,51 +2085,105 @@
                 window.speechSynthesis.cancel();
             }
             
-            // Tüm sesleri al
-            const allVoices = window.speechSynthesis.getVoices();
+            // Seslerin yüklenmesini bekle
+            console.log('[speakWithEdgeVoice] Sesler yükleniyor...');
+            const allVoices = await loadVoices();
+            
+            // Debug: Mevcut sesleri logla
+            console.log('[speakWithEdgeVoice] Toplam ses sayısı:', allVoices.length);
+            console.log('[speakWithEdgeVoice] Tüm sesler:', allVoices.map(v => `${v.name} (${v.lang})`));
+            
+            // Türkçe sesleri filtrele ve logla
+            const turkishVoices = allVoices.filter(v => v.lang.includes('tr') || v.lang.includes('TR'));
+            console.log('[speakWithEdgeVoice] Türkçe ses sayısı:', turkishVoices.length);
+            console.log('[speakWithEdgeVoice] Türkçe sesler:', turkishVoices.map(v => v.name));
             
             // Edge Neural sesleri için kontrol
             let targetVoice = null;
             const voiceNameToSearch = window.currentEdgeVoiceName || 'Emel';
+            console.log('[speakWithEdgeVoice] Aranan ses:', voiceNameToSearch);
             
-            // Edge Neural seslerini ara
+            // 1. Önce Microsoft Edge sesleri ara - Edge'de genellikle "Microsoft" ile başlar
             targetVoice = allVoices.find(voice => {
                 const voiceName = voice.name.toLowerCase();
-                const isEdgeNeural = voiceName.includes('neural') || voiceName.includes('online');
-                const isTurkish = voice.lang.includes('tr-TR');
-                const hasTargetName = voiceName.includes(voiceNameToSearch.toLowerCase());
+                const isTurkish = voice.lang.includes('tr') || voice.lang.includes('TR');
+                const isMicrosoft = voiceName.includes('microsoft');
+                const hasTargetName = voiceName.includes(voiceNameToSearch.toLowerCase()) || 
+                                     (voiceName.includes('emel') && voiceNameToSearch.toLowerCase().includes('emel')) ||
+                                     (voiceName.includes('ahmet') && voiceNameToSearch.toLowerCase().includes('ahmet'));
                 
-                return isEdgeNeural && isTurkish && hasTargetName;
+                return isTurkish && isMicrosoft && hasTargetName;
             });
             
+            // 2. Microsoft sesi bulunamazsa, sadece isim eşleşmesi ara
             if (!targetVoice) {
-                console.warn('[speakWithEdgeVoice] Edge Neural Emel sesi bulunamadı');
-                return;
+                console.log('[speakWithEdgeVoice] Microsoft sesi bulunamadı, isim bazlı arama...');
+                targetVoice = turkishVoices.find(voice => {
+                    const voiceName = voice.name.toLowerCase();
+                    return voiceName.includes(voiceNameToSearch.toLowerCase()) || 
+                           (voiceName.includes('emel') && voiceNameToSearch.toLowerCase().includes('emel')) ||
+                           (voiceName.includes('ahmet') && voiceNameToSearch.toLowerCase().includes('ahmet'));
+                });
+            }
+            
+            // 3. İsim bulunamazsa, ilk Microsoft Türkçe sesi kullan
+            if (!targetVoice) {
+                console.log('[speakWithEdgeVoice] İsim eşleşmesi bulunamadı, ilk Microsoft Türkçe ses aranıyor...');
+                targetVoice = turkishVoices.find(voice => voice.name.toLowerCase().includes('microsoft'));
+            }
+            
+            // 4. Hala bulunamazsa, herhangi bir Türkçe ses kullan
+            if (!targetVoice && turkishVoices.length > 0) {
+                console.log('[speakWithEdgeVoice] Microsoft sesi bulunamadı, ilk Türkçe ses kullanılıyor...');
+                targetVoice = turkishVoices[0];
+            }
+            
+            // 5. Hiç Türkçe ses yoksa bile, Türkçe dil ayarını zorla
+            if (!targetVoice) {
+                console.warn('[speakWithEdgeVoice] Türkçe ses bulunamadı, varsayılan ses TR dil ayarıyla kullanılacak');
+            }
+            
+            if (targetVoice) {
+                console.log('[speakWithEdgeVoice] Seçilen ses:', targetVoice.name, '(' + targetVoice.lang + ')');
             }
             
             // Yeni konuşma oluştur
             const utterance = new SpeechSynthesisUtterance(text);
             
+            // Ses bulunduysa ayarla
             if (targetVoice) {
                 utterance.voice = targetVoice;
             }
             
+            // Her durumda Türkçe dil ayarını zorla
+            utterance.lang = 'tr-TR';
             utterance.rate = 0.95;
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
-            utterance.lang = 'tr-TR';
             
             // Event listeners
             utterance.onstart = () => {
                 appendFeedback('[INFO] Seslendirme başladı');
-                updateDikteButtonState(false);
-                isDictationActive = false;
+                
+                // TTS kontrol butonlarını göster
+                showTTSControls();
+                
+                // TTS başladığında dikte butonunu pasif yap ama flag'i koru
+                // Buton durumu setListeningState tarafından yönetiliyor
+                // isDictationActive değerini KORUYORUZ - false yapmıyoruz
                 
                 // ÇÖZÜM: Edge TTS başladığında Web Speech API'yi durdur
                 if (recognition && isWebSpeechActive) {
                     console.log('[TTS Interrupt] Edge TTS başladı, Web Speech API durduruluyor');
                     recognition.stop();
                     isWebSpeechActive = false;
+                }
+                
+                // C#'a TTS başladı bildirimi
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ 
+                        action: 'ttsStarted'
+                    }));
                 }
             };
             
@@ -1286,13 +2192,11 @@
                 console.log('[TTS] Edge TTS tamamlandı');
                 appendFeedback('[SUCCESS] Seslendirme tamamlandı');
                 
-                // ÇÖZÜM: Edge TTS bittiğinde Web Speech API'yi yeniden başlat
-                if (!isWebSpeechActive) {
-                    console.log('[TTS Interrupt] Edge TTS bitti, Web Speech API yeniden başlatılıyor');
-                    setTimeout(() => {
-                        startWebSpeechRecognition();
-                    }, 500); // 500ms bekle
-                }
+                // TTS kontrol butonlarını gizle
+                hideTTSControls();
+                
+                // TTS tamamlandı - merkezi durum yönetimine bildir
+                onTTSCompleted();
                 
                 // ÇÖZÜM: Edge TTS bittiğinde C#'a bildir
                 if (window.chrome && window.chrome.webview) {
@@ -1302,6 +2206,9 @@
                         source: 'edgeTTS'
                     }));
                 }
+                
+                // Buton durumunu güncelle - dikte pasif
+                // Buton durumu setListeningState tarafından yönetiliyor
             };
             
             utterance.onerror = (event) => {
@@ -1328,12 +2235,6 @@
             }
         }
 
-        function executeCommand() {
-            const text = document.getElementById('txtCikti').value;
-            if (window.chrome && window.chrome.webview) {
-                window.chrome.webview.postMessage(JSON.stringify({ action: 'execute', text: text }));
-            }
-        }
 
         // Çıktı alanına yeni mesaj ekle
         function appendOutput(message, isSystem = false, target = 'outputArea') {
@@ -1426,10 +2327,6 @@
 
         function checkButtonStates() {
             const hasText = document.getElementById('txtCikti').value.trim().length > 0;
-            const executeBtn = document.getElementById('executeButton');
-            if (executeBtn) {
-                executeBtn.disabled = !hasText;
-            }
         }
 
         // Debounced text change handler
@@ -1437,7 +2334,14 @@
             checkButtonStates();
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
+                // Yazı modunda textChanged event gönderme
+                if (currentMode === 'writing') {
+                    console.log('[TextChanged] Writing mode - skipping textChanged event');
+                    return;
+                }
+                
                 if (window.chrome && window.chrome.webview) {
+                    console.log('[TextChanged] Sending textChanged event in command mode');
                     window.chrome.webview.postMessage(JSON.stringify({
                         action: 'textChanged',
                         text: e.target.value
@@ -1529,8 +2433,8 @@
                 if (data.action === 'updateText') {
                     document.getElementById('txtCikti').value = data.text;
                     checkButtonStates();
-                    updateDikteButtonState(false);
-                    isDictationActive = false;
+                    // Buton durumu setListeningState tarafından yönetiliyor
+                    // isDictationActive değerini merkezi state'e göre yönet
                 } else if (data.action === 'clearText') {
                     const textarea = document.getElementById('txtCikti');
                     if (textarea) {
@@ -1576,22 +2480,62 @@
                         console.error('[WebView Message] speakWithEdgeVoice fonksiyonu bulunamadı!');
                         appendFeedback('[ERROR] speakWithEdgeVoice fonksiyonu bulunamadı!');
                     }
+                } else if (data.action === 'readySoundCompleted') {
+                    // Ready sound TTS tamamlandı
+                    console.log('[WebView Message] Ready sound completed:', data.soundType);
+                    if (window.readySoundCallback) {
+                        window.readySoundCallback();
+                        window.readySoundCallback = null; // Callback'i temizle
+                    }
                 } else if (data.action === 'dikteEnded' || data.action === 'dikteStopped') {
-                    updateDikteButtonState(false);
+                    // Buton durumu setListeningState tarafından yönetiliyor
                     isDictationActive = false;
-                    appendFeedback('🎙️ Dikte durduruldu');
-                } else if (data.action === 'updateDictationState') {
-                    isDictationActive = data.isActive;
-                    updateDikteButtonState(data.isActive, data.isActive ? 'Dinleniyor...' : 'Dikte');
-                    if (!data.isActive) {
+                    // Merkezi dinleme durumunu kontrol et
+                    if (currentListeningState === ListeningState.PASSIVE) {
+                        updateListeningStateUI(ListeningState.PASSIVE);
+                    } else {
                         appendFeedback('🎙️ Dikte durduruldu');
                     }
+                } else if (data.action === 'updateDictationState') {
+                    // C#'dan gelen durumu körü körüne kabul etme
+                    // Merkezi dinleme durumunu kontrol et
+                    console.log('[WebView Message] updateDictationState:', data.isActive, 'Mevcut dinleme durumu:', currentListeningState);
+                    
+                    // Sadece buton durumunu güncelle
+                    // Buton durumu setListeningState tarafından yönetiliyor
+                    
+                    // UI'ı merkezi dinleme durumuna göre güncelle
+                    if (!data.isActive && currentListeningState !== ListeningState.NONE) {
+                        // C# dikte kapandı diyor ama biz hala dinlemedeyiz
+                        updateListeningStateUI(currentListeningState);
+                    }
+                } else if (data.action === 'modeChanged') {
+                    // Mod değişikliği geldi
+                    console.log('[WebView Message] modeChanged:', data.mode);
+                    
+                    // currentMode değişkenini güncelle
+                    const modeLower = data.mode.toLowerCase();
+                    currentMode = modeLower;
+                    console.log('[WebView Message] currentMode updated to:', currentMode);
+                    
+                    // UI'ı güncelle
+                    updateModeIndicator(modeLower);
+                    
+                    // Feedback göster
+                    appendFeedback(`📋 ${modeLower === 'command' ? 'Komut' : 'Yazı'} moduna geçildi`);
                 } else if (data.action === 'runTestAudio') {
                     testAudioOutput();
                 } else if (data.action === 'playAudioStream') {
                     appendFeedback('[DEBUG] playAudioStream mesajı alındı');
-                    updateDikteButtonState(false);
-                    isDictationActive = false;
+                    
+                    // TTS başlıyor - durumu güncelle
+                    setListeningState(ListeningState.TTS_PLAYING);
+                    
+                    // Komut sonrası TTS ise bayrak ayarla
+                    if (data.isCommandResponse) {
+                        dikteMode.shouldResumeAfterTTS = true;
+                    }
+                    
                     if (data.audioData) {
                         playBase64Audio(data.audioData, data.format || 'webm', data.text);
                     } else {
@@ -1602,6 +2546,34 @@
                     // Mod değişikliği
                     currentMode = data.mode;
                     appendFeedback(`📋 ${data.mode === 'command' ? 'Komut' : 'Yazı'} moduna geçildi`);
+                } else if (data.action === 'updateVoiceSetting') {
+                    // Ses ayarı güncellemesi
+                    if (data.voiceName) {
+                        window.currentEdgeVoiceName = data.voiceName.toLowerCase().includes('ahmet') ? 'Ahmet' : 'Emel';
+                        console.log('[WebView Message] Ses ayarı güncellendi:', window.currentEdgeVoiceName);
+                        
+                        // Daha görünür bildirim
+                        const voiceMessage = `🔊 TTS SESİ DEĞİŞTİRİLDİ: ${window.currentEdgeVoiceName.toUpperCase()} ✅`;
+                        appendFeedback(voiceMessage);
+                        
+                        // 5 saniye sonra normal duruma dön
+                        setTimeout(() => {
+                            const feedbackDiv = document.getElementById('feedbackArea');
+                            if (feedbackDiv && feedbackDiv.textContent === voiceMessage) {
+                                appendFeedback('🎤 Uyandırma dinlemesi aktif');
+                            }
+                        }, 5000);
+                    }
+                } else if (data.action === 'ttsError') {
+                    // TTS hata bildirimi
+                    console.error('[WebView] TTS hatası:', data.error);
+                    if (data.fallback) {
+                        console.log('[WebView] TTS fallback:', data.fallback);
+                        appendFeedback(`⚠️ TTS hatası, ${data.fallback} kullanılıyor`);
+                    } else {
+                        appendFeedback(`❌ TTS hatası: ${data.error}`);
+                    }
+                }
             });
         }
         
@@ -1653,7 +2625,7 @@
                 }
                 
                 lastAudioTime = Date.now();
-                appendFeedback('[Edge TTS] C# tarafından ses verisi alındı');
+                appendFeedback('[TTS] Ses verisi alındı');
                 
                 // Base64'ü binary'ye çevir
                 const binaryString = atob(base64Data);
@@ -1696,13 +2668,13 @@
                 audio.volume = 1.0;
                 
                 audio.onloadeddata = () => {
-                    appendFeedback('[Edge TTS] Ses yüklendi, oynatılıyor...');
+                    appendFeedback('[TTS] Yüklendi');
                     showTTSControls();
                 };
                 
                 audio.onplay = () => {
                     isPlayingAudio = true;
-                    appendFeedback('[Edge TTS] Ses çalmaya başladı');
+                    // appendFeedback('[TTS] Konuşuyor...'); // Gereksiz - buton zaten gösteriyor
                     
                     // ÇÖZÜM: C# TTS başladığında Web Speech API'yi durdur
                     if (recognition && isWebSpeechActive) {
@@ -1715,16 +2687,10 @@
                 audio.onended = () => {
                     isPlayingAudio = false;
                     console.log('[TTS] C# TTS audio tamamlandı');
-                    appendFeedback('[Edge TTS] Ses çalma tamamlandı');
                     hideTTSControls();
                     
-                    // ÇÖZÜM: C# TTS bittiğinde Web Speech API'yi yeniden başlat
-                    if (!isWebSpeechActive) {
-                        console.log('[TTS Interrupt] C# TTS bitti, Web Speech API yeniden başlatılıyor');
-                        setTimeout(() => {
-                            startWebSpeechRecognition();
-                        }, 500); // 500ms bekle
-                    }
+                    // TTS tamamlandı - merkezi durum yönetimine bildir
+                    onTTSCompleted();
                     
                     // ÇÖZÜM: Edge TTS bittiğinde C#'a bildir
                     if (window.chrome && window.chrome.webview) {
@@ -1745,8 +2711,17 @@
                 };
                 
                 audio.onerror = (e) => {
-                    console.error('[playBase64Audio] Ses çalma hatası:', e);
-                    appendFeedback('[ERROR] Ses çalma hatası');
+                    // Manuel durdurma veya iptal durumunu hata olarak gösterme
+                    if (audio.error && audio.error.code === audio.error.MEDIA_ERR_ABORTED || isManualStop) {
+                        console.log('[playBase64Audio] Ses çalma manuel olarak durduruldu');
+                        if (isManualStop) {
+                            appendFeedback('[TTS] Kullanıcı tarafından kapatıldı');
+                            isManualStop = false;
+                        }
+                    } else {
+                        console.error('[playBase64Audio] Ses çalma hatası:', e);
+                        appendFeedback('[ERROR] Ses çalma hatası');
+                    }
                     isPlayingAudio = false;
                     hideTTSControls();
                 };
@@ -1768,7 +2743,7 @@
         // TTS Controls
         function showTTSControls() {
             document.getElementById('ttsControls').classList.add('show');
-            updateTTSStatus('Oynatılıyor');
+            updateTTSStatus(''); // "Konuşuyor" yazısına gerek yok
         }
         
         function hideTTSControls() {
@@ -1799,7 +2774,7 @@
                 if (currentAudio.paused) {
                     currentAudio.play();
                     ttsIsPaused = false;
-                    updateTTSStatus('Oynatılıyor');
+                    updateTTSStatus(''); // "Konuşuyor" yazısına gerek yok
                 } else {
                     currentAudio.pause();
                     ttsIsPaused = true;
@@ -1811,10 +2786,14 @@
         
         function stopTTS() {
             if (currentAudio) {
+                isManualStop = true; // Manuel durdurma flag'ini ayarla
                 currentAudio.pause();
                 currentAudio.currentTime = 0;
                 hideTTSControls();
-                appendFeedback('[TTS] Ses durduruldu');
+                appendFeedback('[TTS] Kullanıcı tarafından kapatıldı');
+                
+                // TTS manuel durdurulduğunda dinleme durumunu güncelle
+                onTTSCompleted();
             }
             
             if (window.speechSynthesis && window.speechSynthesis.speaking) {
@@ -1828,6 +2807,14 @@
 
         // Widget Functions
         function updateClock() {
+            const clockElement = document.getElementById('clockValue');
+            const dateElement = document.getElementById('dateValue');
+            
+            if (!clockElement || !dateElement) {
+                console.error('[updateClock] Clock veya date element bulunamadı!');
+                return;
+            }
+            
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -1839,8 +2826,8 @@
             const gunler = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
             const gunAdi = gunler[now.getDay()];
             
-            document.getElementById('clockValue').textContent = `${hours}:${minutes}`;
-            document.getElementById('dateValue').textContent = `${gunAdi}, ${day}/${month}/${year}`;
+            clockElement.textContent = `${hours}:${minutes}`;
+            dateElement.textContent = `${gunAdi}, ${day}/${month}/${year}`;
         }
         
         function updateWeather() {
@@ -1953,31 +2940,63 @@
             }
         }
         
+        // Widget click handler
+        function handleWidgetClick(widgetType) {
+            console.log('[Widget Click] Widget tıklandı:', widgetType);
+            
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ 
+                    action: 'widgetClicked',
+                    widgetType: widgetType
+                }));
+                
+                // Görsel geri bildirim
+                const widgetElement = document.getElementById(widgetType + 'Widget');
+                if (widgetElement) {
+                    widgetElement.style.opacity = '0.7';
+                    setTimeout(() => {
+                        widgetElement.style.opacity = '1';
+                    }, 200);
+                }
+            }
+        }
+        
         function initializeWidgets() {
+            console.log('[initializeWidgets] Widget başlatılıyor...');
+            
+            // Saat widget'ı
+            console.log('[initializeWidgets] Saat widget başlatılıyor...');
             updateClock();
             setInterval(updateClock, 1000);
             
+            // Hava durumu widget'ı
+            console.log('[initializeWidgets] Hava durumu widget başlatılıyor...');
             updateWeather();
             setInterval(updateWeather, 600000);
             
+            // Toplantılar widget'ı
+            console.log('[initializeWidgets] Toplantılar widget başlatılıyor...');
             updateMeetings();
             setInterval(updateMeetings, 300000);
             
+            // E-postalar widget'ı
+            console.log('[initializeWidgets] E-postalar widget başlatılıyor...');
             updateMails();
             setInterval(updateMails, 120000);
             
+            // Haberler widget'ı
+            console.log('[initializeWidgets] Haberler widget başlatılıyor...');
             updateNews();
             setInterval(updateNews, 900000);
+            
+            console.log('[initializeWidgets] Tüm widget\'lar başlatıldı.');
         }
         
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
-                const executeBtn = document.getElementById('executeButton');
-                if (executeBtn && !executeBtn.disabled) {
-                    executeCommand();
-                }
+                // Ctrl+Enter - artık kullanılmıyor
             }
             
             if (e.ctrlKey && e.key === 'd') {
@@ -2043,9 +3062,64 @@
         });
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('[DOMContentLoaded] Starting initialization...');
+            
+            // Mikrofon izni iste - İLK İŞ!
+            console.log('[DOMContentLoaded] Mikrofon izni isteniyor...');
+            try {
+                await navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        console.log('[DOMContentLoaded] Mikrofon izni alındı ✅');
+                        appendFeedback('🎤 Mikrofon erişimi sağlandı ✅');
+                        // Stream'i hemen kapat, sadece izin için kullandık
+                        stream.getTracks().forEach(track => track.stop());
+                    })
+                    .catch(err => {
+                        console.error('[DOMContentLoaded] Mikrofon izni reddedildi:', err);
+                        appendFeedback('⚠️ Mikrofon erişimi reddedildi! Lütfen izin verin.');
+                    });
+            } catch (error) {
+                console.error('[DOMContentLoaded] Mikrofon erişim hatası:', error);
+            }
+            
+            // TTS seslerini önceden yükle - ÇOK ÖNEMLİ!
+            console.log('[DOMContentLoaded] TTS seslerini önceden yüklüyorum...');
+            try {
+                await loadVoices();
+                console.log('[DOMContentLoaded] TTS sesleri başarıyla yüklendi');
+            } catch (error) {
+                console.error('[DOMContentLoaded] TTS sesleri yüklenemedi:', error);
+            }
+            
+            // WebView2 versiyon kontrolü
+            try {
+                const userAgent = navigator.userAgent;
+                console.log('[WebView2] User Agent:', userAgent);
+                
+                // Edge/WebView2 versiyonunu bul
+                const edgeMatch = userAgent.match(/Edg\/([0-9.]+)/);
+                if (edgeMatch) {
+                    console.log('[WebView2] Version:', edgeMatch[1]);
+                    
+                    // Versiyon kontrolü
+                    const versionParts = edgeMatch[1].split('.');
+                    const majorVersion = parseInt(versionParts[0]);
+                    if (majorVersion < 93) {
+                        console.warn('[WebView2] Version too old:', edgeMatch[1], '(minimum required: 93.0.954.0)');
+                        appendFeedback('⚠️ WebView2 versiyonu eski. Güncelleme önerilir.');
+                    }
+                }
+                
+            } catch (e) {
+                console.error('[WebView2] Version detection error:', e);
+            }
+            
             checkButtonStates();
+            
+            // Web Speech API'yi başlat
+            console.log('[DOMContentLoaded] Initializing Web Speech API...');
+            initializeWebSpeechAPI();
             
             // F5 refresh kontrolü - geliştirilmiş versiyon
             const isRefresh = isPageRefresh();
@@ -2100,6 +3174,39 @@
             setTimeout(() => {
                 initializeWidgets();
             }, 500);
+            
+            // Wake word dinlemeyi başlat (2 saniye gecikmeyle)
+            setTimeout(() => {
+                console.log('[DOMContentLoaded] Starting wake word listening...');
+                
+                // Debug için feedbackArea'yı kontrol et
+                const feedbackDiv = document.getElementById('feedbackArea');
+                if (feedbackDiv) {
+                    console.log('[DOMContentLoaded] feedbackArea found, current text:', feedbackDiv.textContent);
+                } else {
+                    console.error('[DOMContentLoaded] feedbackArea not found!');
+                }
+                
+                // Mod göstergesini başlat (varsayılan Komut Modu)
+                if (typeof updateModeIndicator === 'function') {
+                    updateModeIndicator('command');
+                    console.log('[DOMContentLoaded] Mode indicator initialized to Command mode');
+                }
+                
+                if (typeof setListeningState === 'function' && typeof ListeningState !== 'undefined') {
+                    console.log('[DOMContentLoaded] Calling setListeningState(PASSIVE)');
+                    setListeningState(ListeningState.PASSIVE);
+                } else {
+                    console.error('[DOMContentLoaded] setListeningState or ListeningState not found!');
+                    console.error('setListeningState type:', typeof setListeningState);
+                    console.error('ListeningState type:', typeof ListeningState);
+                    
+                    // Manuel olarak başlat
+                    if (feedbackDiv) {
+                        feedbackDiv.textContent = '⚠️ Başlatma hatası';
+                    }
+                }
+            }, 2000);
             
             // Focus on textarea
             document.getElementById('txtCikti').focus();

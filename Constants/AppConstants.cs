@@ -121,7 +121,9 @@ namespace QuadroAIPilot.Constants
             "sağ", "sol", "üst", "alt", "orta", "ilk", "son", "yeni", "eski", "boş", "dolu",
             "varolan", "mevcut", "geçmiş", "gelecek", "bugünkü", "dünkü", "yarınkı",
             "test", "et", "kontrol", "doğrula", "hesap", "profil", "oku", "listele", "göster",
-            "e posta", "mesaj", "randevu", "toplantı", "kişi", "takvim", "özet", "okunmamış"
+            "e posta", "mesaj", "randevu", "toplantı", "kişi", "takvim", "özet", "okunmamış",
+            "kilitle", "sonlandır", "yenile", "kaydır", "arttır", "azalt", "yapıştır", "kes", "seç", "hizala", "özetle", "gönder",
+            "yap", "ayarla", "kur"
         };
 
         // Sistem klasörleri
@@ -132,7 +134,9 @@ namespace QuadroAIPilot.Constants
 
         // Mod geçiş komutları
         public static readonly string[] ModeCommands = {
-            "komut modu", "yazı modu", "okuma modu"
+            "komut modu", "yazı modu", "yazma modu", "yazım modu", "yazın modu",
+            "yazma moduna geç", "yazı moduna geç", "yazım moduna geç", "yazın moduna geç",
+            "yazım oduna geç", "yazın oduna geç", "yaz kızım", "yaz oğlum"
         };
     }
 }

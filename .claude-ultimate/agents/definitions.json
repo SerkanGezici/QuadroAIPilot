@@ -1,76 +1,125 @@
 {
+  "version": "1.0.0",
+  "last_updated": "2024-12-13",
+  "model_default": "claude-opus-4-1-20250805",
   "agents": {
     "orchestrator": {
-      "model": "opus-4",
-      "role": "Görev dağıtımı ve koordinasyon yöneticisi",
-      "priority": "highest",
-      "capabilities": ["task-analysis", "agent-management", "result-merging"]
-    },
-    "architect": {
-      "model": "opus-4",
-      "role": "Sistem mimarı ve tasarımcı",
-      "priority": "high",
-      "capabilities": ["system-design", "pattern-selection", "architecture-planning"]
+      "name": "orchestrator",
+      "description": "Görev koordinasyonu ve ajan yönetimi uzmanı. Karmaşık görevleri analiz edip uygun alt ajanlara dağıtır.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Task", "TodoWrite"],
+      "priority": 1,
+      "proactive": true
     },
     "developer": {
-      "model": "sonnet-4",
-      "role": "Ana geliştirici",
-      "priority": "normal",
-      "capabilities": ["code-writing", "refactoring", "implementation"]
-    },
-    "tester": {
-      "model": "sonnet-4",
-      "role": "Test uzmanı",
-      "priority": "normal",
-      "capabilities": ["unit-testing", "integration-testing", "test-coverage"]
+      "name": "developer",
+      "description": "Kod geliştirme ve implementasyon uzmanı. Yeni özellikler ekler, bug'ları düzeltir, refactoring yapar.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "MultiEdit", "Bash", "Grep"],
+      "priority": 1
     },
     "reviewer": {
-      "model": "opus-4",
-      "role": "Kod incelemeci",
-      "priority": "normal",
-      "capabilities": ["code-review", "best-practices", "optimization"]
+      "name": "reviewer",
+      "description": "Kod inceleme ve best practices uzmanı. Code review yapar, standartlara uygunluk kontrol eder.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Grep", "Glob"],
+      "priority": 2,
+      "proactive": true
     },
-    "production": {
-      "model": "opus-4",
-      "role": "Production ve ölçeklendirme uzmanı (50K-1M kullanıcı)",
-      "priority": "high",
-      "capabilities": ["scalability", "load-balancing", "caching", "monitoring"]
+    "tester": {
+      "name": "tester",
+      "description": "Test senaryoları ve QA uzmanı. Unit test, integration test yazımı ve test coverage analizi.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep"],
+      "priority": 2,
+      "proactive": true
+    },
+    "architect": {
+      "name": "architect",
+      "description": "Yazılım mimarisi ve sistem tasarımı uzmanı. Proje yapısı, design pattern'ler ve mimari kararlar.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Grep", "Glob", "WebSearch"],
+      "priority": 1
     },
     "security": {
-      "model": "opus-4",
-      "role": "Güvenlik uzmanı",
-      "priority": "high",
-      "capabilities": ["vulnerability-scanning", "security-hardening", "penetration-testing"]
-    },
-    "compliance": {
-      "model": "opus-4",
-      "role": "KVKK/GDPR uyumluluk uzmanı",
-      "priority": "normal",
-      "capabilities": ["data-privacy", "compliance-audit", "policy-implementation"]
+      "name": "security",
+      "description": "Güvenlik analizi ve audit uzmanı. Güvenlik açıklarını tespit eder, OWASP standartlarını kontrol eder.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Grep", "WebSearch", "Bash"],
+      "priority": 1,
+      "proactive": true
     },
     "performance": {
-      "model": "sonnet-4",
-      "role": "Performans optimizasyon uzmanı",
-      "priority": "normal",
-      "capabilities": ["profiling", "optimization", "benchmark"]
+      "name": "performance",
+      "description": "Performans analizi ve optimizasyon uzmanı. Darboğazları tespit eder, optimizasyon önerileri sunar.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Bash", "Grep", "Edit"],
+      "priority": 2
+    },
+    "database": {
+      "name": "database",
+      "description": "Veritabanı tasarımı ve optimizasyon uzmanı. Schema tasarımı, query optimizasyonu ve veri modelleme.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "Bash"],
+      "priority": 2
+    },
+    "api": {
+      "name": "api",
+      "description": "API tasarımı ve backend servisler uzmanı. RESTful API, GraphQL, gRPC ve microservice'ler.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "Bash", "WebSearch"],
+      "priority": 1
+    },
+    "frontend": {
+      "name": "frontend",
+      "description": "UI/UX ve frontend geliştirme uzmanı. Kullanıcı arayüzü tasarımı, responsive design ve frontend framework'leri.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "MultiEdit", "Bash"],
+      "priority": 2
     },
     "devops": {
-      "model": "sonnet-4",
-      "role": "DevOps ve CI/CD uzmanı",
-      "priority": "normal",
-      "capabilities": ["pipeline-creation", "deployment", "containerization"]
+      "name": "devops",
+      "description": "CI/CD, deployment ve infrastructure uzmanı. Build pipeline'ları, containerization ve cloud deployment.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "Bash"],
+      "priority": 2
+    },
+    "documentation": {
+      "name": "documentation",
+      "description": "Dokümantasyon ve guide yazımı uzmanı. README, API docs, kullanım kılavuzları ve teknik dokümantasyon.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "Edit", "Glob"],
+      "priority": 3
+    },
+    "production": {
+      "name": "production",
+      "description": "Production ortamı ve ölçeklendirme uzmanı. Canlı ortam yönetimi, yük dengeleme, disaster recovery.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Bash", "WebSearch", "Grep"],
+      "priority": 1,
+      "proactive": true
+    },
+    "compliance": {
+      "name": "compliance",
+      "description": "KVKK/GDPR uyumluluk ve regülasyon uzmanı. Veri koruma, gizlilik standartları ve yasal uyumluluk.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Grep", "WebSearch", "Write"],
+      "priority": 1,
+      "proactive": true
     },
     "ultrasearch": {
-      "model": "opus-4",
-      "role": "Derin araştırma uzmanı",
-      "priority": "high",
-      "capabilities": ["deep-research", "documentation-analysis", "best-practice-finding"]
+      "name": "ultrasearch",
+      "description": "Derin kod araştırma ve pattern analizi uzmanı. Karmaşık arama sorguları, büyük codebase analizi.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Grep", "Glob", "Read", "LS", "Bash"],
+      "priority": 1
     },
     "ultrathinking": {
-      "model": "opus-4",
-      "role": "Derin düşünme ve problem çözme uzmanı",
-      "priority": "high",
-      "capabilities": ["complex-problem-solving", "strategic-thinking", "solution-design"]
+      "name": "ultrathinking",
+      "description": "Kompleks problem çözme ve stratejik planlama uzmanı. Yaratıcı çözümler, sistem tasarımı ve zor problemler.",
+      "model": "claude-opus-4-1-20250805",
+      "tools": ["Read", "Write", "WebSearch", "TodoWrite"],
+      "priority": 1
     }
   }
 }

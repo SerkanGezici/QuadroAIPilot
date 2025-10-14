@@ -18,7 +18,7 @@ namespace QuadroAIPilot.Commands
     /// <summary>
     /// Command for web information retrieval (Wikipedia, news, trends)
     /// </summary>
-    public class WebInfoCommand : ISystemCommand
+    public partial class WebInfoCommand : ISystemCommand
     {
         private readonly IWebContentService _webService;
         private readonly List<string> _supportedCommands;
@@ -37,6 +37,12 @@ namespace QuadroAIPilot.Commands
                 "haberlerini oku", "haberleri oku", "haberlerini göster", "haberleri göster",
                 "haberlerini getir", "haberleri getir", "haberlerini listele", "haberleri listele",
                 "haberlerde neler var", "haberlerde ne var", "haberlerinde neler var", "haberlerinde ne var",
+                "haberleri aç", "haberlerini aç", // Yeni eklenen
+                
+                // Zaman bazlı haber komutları
+                "yeni haberleri oku", "yeni haberler", "yeni haberleri göster",
+                "tüm haberleri oku", "tüm haberler", "tüm haberleri göster",
+                "son 1 saatteki haberler", "son 2 saatteki haberler", "son 3 saatteki haberler",
                 
                 // Kategori + fiil bazlı komutlar - TÜM KATEGORİLER İÇİN OKU DESTEĞİ
                 "spor haberlerini oku", "spor haberleri oku", "spor haberlerini göster", "spor haberleri göster",
@@ -57,6 +63,10 @@ namespace QuadroAIPilot.Commands
                 "turizm haberlerini oku", "turizm haberleri oku", "turizm haberlerini göster", "turizm haberleri göster",
                 "güncel haberlerini oku", "güncel haberleri oku", "güncel haberlerini göster", "güncel haberleri göster",
                 "yerel haberlerini oku", "yerel haberleri oku", "yerel haberlerini göster", "yerel haberleri göster",
+                
+                // Kategori bazlı yeni haber sorguları
+                "spor haberlerinde yeni ne var", "ekonomi haberlerinde yeni ne var",
+                "teknoloji haberlerinde yeni ne var", "sağlık haberlerinde yeni ne var",
                 
                 // Genel haber sorguları
                 "haberlerde ne var", "neler oluyor", "gündemde neler var", "son haberler neler",
@@ -159,6 +169,66 @@ namespace QuadroAIPilot.Commands
 
                 var lowerCommand = context.RawCommand.ToLowerInvariant();
                 
+                // Yeni haber komutlarını kontrol et
+                if (lowerCommand.Contains("yeni haberler") || lowerCommand.Contains("yeni haberleri"))
+                {
+                    return await HandleNewNewsOnly(context.RawCommand);
+                }
+                
+                // Tüm haberleri gösterme komutu
+                if (lowerCommand.Contains("tüm haberler") || lowerCommand.Contains("tüm haberleri"))
+                {
+                    NewsMemoryService.ResetTimeFilter();
+                    // Normal akışa devam
+                }
+                
+                // Belirli zaman aralığı komutları
+                if (System.Text.RegularExpressions.Regex.IsMatch(lowerCommand, @"son \d+ saatteki haberler"))
+                {
+                    return await HandleTimeRangeNews(context.RawCommand);
+                }
+                
+                // Basit "haberleri oku/göster" komutu için zaman kontrolü
+                if ((lowerCommand == "haberleri oku" || lowerCommand == "haberleri göster" || 
+                     lowerCommand == "haberleri oku." || lowerCommand == "haberleri göster.") &&
+                    !lowerCommand.Contains("yeni") && !lowerCommand.Contains("tüm"))
+                {
+                    // Son komuttan sonra yeni haber var mı kontrol et
+                    if (!NewsMemoryService.HasNewNews())
+                    {
+                        var lastCommandTime = NewsMemoryService.GetLastCommandTime();
+                        if (lastCommandTime != DateTime.MinValue)
+                        {
+                            var timeDiff = DateTime.Now - lastCommandTime;
+                            string timeText;
+                            
+                            if (timeDiff.TotalMinutes < 60)
+                            {
+                                timeText = $"{(int)timeDiff.TotalMinutes} dakika";
+                            }
+                            else if (timeDiff.TotalHours < 24)
+                            {
+                                timeText = $"{(int)timeDiff.TotalHours} saat";
+                            }
+                            else
+                            {
+                                timeText = $"{(int)timeDiff.TotalDays} gün";
+                            }
+                            
+                            var voiceMessage = $"Son {timeText} içinde yeni haber yok.";
+                            
+                            return new CommandResponse
+                            {
+                                IsSuccess = true,
+                                Message = voiceMessage,
+                                VoiceOutput = voiceMessage,
+                                ActionType = CommandActionType.None
+                            };
+                        }
+                    }
+                    // Yeni haber varsa normal akışa devam
+                }
+                
                 // "En son haberler" komutu hem haberleri hem trendleri göstersin
                 if (lowerCommand.Contains("son haberler") || lowerCommand.Contains("en son haberler") ||
                     (lowerCommand.Contains("haberler") && lowerCommand.Contains("neler")))
@@ -172,6 +242,19 @@ namespace QuadroAIPilot.Commands
                 if (IsTrendRequest(context.RawCommand))
                 {
                     return await HandleTrendRequest(request);
+                }
+                
+                // Kategori bazlı haber komutu olup olmadığını belirle
+                var newsCategories = new[] { "spor", "ekonomi", "teknoloji", "sağlık", "dünya", "magazin", "siyaset", "finans", "borsa", "bilim", "kültür", "sanat", "eğitim", "otomobil", "emlak", "turizm", "güncel", "yerel" };
+                string detectedCategory = null;
+                
+                if (request.PreferredType == ContentType.News)
+                {
+                    detectedCategory = newsCategories.FirstOrDefault(cat => lowerCommand.Contains(cat) && lowerCommand.Contains("haber"));
+                    if (!string.IsNullOrEmpty(detectedCategory))
+                    {
+                        LogService.LogInfo($"[WebInfoCommand] Kategori bazlı haber komutu tespit edildi: {lowerCommand} - Kategori: {detectedCategory}");
+                    }
                 }
 
                 // Get content from appropriate provider
@@ -187,8 +270,80 @@ namespace QuadroAIPilot.Commands
                     };
                 }
 
+                // Kategori bazlı haber filtresi
+                if (!string.IsNullOrEmpty(detectedCategory) && content != null && (content.Type == ContentType.News || content.Type == ContentType.RSS) && 
+                    content.Metadata != null && content.Metadata.ContainsKey("RSSItems"))
+                {
+                    var allItems = content.Metadata["RSSItems"] as List<RSSItem>;
+                    if (allItems != null && allItems.Any())
+                    {
+                        var lastCommandTime = NewsMemoryService.GetLastCommandTimeForCategory(detectedCategory);
+                        
+                        // Web'den gelen içerik için filtreleme yap
+                        if (!content.IsFromCache && lastCommandTime != DateTime.MinValue)
+                        {
+                            // Son komuttan sonraki haberleri filtrele
+                            var newItems = NewsMemoryService.GetNewsSinceForCategory(detectedCategory, lastCommandTime);
+                            
+                            if (!newItems.Any())
+                            {
+                                // Yeni haber yok - boş bir content oluştur ve normal akışa devam et
+                                var timeDiff = DateTime.Now - lastCommandTime;
+                                string timeText = timeDiff.TotalMinutes < 60 ? $"{(int)timeDiff.TotalMinutes} dakika" :
+                                                timeDiff.TotalHours < 24 ? $"{(int)timeDiff.TotalHours} saat" :
+                                                $"{(int)timeDiff.TotalDays} gün";
+                                
+                                var voiceMessage = $"Son {timeText} içinde yeni {detectedCategory} haberi yok.";
+                                LogService.LogInfo($"[WebInfoCommand] {detectedCategory} için yeni haber yok: {voiceMessage}");
+                                
+                                // Boş content oluştur ama mesajı metadata'ya ekle
+                                content.Metadata["RSSItems"] = new List<RSSItem>();
+                                content.Metadata["ItemCount"] = 0;
+                                content.Metadata["NoNewsMessage"] = voiceMessage;
+                                content.Metadata["TTSContent"] = voiceMessage;
+                            }
+                            else
+                            {
+                                // Yeni haberler var, content'i güncelle
+                                content.Metadata["RSSItems"] = newItems;
+                                content.Metadata["ItemCount"] = newItems.Count;
+                                LogService.LogInfo($"[WebInfoCommand] {detectedCategory} için {newItems.Count} yeni haber bulundu");
+                            }
+                        }
+                        
+                        // HER DURUMDA gösterilen haberlerin zaman damgasını güncelle (kategori bazlı)
+                        var shownItems = content.Metadata["RSSItems"] as List<RSSItem>;
+                        if (shownItems != null && shownItems.Any())
+                        {
+                            NewsMemoryService.UpdateLastCommandTimeForCategory(detectedCategory, shownItems);
+                            NewsMemoryService.StoreNewsItems(shownItems);
+                            LogService.LogInfo($"[WebInfoCommand] {detectedCategory} kategorisi için {shownItems.Count} haberin zaman damgası güncellendi (Cache: {content.IsFromCache})");
+                        }
+                    }
+                }
+
                 // Format response based on content type
                 var response = FormatContentResponse(content);
+                
+                // Genel haber komutu ise (kategori değilse) genel zaman damgasını güncelle
+                if (string.IsNullOrEmpty(detectedCategory) && content != null && (content.Type == ContentType.News || content.Type == ContentType.RSS) && 
+                    content.Metadata != null && content.Metadata.ContainsKey("RSSItems"))
+                {
+                    var shownItems = content.Metadata["RSSItems"] as List<RSSItem>;
+                    if (shownItems != null && shownItems.Any())
+                    {
+                        LogService.LogInfo($"[WebInfoCommand] Genel haberler için {shownItems.Count} haberin zaman damgası güncelleniyor (Cache: {content.IsFromCache})");
+                        NewsMemoryService.UpdateLastCommandTime(shownItems);
+                        NewsMemoryService.UpdateLastCommandTimeForCategory("genel", shownItems);
+                        
+                        // Cache'den gelen içerik için NewsMemoryService'e de sakla
+                        if (content.IsFromCache)
+                        {
+                            NewsMemoryService.StoreNewsItems(shownItems);
+                        }
+                    }
+                }
+                
                 return response;
             }
             catch (Exception ex)
@@ -342,13 +497,14 @@ namespace QuadroAIPilot.Commands
                 var configService = ServiceContainer.GetOptionalService<ConfigurationService>();
                 var userPreferences = configService?.User.NewsPreferences;
                 
-                // Haberleri al
+                // Haberleri al - CANLI FEED'den (cache bypass)
                 var newsRequest = new ContentRequest
                 {
                     Query = command,
                     PreferredType = ContentType.News,
                     MaxResults = 10
                 };
+                newsRequest.Parameters["forceRefresh"] = true; // Cache'i bypass et
                 
                 // Kullanıcı tercihlerine göre kategorileri belirle
                 if (userPreferences != null)
@@ -372,6 +528,39 @@ namespace QuadroAIPilot.Commands
                 var news = await newsTask;
                 var trends = await trendsTask;
                 
+                // Yeni haber kontrolü
+                if (news?.Metadata?.ContainsKey("RSSItems") == true)
+                {
+                    var freshItems = news.Metadata["RSSItems"] as List<RSSItem>;
+                    if (freshItems != null && freshItems.Any())
+                    {
+                        // Son gösterilen haberlerle karşılaştır
+                        var lastShownNews = NewsMemoryService.GetAllNews();
+                        var newItemsCount = 0;
+                        
+                        foreach (var freshItem in freshItems)
+                        {
+                            bool isNew = !lastShownNews.Any(old => 
+                                old.Title == freshItem.Title || 
+                                (Math.Abs((old.PublishDate - freshItem.PublishDate).TotalMinutes) < 5 && 
+                                 old.Source == freshItem.Source));
+                            
+                            if (isNew) newItemsCount++;
+                        }
+                        
+                        // Yeni haber sayısını metadata'ya ekle
+                        if (newItemsCount > 0)
+                        {
+                            news.Metadata["NewItemsCount"] = newItemsCount;
+                            var newCountText = newItemsCount == 1 ? "1 yeni haber" : $"{newItemsCount} yeni haber";
+                            news.Summary = $"{newCountText} var. " + (news.Summary ?? "");
+                        }
+                        
+                        // Haberleri hafızaya kaydet
+                        NewsMemoryService.StoreNewsItems(freshItems.Take(10).ToList());
+                    }
+                }
+                
                 // Haberleri NewsMemoryService'e kaydet
                 if (news != null)
                 {
@@ -383,6 +572,17 @@ namespace QuadroAIPilot.Commands
                 if (news != null && userPreferences != null)
                 {
                     news = FilterNewsByUserPreferences(news, userPreferences);
+                }
+                
+                // Filtrelenmiş haberlerin zaman damgasını güncelle
+                if (news != null && news.Metadata != null && news.Metadata.ContainsKey("RSSItems"))
+                {
+                    var shownItems = news.Metadata["RSSItems"] as List<RSSItem>;
+                    if (shownItems != null && shownItems.Any())
+                    {
+                        LogService.LogInfo($"[WebInfoCommand] Gösterilen {shownItems.Count} haberin zaman damgası güncelleniyor");
+                        NewsMemoryService.UpdateLastCommandTime(shownItems);
+                    }
                 }
                 
                 // HTML formatla
@@ -819,6 +1019,13 @@ namespace QuadroAIPilot.Commands
                     ttsContent = System.Text.RegularExpressions.Regex.Replace(ttsContent, @"<[^>]*>", "");
                     ttsContent = System.Net.WebUtility.HtmlDecode(ttsContent);
                     
+                    // NoNewsMessage durumunda ön ek ekleme
+                    if (content.Metadata.ContainsKey("NoNewsMessage"))
+                    {
+                        Debug.WriteLine($"[FormatNewsVoice] NoNewsMessage bulundu - ön ek eklenmeyecek");
+                        return ttsContent;
+                    }
+                    
                     // Kategori bilgisini ekle
                     string category = "";
                     if (content.Metadata.ContainsKey("category"))
@@ -930,6 +1137,16 @@ namespace QuadroAIPilot.Commands
             // HTML encode YAPMA - zaten güvenli HTML oluşturuyoruz
             var html = markdown;
 
+            // Google News formatı temizleme - liste işaretlerini düzgün göster
+            // • ile başlayan satırları düzgün formatla
+            html = System.Text.RegularExpressions.Regex.Replace(html, @"^• (.+)$", "<li style='margin-left: 20px;'>$1</li>", System.Text.RegularExpressions.RegexOptions.Multiline);
+
+            // Eğer <li> tagları varsa <ul> ile sar
+            if (html.Contains("<li"))
+            {
+                html = System.Text.RegularExpressions.Regex.Replace(html, @"(<li[^>]*>.*?</li>)+", "<ul style='list-style-type: none; padding-left: 0;'>$&</ul>", System.Text.RegularExpressions.RegexOptions.Singleline);
+            }
+
             // Headers
             html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h3>$1</h3>", System.Text.RegularExpressions.RegexOptions.Multiline);
             html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h2>$1</h2>", System.Text.RegularExpressions.RegexOptions.Multiline);
@@ -938,16 +1155,24 @@ namespace QuadroAIPilot.Commands
             // Bold
             html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
 
-            // Line breaks
-            html = html.Replace("\n\n", "</p><p>");
-            html = html.Replace("\n", "<br>");
-            html = $"<p>{html}</p>";
+            // Line breaks - <ul> tagları dışında
+            if (!html.Contains("<ul"))
+            {
+                html = html.Replace("\n\n", "</p><p>");
+                html = html.Replace("\n", "<br>");
+                html = $"<p>{html}</p>";
+            }
+            else
+            {
+                // Sadece liste olmayan kısımları <p> ile sar
+                html = System.Text.RegularExpressions.Regex.Replace(html, @"(?<!<\/li>)\n\n(?!<li)", "</p><p>", System.Text.RegularExpressions.RegexOptions.Multiline);
+            }
 
             // Links
             html = System.Text.RegularExpressions.Regex.Replace(html, @"\[([^\]]+)\]\(([^)]+)\)", "<a href='$2' target='_blank'>$1</a>");
 
             // Emojis are already in the text
-            
+
             return html;
         }
 
@@ -1832,6 +2057,252 @@ namespace QuadroAIPilot.Commands
             }
             
             return items;
+        }
+        
+        /// <summary>
+        /// Sadece yeni haberleri gösterir (son komuttan sonrakiler)
+        /// </summary>
+        private async Task<CommandResponse> HandleNewNewsOnly(string command)
+        {
+            try
+            {
+                var lastCommandTime = NewsMemoryService.GetLastCommandTime();
+                
+                // İlk kez haber isteniyorsa normal akışa yönlendir
+                if (lastCommandTime == DateTime.MinValue)
+                {
+                    return await HandleCombinedNewsAndTrends(command);
+                }
+                
+                // Yeni haberleri kontrol et
+                var newItems = NewsMemoryService.GetNewsSince(lastCommandTime);
+                
+                if (!newItems.Any())
+                {
+                    // Yeni haber yok
+                    var timeDiff = DateTime.Now - lastCommandTime;
+                    string timeText;
+                    
+                    if (timeDiff.TotalMinutes < 60)
+                    {
+                        timeText = $"{(int)timeDiff.TotalMinutes} dakika";
+                    }
+                    else if (timeDiff.TotalHours < 24)
+                    {
+                        timeText = $"{(int)timeDiff.TotalHours} saat";
+                    }
+                    else
+                    {
+                        timeText = $"{(int)timeDiff.TotalDays} gün";
+                    }
+                    
+                    var voiceMessage = $"Son {timeText} içinde yeni haber yok.";
+                    
+                    return new CommandResponse
+                    {
+                        IsSuccess = true,
+                        Message = voiceMessage,
+                        VoiceOutput = voiceMessage,
+                        ActionType = CommandActionType.None
+                    };
+                }
+                
+                // Yeni haberler var - göster
+                var content = new WebContent
+                {
+                    Title = "Yeni Haberler",
+                    Type = ContentType.News,
+                    Content = FormatNewNewsContent(newItems),
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["RSSItems"] = newItems,
+                        ["IsNewOnly"] = true
+                    }
+                };
+                
+                // Yeni haberleri hafızaya al
+                NewsMemoryService.UpdateLastCommandTime(newItems);
+                
+                var response = FormatContentResponse(content);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                LogService.LogError($"[WebInfoCommand] HandleNewNewsOnly hatası: {ex.Message}");
+                return new CommandResponse
+                {
+                    IsSuccess = false,
+                    Message = "Yeni haberler kontrol edilirken hata oluştu.",
+                    VoiceOutput = "Yeni haberler kontrol edilirken bir hata oluştu."
+                };
+            }
+        }
+        
+        /// <summary>
+        /// Belirli bir zaman aralığındaki haberleri gösterir
+        /// </summary>
+        private async Task<CommandResponse> HandleTimeRangeNews(string command)
+        {
+            try
+            {
+                // Saat değerini çıkar
+                var match = System.Text.RegularExpressions.Regex.Match(command, @"son (\d+) saatteki");
+                if (!match.Success)
+                {
+                    return await HandleCombinedNewsAndTrends(command);
+                }
+                
+                int hours = int.Parse(match.Groups[1].Value);
+                var sinceTime = DateTime.Now.AddHours(-hours);
+                
+                // ÖNEMLİ: Canlı feed'den güncel haberleri çek (cache'i bypass et)
+                var request = ParseCommandToRequest(command);
+                request.PreferredType = ContentType.News;
+                request.Parameters["forceRefresh"] = true; // Cache'i bypass et
+                
+                // Güncel haberleri al
+                var freshContent = await _webService.GetContentAsync(request);
+                
+                // Metadata'dan güncel RSS haberleri al
+                List<RSSItem> allFreshItems = null;
+                if (freshContent?.Metadata?.ContainsKey("RSSItems") == true)
+                {
+                    allFreshItems = freshContent.Metadata["RSSItems"] as List<RSSItem>;
+                }
+                
+                if (allFreshItems == null || !allFreshItems.Any())
+                {
+                    var voiceMessage = "Haberler alınamadı, lütfen tekrar deneyin.";
+                    return new CommandResponse
+                    {
+                        IsSuccess = false,
+                        Message = voiceMessage,
+                        VoiceOutput = voiceMessage,
+                        ActionType = CommandActionType.None
+                    };
+                }
+                
+                // Belirtilen zamandan sonraki haberleri filtrele
+                var recentItems = allFreshItems
+                    .Where(item => item.PublishDate > sinceTime)
+                    .OrderByDescending(item => item.PublishDate)
+                    .ToList();
+                
+                if (!recentItems.Any())
+                {
+                    var voiceMessage = $"Son {hours} saat içinde yeni haber yok.";
+                    return new CommandResponse
+                    {
+                        IsSuccess = true,
+                        Message = voiceMessage,
+                        VoiceOutput = voiceMessage,
+                        ActionType = CommandActionType.None
+                    };
+                }
+                
+                // Haberleri göster
+                var content = new WebContent
+                {
+                    Title = $"Son {hours} Saatteki Haberler",
+                    Type = ContentType.News,
+                    Content = FormatTimeRangeNewsContent(recentItems, hours),
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["RSSItems"] = recentItems,
+                        ["TimeRange"] = hours
+                    }
+                };
+                
+                // Gösterilen haberleri hafızaya al
+                NewsMemoryService.UpdateLastCommandTime(recentItems);
+                
+                var response = FormatContentResponse(content);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                LogService.LogError($"[WebInfoCommand] HandleTimeRangeNews hatası: {ex.Message}");
+                return new CommandResponse
+                {
+                    IsSuccess = false,
+                    Message = "Haberler alınırken hata oluştu.",
+                    VoiceOutput = "Haberler alınırken bir hata oluştu."
+                };
+            }
+        }
+        
+        /// <summary>
+        /// Yeni haberleri formatlar
+        /// </summary>
+        private string FormatNewNewsContent(List<RSSItem> items)
+        {
+            var content = new StringBuilder();
+            content.AppendLine($"📰 **YENİ HABERLER** ({items.Count} adet)");
+            content.AppendLine();
+            
+            int index = 1;
+            foreach (var item in items)
+            {
+                content.AppendLine($"🆕 **{index}. {item.Title}**");
+                
+                if (!string.IsNullOrEmpty(item.Description))
+                {
+                    content.AppendLine($"{item.Description}");
+                }
+                
+                if (!string.IsNullOrEmpty(item.Source))
+                {
+                    content.AppendLine($"🔗 Kaynak: {item.Source} | ⏰ {item.PublishDate:HH:mm}");
+                }
+                
+                content.AppendLine();
+                index++;
+            }
+            
+            return content.ToString();
+        }
+        
+        /// <summary>
+        /// Belirli zaman aralığındaki haberleri formatlar
+        /// </summary>
+        private string FormatTimeRangeNewsContent(List<RSSItem> items, int hours)
+        {
+            var content = new StringBuilder();
+            content.AppendLine($"📰 **SON {hours} SAATİN HABERLERİ** ({items.Count} adet)");
+            content.AppendLine();
+            
+            int index = 1;
+            foreach (var item in items)
+            {
+                var timeDiff = DateTime.Now - item.PublishDate;
+                string timeText;
+                
+                if (timeDiff.TotalMinutes < 60)
+                {
+                    timeText = $"{(int)timeDiff.TotalMinutes} dakika önce";
+                }
+                else
+                {
+                    timeText = $"{(int)timeDiff.TotalHours} saat önce";
+                }
+                
+                content.AppendLine($"**{index}. {item.Title}**");
+                
+                if (!string.IsNullOrEmpty(item.Description))
+                {
+                    content.AppendLine($"{item.Description}");
+                }
+                
+                if (!string.IsNullOrEmpty(item.Source))
+                {
+                    content.AppendLine($"🔗 Kaynak: {item.Source} | ⏰ {timeText}");
+                }
+                
+                content.AppendLine();
+                index++;
+            }
+            
+            return content.ToString();
         }
     }
 }

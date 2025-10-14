@@ -58,6 +58,14 @@ namespace QuadroAIPilot.Commands
                     case "volumemute":
                         HotkeySender.VolumeMute();
                         break;
+                    case "win+l":
+                        // Bilgisayar kilitleme için özel API kullan
+                        HotkeySender.LockComputer();
+                        break;
+                    case "win+d":
+                        // Masaüstünü göster
+                        HotkeySender.ShowDesktop();
+                        break;
                     // Diğer sistem geneli komutlar burada eklenir
                     default:
                         if (!string.IsNullOrEmpty(Metadata.KeyCombination))

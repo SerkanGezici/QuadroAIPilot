@@ -89,7 +89,7 @@ namespace QuadroAIPilot.Services.AI
                 new[] { "command" });
                 
             // Mod değiştirme komutları
-            AddPattern(@"^(yazı moduna|komut moduna|okuma moduna)\s*(geç|git)$", 
+            AddPattern(@"^(yazı moduna|komut moduna)\s*(geç|git)$", 
                 IntentType.SystemControl, 
                 new[] { "mode", "action" });
                 

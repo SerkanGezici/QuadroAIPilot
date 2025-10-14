@@ -1,0 +1,117 @@
+============================================
+QuadroAIPilot Build & Setup Automation
+============================================
+
+[1/6] Temizlik yapiliyor...
+Oluşturma başlatıldı: 15.09.2025 17:24:39.
+     1>1 düğümünde "C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.sln" projesi (Clean hedef).
+     1>ValidateSolutionConfiguration:
+         "Debug|ARM64" çözüm yapılandırması oluşturuluyor.
+     1>"C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.sln" Projesini Oluşturma İşlemi Tamamlandı (Clean hedef).
+
+Oluşturma başarılı oldu.
+    0 Uyarı
+    0 Hata
+
+Geçen Süre 00:00:02.07
+OK: Temizlik tamamlandi
+
+[2/6] Release build yapiliyor...
+  Geri yüklenecek projeler belirleniyor...
+  Geri yükleme için tüm projeler güncel.
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
+
+Oluşturma başarılı oldu.
+    0 Uyarı
+    0 Hata
+
+Geçen Süre 00:00:10.79
+OK: Build basarili
+
+[3/6] Self-contained publish yapiliyor...
+  Geri yüklenecek projeler belirleniyor...
+  Geri yükleme için tüm projeler güncel.
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\
+OK: Publish tamamlandi
+
+[4/6] Gereksiz dil klasorleri temizleniyor...
+Dil klas��rleri temizleniyor...
+  Silindi: af-ZA
+  Silindi: am-ET
+  Silindi: ar-SA
+  Silindi: bg-BG
+  Silindi: ca-ES
+  Silindi: cs-CZ
+  Silindi: cy-GB
+  Silindi: da-DK
+  Silindi: de-DE
+  Silindi: el-GR
+  Silindi: en-GB
+  Korundu: en-us
+  Silindi: es-ES
+  Silindi: es-MX
+  Silindi: et-EE
+  Silindi: eu-ES
+  Silindi: fr-CA
+  Silindi: fr-FR
+  Silindi: gd-gb
+  Silindi: gl-ES
+  Silindi: hr-HR
+  Silindi: hu-HU
+  Silindi: hy-AM
+  Silindi: ja-JP
+  Silindi: ka-GE
+  Silindi: kk-KZ
+  Silindi: km-KH
+  Silindi: ko-KR
+  Silindi: lb-LU
+  Silindi: lo-LA
+  Silindi: lt-LT
+  Silindi: lv-LV
+  Silindi: mi-NZ
+  Silindi: mk-MK
+  Silindi: ms-MY
+  Silindi: mt-MT
+  Silindi: nb-NO
+  Silindi: ne-NP
+  Silindi: nl-NL
+  Silindi: nn-NO
+  Silindi: pl-PL
+  Silindi: pt-BR
+  Silindi: pt-PT
+  Silindi: ro-RO
+  Silindi: ru-RU
+  Silindi: sk-SK
+  Silindi: sq-AL
+  Silindi: sv-SE
+  Silindi: th-TH
+  Korundu: tr-TR
+  Silindi: tt-RU
+  Silindi: ug-CN
+  Silindi: uk-UA
+  Silindi: ur-PK
+  Silindi: vi-VN
+  Silindi: zh-CN
+  Silindi: zh-TW
+
+�-zet:
+  - 55 dil klas��rǬ silindi
+  - Korunan klas��rler: en-us, tr-TR
+Temizlik tamamland��!
+
+[5/6] Edge manifest.json kontrol ediliyor...
+  OK: Edge manifest temiz (CSP yok)
+  OK: BrowserExtensions publish'e kopyalandi
+
+[6/6] Setup dosyasi olusturuluyor...
+OK: Setup dosyasi basariyla olusturuldu!
+
+Olusturulan Setup Dosyalari:
+  - QuadroAIPilot_Setup_1.2.0_Win11_Final.exe (115.48 MB) - 09/15/2025 17:27:23
+  - QuadroAIPilot_Setup_1.2.0_Win11_Fixed.exe (115.47 MB) - 09/15/2025 16:32:51
+  - QuadroAIPilot_Setup_1.2.0_Win11_v2.exe (115.3 MB) - 09/15/2025 16:15:06
+
+============================================
+Islem Tamamlandi!
+============================================

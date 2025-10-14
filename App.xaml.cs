@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using QuadroAIPilot.Infrastructure;
 using QuadroAIPilot.Services;
@@ -26,25 +27,57 @@ namespace QuadroAIPilot
         /// </summary>
         public App()
         {
-            this.InitializeComponent();
+            SimpleCrashLogger.Clear(); // Clear previous crash log
+            SimpleCrashLogger.Log("App constructor started");
+            
+            try
+            {
+                this.InitializeComponent();
+                SimpleCrashLogger.Log("InitializeComponent completed");
+            }
+            catch (Exception ex)
+            {
+                SimpleCrashLogger.LogException(ex, "InitializeComponent");
+                throw;
+            }
             
             try
             {
                 // Set the working directory to the application directory
                 SetWorkingDirectory();
+                SimpleCrashLogger.Log($"Working directory set to: {Environment.CurrentDirectory}");
                 
                 // Initialize logging first
                 LoggingService.ConfigureLogging();
                 LoggingService.LogApplicationStart();
+                SimpleCrashLogger.Log("Logging configured");
                 
                 // Initialize global exception handling
                 GlobalExceptionHandler.Initialize();
+                SimpleCrashLogger.Log("Global exception handler initialized");
                 
                 // Configure Dependency Injection
                 ServiceContainer.ConfigureServices();
+                SimpleCrashLogger.Log("Services configured");
+
+                // Auto-update sistemini başlat (arka planda)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(10000); // 10 saniye bekle (UI yüklensin)
+                        SimpleCrashLogger.Log("Auto-update kontrolü başlatılıyor...");
+                        await Services.UpdateService.Instance.StartupUpdateCheckAsync();
+                    }
+                    catch (Exception updateEx)
+                    {
+                        SimpleCrashLogger.LogException(updateEx, "AutoUpdate");
+                    }
+                });
             }
             catch (Exception ex)
             {
+                SimpleCrashLogger.LogException(ex, "App.Constructor");
                 // Fallback exception handling during startup
                 GlobalExceptionHandler.HandleException(ex, "App.Constructor");
                 throw; // Re-throw to prevent application from starting in invalid state
@@ -76,14 +109,22 @@ namespace QuadroAIPilot
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            SimpleCrashLogger.Log("OnLaunched started");
+            
             try
             {
                 // Create MainWindow manually since it contains XAML controls
+                SimpleCrashLogger.Log("Creating MainWindow...");
                 m_window = new MainWindow();
+                SimpleCrashLogger.Log("MainWindow created");
+                
+                SimpleCrashLogger.Log("Activating window...");
                 m_window.Activate();
+                SimpleCrashLogger.Log("Window activated");
             }
             catch (Exception ex)
             {
+                SimpleCrashLogger.LogException(ex, "App.OnLaunched");
                 GlobalExceptionHandler.HandleException(ex, "App.OnLaunched");
                 throw;
             }

@@ -220,14 +220,13 @@ namespace QuadroAIPilot.Managers
                 await StopDictationIfActiveAsync();
                 // Current dictation stopped
 
-                // 2. Focus with mouse click (simplified approach)
-                await SimulateClickOnWebViewAsync();
-                // Mouse click performed
-
-                // 3. Short delay then send Win+H (accelerated approach)
+                // 2. Focus textarea (Web Speech API için)
+                await FocusWebViewTextAreaAsync();
+                
+                // 3. Short delay then start Web Speech API
                 await Task.Delay(100);
 
-                // Win+H sending loop starting (simplified)
+                // Web Speech API başlatılıyor
                 bool dikteStarted = await StartDictationWithRetriesAsync();
 
                 if (!dikteStarted)

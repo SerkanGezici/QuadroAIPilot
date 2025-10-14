@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuadroAIPilot - Auto-Update Kurulum Rehberi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        .status {
+            background: #e7f9e7;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        .status h2 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        .status ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .status li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .status li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+        .step {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+        .step h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .substep {
+            margin-left: 40px;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .tip {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .footer {
+            background: #2d2d2d;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 QuadroAIPilot</h1>
+            <p>Auto-Update Sistemi - GitHub Kurulum Rehberi</p>
+        </div>
+
+        <div class="content">
+            <div class="status">
+                <h2>✅ TAMAMLANAN İŞLEMLER</h2>
+                <ul>
+                    <li>Git yapılandırması tamamlandı</li>
+                    <li>221 dosya commit edildi</li>
+                    <li>GitHub remote eklendi (quadroaipilot/QuadroAIPilot)</li>
+                    <li>Branch 'main' olarak ayarlandı</li>
+                    <li>Setup dosyası hazır (104.88 MB)</li>
+                    <li>Auto-update kodu yazıldı ve derlendi</li>
+                    <li>update.xml manifest oluşturuldu</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <h3><span class="step-number">1</span>GitHub Repository Oluştur</h3>
+
+                <div class="substep">
+                    <p><strong>Tarayıcıda aç:</strong></p>
+                    <a href="https://github.com/new" target="_blank" class="button">GitHub'da Yeni Repo Oluştur</a>
+                </div>
+
+                <div class="substep">
+                    <p><strong>Form doldurma:</strong></p>
+                    <ul>
+                        <li><strong>Repository name:</strong> <code>QuadroAIPilot</code> (tam olarak bu isim)</li>
+                        <li><strong>Description:</strong> "AI-powered voice assistant for Windows 11"</li>
+                        <li><strong>Visibility:</strong> ✅ Public (ücretsiz)</li>
+                        <li><strong>Add a README file:</strong> ❌ Seçme (zaten var)</li>
+                        <li><strong>Add .gitignore:</strong> ❌ Seçme (zaten var)</li>
+                        <li><strong>Choose a license:</strong> MIT License (opsiyonel)</li>
+                    </ul>
+                </div>
+
+                <div class="warning">
+                    <strong>⚠️ Önemli:</strong> "Create repository" tıkladıktan sonra açılan sayfadaki komutları KULLANMA! Sadece repo oluşturulduğunu doğrula.
+                </div>
+            </div>
+
+            <div class="step">
+                <h3><span class="step-number">2</span>Kodu GitHub'a Yükle</h3>
+
+                <div class="substep">
+                    <p><strong>PowerShell'i Yönetici Olarak Aç</strong></p>
+                    <p>Windows Tuşu + X → "Windows PowerShell (Yönetici)" veya "Terminal (Yönetici)"</p>
+                </div>
+
+                <div class="substep">
+                    <p><strong>Proje klasörüne git:</strong></p>
+                    <div class="code">cd "C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2"</div>
+                </div>
+
+                <div class="substep">
+                    <p><strong>Kodu GitHub'a yükle:</strong></p>
+                    <div class="code">git push -u origin main</div>
+                    <p style="margin-top: 10px;">GitHub kullanıcı adı ve şifre soracak. Gir ve bekle.</p>
+                </div>
+
+                <div class="tip">
+                    <strong>💡 İpucu:</strong> Eğer şifre hata verirse, GitHub Personal Access Token kullanman gerekebilir:
+                    <ol style="margin-top: 10px;">
+                        <li><a href="https://github.com/settings/tokens" target="_blank">GitHub Token Oluştur</a></li>
+                        <li>"Generate new token (classic)" tıkla</li>
+                        <li>Scope: "repo" seç (tümünü işaretle)</li>
+                        <li>Token'ı kopyala</li>
+                        <li>Şifre yerine token'ı yapıştır</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3><span class="step-number">3</span>İlk Release Oluştur</h3>
+
+                <div class="substep">
+                    <p><strong>GitHub Release sayfasını aç:</strong></p>
+                    <a href="https://github.com/quadroaipilot/QuadroAIPilot/releases/new" target="_blank" class="button">Release Oluştur</a>
+                </div>
+
+                <div class="substep">
+                    <p><strong>Formu doldur:</strong></p>
+                    <ul>
+                        <li><strong>Tag version:</strong> <code>v1.2.0</code> (tam olarak bu!)</li>
+                        <li><strong>Release title:</strong> <code>QuadroAIPilot v1.2.0</code></li>
+                        <li><strong>Description:</strong></li>
+                    </ul>
+                    <div class="code" style="white-space: pre-wrap; color: #f8f8f2;">
+# QuadroAIPilot v1.2.0 - İlk Release 🎉
+
+## ✨ Yeni Özellikler
+
+- 🔄 **Otomatik Güncelleme Sistemi**: GitHub Releases üzerinden otomatik güncelleme
+- 🎤 Sesli komut tanıma
+- 🤖 Claude AI entegrasyonu
+- 📰 Haber agregasyonu
+- 📧 Outlook entegrasyonu
+- 🌐 Tarayıcı eklentileri (Chrome, Edge, Firefox)
+- 🎨 Modern UI (4 farklı tema)
+
+## 📥 Kurulum
+
+1. Aşağıdaki setup dosyasını indir
+2. QuadroAIPilot_Setup_1.2.0_Win11_Final_v10.exe'yi çalıştır
+3. Kurulum talimatlarını takip et
+
+## 📋 Gereksinimler
+
+- Windows 11 (Build 22000+)
+- .NET 8.0 Runtime
+- Microsoft Edge WebView2
+
+## 🔄 Otomatik Güncelleme
+
+Bu sürümden itibaren uygulama otomatik olarak güncellemeleri kontrol eder.
+Manuel kontrol için: Ayarlar → Güncellemeler → Güncellemeleri Kontrol Et
+                    </div>
+                </div>
+
+                <div class="substep">
+                    <p><strong>Setup dosyasını ekle:</strong></p>
+                    <ol>
+                        <li>"Attach binaries" kısmına tıkla veya sürükle</li>
+                        <li>Dosya yolu: <code>Output\QuadroAIPilot_Setup_1.2.0_Win11_Final_v10.exe</code></li>
+                        <li>Yükleme bitene kadar bekle (104 MB)</li>
+                    </ol>
+                </div>
+
+                <div class="substep">
+                    <p><strong>"Publish release" butonuna tıkla</strong></p>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3><span class="step-number">4</span>update.xml Dosyasını Kontrol Et</h3>
+
+                <div class="substep">
+                    <p><strong>PowerShell'de:</strong></p>
+                    <div class="code">
+cd "C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2"
+git add update.xml
+git commit -m "Add update manifest for v1.2.0"
+git push origin main
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <strong>💡 Doğrulama:</strong> GitHub'da update.xml dosyasının yüklendiğini kontrol et:
+                    <br><a href="https://github.com/quadroaipilot/QuadroAIPilot/blob/main/update.xml" target="_blank" class="button">update.xml'i Kontrol Et</a>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3><span class="step-number">5</span>Test Et 🎉</h3>
+
+                <div class="substep">
+                    <p><strong>Uygulamayı çalıştır:</strong></p>
+                    <div class="code">bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.exe</div>
+                </div>
+
+                <div class="substep">
+                    <p><strong>Güncellemeleri test et:</strong></p>
+                    <ol>
+                        <li>Ayarlar → Güncellemeler sekmesine git</li>
+                        <li>"Mevcut Versiyon: 1.2.0" görmeli</li>
+                        <li>"Güncellemeleri Kontrol Et" butonuna tıkla</li>
+                        <li>"Uygulama güncel" mesajı almalısın (normal!)</li>
+                    </ol>
+                </div>
+
+                <div class="warning">
+                    <strong>⚠️ İlk Test:</strong> Şu anda 1.2.0 çalışıyor ve GitHub'da da 1.2.0 var, bu yüzden "güncelleme yok" mesajı alman NORMAL. Sistem çalışıyor demek!
+                </div>
+            </div>
+
+            <div class="step">
+                <h3><span class="step-number">6</span>Yeni Versiyon Yayınlama (İlerde)</h3>
+
+                <div class="substep">
+                    <p><strong>1. Versiyon numaralarını güncelle:</strong></p>
+                    <ul>
+                        <li><code>Package.appxmanifest</code>: <code>1.2.0.0</code> → <code>1.3.0.0</code></li>
+                        <li><code>Setup/QuadroAIPilot.iss</code>: <code>AppVersion "1.2.0"</code> → <code>AppVersion "1.3.0"</code></li>
+                    </ul>
+                </div>
+
+                <div class="substep">
+                    <p><strong>2. Build al:</strong></p>
+                    <div class="code">.\BuildAndSetup.ps1</div>
+                </div>
+
+                <div class="substep">
+                    <p><strong>3. Git commit ve push:</strong></p>
+                    <div class="code">
+git add .
+git commit -m "Release v1.3.0: [Değişiklikler]"
+git push origin main
+                    </div>
+                </div>
+
+                <div class="substep">
+                    <p><strong>4. GitHub'da yeni release oluştur (Adım 3 gibi)</strong></p>
+                    <ul>
+                        <li>Tag: <code>v1.3.0</code></li>
+                        <li>Setup dosyasını yükle</li>
+                    </ul>
+                </div>
+
+                <div class="substep">
+                    <p><strong>5. update.xml güncelle ve push et</strong></p>
+                    <div class="code">
+# update.xml'i düzenle (versiyon ve URL güncelle)
+git add update.xml
+git commit -m "Update manifest for v1.3.0"
+git push origin main
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <strong>🎉 Sonuç:</strong> Eski versiyon kullanan kullanıcılar otomatik olarak "Yeni versiyon mevcut!" bildirimi alacak!
+                </div>
+            </div>
+
+            <div class="warning">
+                <h3>🛠️ SORUN GİDERME</h3>
+                <ul>
+                    <li><strong>git push hata veriyor:</strong> Personal Access Token kullan (Adım 2'deki ipucu)</li>
+                    <li><strong>Setup dosyası bulunamıyor:</strong> <code>.\BuildAndSetup.ps1</code> çalıştır</li>
+                    <li><strong>"Güncelleme bulunamadı" hatası:</strong> update.xml GitHub'da main branch'te mi kontrol et</li>
+                    <li><strong>404 Not Found:</strong> Repository public mi? Release yayınlandı mı?</li>
+                </ul>
+            </div>
+
+            <div class="tip">
+                <h3>💡 FAYDALII LİNKLER</h3>
+                <ul>
+                    <li><a href="https://github.com/new" target="_blank">Yeni Repository Oluştur</a></li>
+                    <li><a href="https://github.com/quadroaipilot/QuadroAIPilot/releases/new" target="_blank">Yeni Release Oluştur</a></li>
+                    <li><a href="https://github.com/settings/tokens" target="_blank">Personal Access Token Oluştur</a></li>
+                    <li><a href="https://desktop.github.com/" target="_blank">GitHub Desktop İndir</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>🎉 Kurulum Tamamlandı!</h3>
+            <p>Artık kullanıcılarınız otomatik güncelleme alacak.</p>
+            <p style="margin-top: 10px; opacity: 0.7;">QuadroAIPilot v1.2.0 - Auto-Update System</p>
+        </div>
+    </div>
+</body>
+</html>

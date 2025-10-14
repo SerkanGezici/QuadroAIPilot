@@ -34,32 +34,11 @@
                 <ComboBox x:Name="ThemeComboBox" 
                           Width="300"
                           HorizontalAlignment="Left">
-                    <ComboBoxItem Content="🌈 Gradient Paradise" Tag="GradientParadise" IsSelected="True"/>
-                    <ComboBoxItem Content="🌙 Dark Elegance" Tag="DarkElegance"/>
+                    <ComboBoxItem Content="🌙 Dark Elegance" Tag="DarkElegance" IsSelected="True"/>
                     <ComboBoxItem Content="🌅 Warm Sunset" Tag="WarmSunset"/>
                     <ComboBoxItem Content="❄️ Nordic Aurora" Tag="NordicAurora"/>
                     <ComboBoxItem Content="🎆 Neon Nights" Tag="NeonNights"/>
                 </ComboBox>
-            </StackPanel>
-            
-            <!-- Performans profili -->
-            <StackPanel>
-                <TextBlock Text="Performans Profili" 
-                           Style="{ThemeResource SubtitleTextBlockStyle}"
-                           Margin="0,0,0,8"/>
-                <ComboBox x:Name="PerformanceComboBox" 
-                          Width="300"
-                          HorizontalAlignment="Left">
-                    <ComboBoxItem Content="Otomatik" Tag="Auto" IsSelected="True"/>
-                    <ComboBoxItem Content="Yüksek" Tag="High"/>
-                    <ComboBoxItem Content="Orta" Tag="Medium"/>
-                    <ComboBoxItem Content="Düşük" Tag="Low"/>
-                    <ComboBoxItem Content="Güç Tasarrufu" Tag="PowerSaver"/>
-                </ComboBox>
-                <TextBlock Text="GPU ve sistem kaynaklarına göre otomatik ayarlanır" 
-                           Style="{ThemeResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                           Margin="0,4,0,0"/>
             </StackPanel>
             
             <!-- Ses Seçimi -->
@@ -71,8 +50,8 @@
                           Width="300"
                           HorizontalAlignment="Left">
                     <ComboBoxItem Content="🔄 Otomatik" Tag="automatic" IsSelected="True"/>
-                    <ComboBoxItem Content="🔊 Emel (Edge)" Tag="edge-emel"/>
-                    <ComboBoxItem Content="🔊 Ahmet (Edge)" Tag="edge-ahmet"/>
+                    <ComboBoxItem Content="👩 Kadın" Tag="edge-emel"/>
+                    <ComboBoxItem Content="👨 Erkek" Tag="edge-ahmet"/>
                 </ComboBox>
                 <TextBlock Text="Metin seslendirme için kullanılacak ses" 
                            Style="{ThemeResource CaptionTextBlockStyle}"
@@ -107,26 +86,6 @@
                 </Grid>
             </StackPanel>
             
-            <!-- Görsel efektler -->
-            <StackPanel>
-                <TextBlock Text="Görsel Efektler" 
-                           Style="{ThemeResource SubtitleTextBlockStyle}"
-                           Margin="0,0,0,12"/>
-                
-                <ToggleSwitch x:Name="EnableAnimationsToggle" 
-                              Header="Animasyonları Etkinleştir"
-                              IsOn="True"
-                              Margin="0,0,0,8"/>
-                
-                <ToggleSwitch x:Name="EnableGlowToggle" 
-                              Header="Işık Efektlerini Etkinleştir"
-                              IsOn="True"
-                              Margin="0,0,0,8"/>
-                
-                <ToggleSwitch x:Name="EnableParallaxToggle" 
-                              Header="Parallax Efektlerini Etkinleştir"
-                              IsOn="True"/>
-            </StackPanel>
 
             <!-- Haber Tercihleri -->
             <Expander Header="Haber Tercihleri" 
@@ -435,24 +394,70 @@
                 </StackPanel>
             </Expander>
 
-            <!-- Gelişmiş ayarlar -->
-            <Expander Header="Gelişmiş Ayarlar" 
+<!-- Güncelleme Ayarları -->
+            <Expander Header="Güncellemeler"
                       HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Left">
+                      HorizontalContentAlignment="Left"
+                      IsExpanded="False">
                 <StackPanel Spacing="12" Margin="0,12,0,0">
-                    <Slider x:Name="BlurIntensitySlider"
-                            Header="Widget Bulanıklık Efekti"
-                            Minimum="0"
-                            Maximum="40"
-                            Value="20"
-                            StepFrequency="5"
-                            TickFrequency="10"
-                            TickPlacement="BottomRight"/>
-                    
-                    <TextBlock Text="Widget'ların arka plan bulanıklık efektini ayarlar" 
+                    <!-- Otomatik Güncelleme -->
+                    <ToggleSwitch x:Name="AutoUpdateToggle"
+                                  Header="Otomatik Güncelleme"
+                                  OffContent="Kapalı"
+                                  OnContent="Açık"
+                                  IsOn="True"
+                                  Margin="0,0,0,8"/>
+
+                    <TextBlock Text="Otomatik güncelleme açıksa, uygulama başlangıcında günde bir kez yeni versiyon kontrolü yapılır."
                                Style="{ThemeResource CaptionTextBlockStyle}"
                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                               Margin="0,0,0,8"/>
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12"/>
+
+                    <!-- Versiyon Bilgisi -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Mevcut Versiyon:"
+                                   Grid.Row="0" Grid.Column="0"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Margin="0,0,12,4"/>
+                        <TextBlock x:Name="CurrentVersionText"
+                                   Grid.Row="0" Grid.Column="1"
+                                   Text="1.0.0"
+                                   Style="{ThemeResource BodyStrongTextBlockStyle}"
+                                   Margin="0,0,0,4"/>
+
+                        <TextBlock Text="Son Kontrol:"
+                                   Grid.Row="1" Grid.Column="0"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   Margin="0,0,12,0"/>
+                        <TextBlock x:Name="LastCheckText"
+                                   Grid.Row="1" Grid.Column="1"
+                                   Text="Henüz kontrol edilmedi"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    </Grid>
+
+                    <!-- Kontrol Butonu -->
+                    <Button x:Name="CheckUpdatesButton"
+                            Content="Güncellemeleri Kontrol Et"
+                            Click="CheckUpdates_Click"
+                            Margin="0,8,0,0"/>
+
+                    <!-- Release Notes Linki -->
+                    <HyperlinkButton x:Name="ReleaseNotesLink"
+                                     Content="Release Notes (GitHub)"
+                                     Click="ReleaseNotes_Click"
+                                     Margin="0,4,0,0"/>
                 </StackPanel>
             </Expander>
 
@@ -462,7 +467,7 @@
                     Padding="12"
                     Margin="0,8,0,0">
                 <StackPanel>
-                    <TextBlock Text="Sistem Bilgisi" 
+                    <TextBlock Text="Sistem Bilgisi"
                                Style="{ThemeResource BaseTextBlockStyle}"
                                FontWeight="SemiBold"
                                Margin="0,0,0,8"/>

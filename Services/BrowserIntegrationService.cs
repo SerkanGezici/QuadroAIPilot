@@ -17,6 +17,31 @@ namespace QuadroAIPilot.Services
         Task StopAsync();
         bool IsRunning { get; }
         event EventHandler<string> TextReadRequested;
+        Task<TabCloseResult> CloseTabAsync(string keyword, string urlPattern);
+        Task NotifyTabOpenedAsync(string keyword, string url);
+    }
+
+    /// <summary>
+    /// Tab kapatma işleminin sonucunu temsil eder
+    /// </summary>
+    public class TabCloseResult
+    {
+        public bool Success { get; set; }
+        public string TabTitle { get; set; }
+        public string TabUrl { get; set; }
+        public string Source { get; set; } // "tracked", "pattern", "keyboard-nav"
+        public string Error { get; set; }
+        public TabInfo ClosedTab { get; set; }
+
+        /// <summary>
+        /// Kapatılan tab bilgilerini içerir
+        /// </summary>
+        public class TabInfo
+        {
+            public int TabId { get; set; }
+            public string Title { get; set; }
+            public string Url { get; set; }
+        }
     }
 
     public class BrowserIntegrationService : IBrowserIntegrationService
@@ -24,7 +49,7 @@ namespace QuadroAIPilot.Services
         private readonly ILogger<BrowserIntegrationService> _logger;
         private readonly IWindowsApiService _windowsApiService;
         private readonly IGoogleTranslateService _translateService;
-        
+
         private HttpListener _httpListener;
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isRunning;
@@ -32,6 +57,10 @@ namespace QuadroAIPilot.Services
         private readonly SemaphoreSlim _translationSemaphore = new(1, 1);
 
         private const string HTTP_PREFIX = "http://127.0.0.1:19741/";
+
+        // SECURITY FIX: Shared secret token for browser extension authentication
+        // Token should match in browser extension manifest
+        private const string AUTH_TOKEN = "QuadroAI-f7a3c9d8-4e2b-11ef-9a1c-0242ac120002";
         
         public bool IsRunning => _isRunning;
         public event EventHandler<string> TextReadRequested;
@@ -112,11 +141,22 @@ namespace QuadroAIPilot.Services
                 // CORS headers
                 context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
                 context.Response.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
-                context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
                 if (context.Request.HttpMethod == "OPTIONS")
                 {
                     context.Response.StatusCode = 200;
+                    context.Response.Close();
+                    return;
+                }
+
+                // SECURITY FIX: Token validation for all non-OPTIONS requests
+                if (!ValidateAuthToken(context.Request))
+                {
+                    _logger.LogWarning("[SECURITY] Unauthorized request blocked - invalid or missing auth token");
+                    context.Response.StatusCode = 401; // Unauthorized
+                    var errorResponse = Encoding.UTF8.GetBytes("{\"error\":\"Unauthorized\",\"message\":\"Invalid or missing authentication token\"}");
+                    await context.Response.OutputStream.WriteAsync(errorResponse, 0, errorResponse.Length);
                     context.Response.Close();
                     return;
                 }
@@ -222,7 +262,7 @@ namespace QuadroAIPilot.Services
             try
             {
                 // Önce TTS'i durdur (yeni metin geldi)
-                await TextToSpeechService.StopSpeakingAsync();
+                TextToSpeechService.StopSpeaking();
 
                 // Metni temizle
                 var cleanedText = CleanText(text);
@@ -322,7 +362,7 @@ namespace QuadroAIPilot.Services
             try
             {
                 _cancellationTokenSource?.Cancel();
-                
+
                 _httpListener?.Stop();
                 _httpListener?.Close();
 
@@ -332,6 +372,222 @@ namespace QuadroAIPilot.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error stopping browser integration service");
+            }
+        }
+
+        /// <summary>
+        /// Browser extension'a tab kapatma isteği gönderir
+        /// 3-Tier fallback stratejisi:
+        /// Tier 1: Browser Extension (ideal)
+        /// Tier 2: Smart Keyboard Navigator (fallback)
+        /// Tier 3: Process Matching (son çare)
+        /// </summary>
+        public async Task<TabCloseResult> CloseTabAsync(string keyword, string urlPattern)
+        {
+            try
+            {
+                _logger.LogInformation($"[CloseTab] Request: keyword='{keyword}', pattern='{urlPattern}'");
+
+                // ─────────────────────────────────────
+                // TIER 1: Browser Extension
+                // ─────────────────────────────────────
+                // NOT: Şu an extension tam entegre değil (Native Messaging gerekli)
+                // TODO: Native Messaging ile extension entegrasyonu
+
+                _logger.LogInformation("[CloseTab] Tier 1 (Extension) - Not fully implemented yet");
+
+                // ─────────────────────────────────────
+                // TIER 2: Smart Keyboard Navigator
+                // ─────────────────────────────────────
+                var navService = Infrastructure.ServiceContainer.GetOptionalService<SmartTabNavigator>();
+                if (navService != null)
+                {
+                    try
+                    {
+                        _logger.LogInformation("[CloseTab] Tier 2 (Keyboard Nav) - Starting...");
+                        var result = await navService.CloseTabByKeyboard(keyword);
+
+                        if (result.Success)
+                        {
+                            _logger.LogInformation($"[CloseTab] ✓ Tier 2 başarılı: {result.TabTitle}");
+                            return result;
+                        }
+
+                        _logger.LogWarning($"[CloseTab] Tier 2 başarısız: {result.Error}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[CloseTab] Tier 2 hatası");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("[CloseTab] SmartTabNavigator service bulunamadı");
+                }
+
+                // ─────────────────────────────────────
+                // TIER 3: Process Matching (Fallback)
+                // ─────────────────────────────────────
+                _logger.LogInformation("[CloseTab] Tier 3 (Process Matching) - Starting...");
+                var fallbackResult = await CloseTabViaProcessMatching(keyword);
+
+                return fallbackResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error closing tab");
+                return new TabCloseResult
+                {
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Process window title matching ile tab kapatma (fallback)
+        /// </summary>
+        private async Task<TabCloseResult> CloseTabViaProcessMatching(string keyword)
+        {
+            try
+            {
+                // Browser process isimleri
+                var browserProcesses = new[] { "chrome", "msedge", "firefox" };
+
+                foreach (var processName in browserProcesses)
+                {
+                    var processes = System.Diagnostics.Process.GetProcessesByName(processName);
+                    _logger.LogInformation($"[CloseTab] Found {processes.Length} {processName} processes");
+
+                    foreach (var process in processes)
+                    {
+                        try
+                        {
+                            if (string.IsNullOrEmpty(process.MainWindowTitle))
+                                continue;
+
+                            var normalizedTitle = NormalizeTurkish(process.MainWindowTitle.ToLowerInvariant());
+                            var normalizedKeyword = NormalizeTurkish(keyword.ToLowerInvariant());
+
+                            if (normalizedTitle.Contains(normalizedKeyword))
+                            {
+                                _logger.LogInformation($"[CloseTab] Match found: '{process.MainWindowTitle}'");
+
+                                // Browser window'u kapatmaya çalış (sadece window, process değil!)
+                                // NOT: Browser'ın tek bir process'i olabilir, tüm tabları içeren
+                                // Bu yüzden CloseMainWindow kullanmak riskli
+                                // Doğru çözüm: Extension üzerinden kapatmak
+
+                                _logger.LogWarning("Cannot close individual tab without extension support");
+                                _logger.LogWarning("Please ensure browser extension is installed and running");
+
+                                return new TabCloseResult
+                                {
+                                    Success = false,
+                                    Error = "Tab closing requires browser extension. Please install QuadroAI browser extension."
+                                };
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error checking process window");
+                        }
+                    }
+                }
+
+                return new TabCloseResult
+                {
+                    Success = false,
+                    Error = "Tab not found or extension not available"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in process matching");
+                return new TabCloseResult
+                {
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Extension'a tab açıldığını bildirir (tracking için)
+        /// </summary>
+        public async Task NotifyTabOpenedAsync(string keyword, string url)
+        {
+            try
+            {
+                _logger.LogInformation($"[NotifyTab] Tab opened: keyword='{keyword}', url='{url}'");
+
+                // TODO: Extension'a HTTP callback ile bildir
+                // Şimdilik extension kendi tracking'ini yapıyor
+
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error notifying tab opened");
+            }
+        }
+
+        private string NormalizeTurkish(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+
+            return input
+                .Replace('ı', 'i').Replace('İ', 'I')
+                .Replace('ğ', 'g').Replace('Ğ', 'G')
+                .Replace('ü', 'u').Replace('Ü', 'U')
+                .Replace('ş', 's').Replace('Ş', 'S')
+                .Replace('ö', 'o').Replace('Ö', 'O')
+                .Replace('ç', 'c').Replace('Ç', 'C');
+        }
+
+        /// <summary>
+        /// SECURITY: Validates the authentication token from browser extension
+        /// Expects "Authorization: Bearer <token>" header or "X-QuadroAI-Token: <token>"
+        /// </summary>
+        private bool ValidateAuthToken(HttpListenerRequest request)
+        {
+            try
+            {
+                // Check Authorization header (Bearer token)
+                string authHeader = request.Headers["Authorization"];
+                if (!string.IsNullOrEmpty(authHeader))
+                {
+                    if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string token = authHeader.Substring(7).Trim();
+                        if (token == AUTH_TOKEN)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                // Check custom X-QuadroAI-Token header (alternative)
+                string customToken = request.Headers["X-QuadroAI-Token"];
+                if (!string.IsNullOrEmpty(customToken) && customToken == AUTH_TOKEN)
+                {
+                    return true;
+                }
+
+                // Check query string (fallback, not recommended but for compatibility)
+                string queryToken = request.QueryString["token"];
+                if (!string.IsNullOrEmpty(queryToken) && queryToken == AUTH_TOKEN)
+                {
+                    _logger.LogWarning("[SECURITY] Token validated via query string (not recommended)");
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SECURITY] Error validating auth token");
+                return false;
             }
         }
     }

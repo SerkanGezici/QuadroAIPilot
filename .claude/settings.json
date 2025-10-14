@@ -1,0 +1,57 @@
+{
+  "modelPreference": "opus",
+  "permissions": {
+    "allow": [
+      "Task",
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "Grep",
+      "Glob",
+      "LS",
+      "WebFetch",
+      "WebSearch",
+      "TodoWrite",
+      "ExitPlanMode",
+      "NotebookEdit",
+      "BashOutput",
+      "KillBash"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +'%H:%M:%S')] 🚀 Agent başlatılıyor\" >&2",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +'%H:%M:%S')] ✅ Agent tamamlandı\" >&2",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "agentMode": {
+    "parallelExecution": true,
+    "maxConcurrentAgents": 10,
+    "defaultTimeout": 300000
+  },
+  "customInstructions": "12-Agent Orchestration System aktif. Tüm ajanlar hazır ve kullanıma uygun.",
+  "verbose": false,
+  "debug": false
+}

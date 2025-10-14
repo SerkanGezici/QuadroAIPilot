@@ -14,34 +14,7 @@ namespace QuadroAIPilot.Commands
     {
         private readonly string _action;
         public string CommandText { get; }
-        private readonly WindowsApiService _windowsApiService;        // Alt+Tab gerektirmeyen komutlar listesi
-        private static readonly HashSet<string> NoWindowSwitchCommands = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "sesi arttır",
-            "sesi azalt",
-            "sesi kapat",
-            "sesi aç",
-            "caps lock aç/kapat",
-            "ekran görüntüsü al",
-            "bilgisayarı kilitle",
-            "masaüstünü göster",
-            "görev görünümünü aç",
-            "çalıştır penceresini aç",
-            "dosya gezginini aç",
-            "belgeler aç",
-            "belgelerim aç",
-            "resimler aç",
-            "resimlerim aç",
-            "müzik aç",
-            "müziğim aç",
-            "videolar aç",
-            "videolarım aç",
-            "indirilenler aç",
-            "İndirilenler aç",
-            "downloads aç",
-            "masaüstü aç",
-            "desktop aç"
-        };
+        private readonly WindowsApiService _windowsApiService;
 
         /// <summary>
         /// Yeni bir sistem komutu oluşturur
@@ -56,14 +29,6 @@ namespace QuadroAIPilot.Commands
             _windowsApiService = windowsApiService ?? new WindowsApiService();
         }
 
-        /// <summary>
-        /// Komutun pencere değiştirme gerektirip gerektirmediğini kontrol eder
-        /// </summary>
-        private bool RequiresWindowSwitch()
-        {
-            // Komut Alt+Tab gerektirmeyen listede varsa false döner
-            return !NoWindowSwitchCommands.Contains(_action);
-        }
 
         /// <summary>
         /// Aktif uygulamaya göre komutun uygun olup olmadığını kontrol eder
@@ -114,50 +79,8 @@ namespace QuadroAIPilot.Commands
                     return false;
                 }
 
-                // Pencere değiştirme gerekip gerekmediğini kontrol et
-                if (RequiresWindowSwitch())
-                {
-                    // Aktif pencere bilgilerini kaydet (P/Invoke ile doğrudan çağrı)
-                    var activeWindowBefore = _windowsApiService.GetActiveWindow();
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Alt+Tab ÖNCESI aktif pencere: {activeWindowBefore}");
-
-                    // Önce Alt+Tab ile odağı bir önceki pencereye geçir
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Alt+Tab gönderiliyor...");
-                    HotkeySender.AltTab();
-
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Alt+Tab gönderildi, 800ms bekleniyor...");
-                    await Task.Delay(800); // Pencere değişimi için bekle
-
-                    // Hedef pencereyi odakla - bu adım kritik!
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Hedef pencereyi odaklama...");
-                    HotkeySender.FocusTargetWindow();
-
-                    // Odaklamanın gerçekleşmesi için ek bekleme
-                    await Task.Delay(300);
-
-                    // Alt+Tab sonrası aktif pencereyi kontrol et
-                    var activeWindowAfter = _windowsApiService.GetActiveWindow();
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Alt+Tab SONRASI aktif pencere: {activeWindowAfter}");
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Pencere değişti mi? {(activeWindowBefore != activeWindowAfter ? "EVET" : "HAYIR")}");
-
-                    // Pencere değişmediği durumda tekrar Alt+Tab yapma
-                    if (activeWindowBefore == activeWindowAfter && _action.ToLowerInvariant() == "pencereyi kapat")
-                    {
-                        Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Pencere değişmedi! Tekrar Alt+Tab deneniyor...");
-                        HotkeySender.AltTab();
-                        await Task.Delay(800);
-                        HotkeySender.FocusTargetWindow();
-                        await Task.Delay(300);
-
-                        // Son bir kontrol
-                        activeWindowAfter = _windowsApiService.GetActiveWindow();
-                        Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] İkinci Alt+Tab SONRASI aktif pencere: {activeWindowAfter}");
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Bu komut pencere değiştirme gerektirmiyor: {_action}");
-                }
+                // Win+H kaldırıldıktan sonra artık pencere değiştirme yapılmıyor
+                Debug.WriteLine($"[SystemCommand][{stopwatch.ElapsedMilliseconds}ms] Komut doğrudan çalıştırılıyor: {_action}");
 
                 // Komutu çalıştır
                 bool result = await ExecuteCommandAction();
@@ -183,7 +106,10 @@ namespace QuadroAIPilot.Commands
         /// </summary>
         private async Task<bool> ExecuteCommandAction()
         {
-            switch (_action.ToLowerInvariant())
+            // Nokta ve fazla boşlukları temizle
+            var cleanAction = _action.ToLowerInvariant().TrimEnd('.', ' ', '!', '?');
+
+            switch (cleanAction)
             {                // "Kabul et" ve "Vazgeç" komutları                case "kabul et":
                 case "onayla":
                 case "tamam":
@@ -212,6 +138,15 @@ namespace QuadroAIPilot.Commands
 
                 // Bilgisayar kontrolleri
                 case "bilgisayarı kilitle":
+                case "bilgisayarımı kilitle":
+                case "pc kilitle":
+                case "pc yi kilitle":
+                case "pc'yi kilitle":
+                case "ekranı kilitle":
+                case "ekranımı kilitle":
+                case "screen lock":
+                case "lock screen":
+                case "kilitle":
                     HotkeySender.LockComputer();
                     break;                case "masaüstünü göster":
                     HotkeySender.ShowDesktop();
@@ -235,9 +170,6 @@ namespace QuadroAIPilot.Commands
                 // Tarayıcı/Editör komutları
                 case "sekmeyi kapat":
                     HotkeySender.CloseTab();
-                    break;
-                case "bul":
-                    HotkeySender.Find();
                     break;
                 case "yazdır":
                     HotkeySender.Print();
@@ -469,32 +401,75 @@ namespace QuadroAIPilot.Commands
 
                 // Klasör açma komutları
                 case "belgeler aç":
+                case "belgeleri aç":
                 case "belgelerim aç":
+                case "belgelerimi aç":
+                case "belgelerim klasörünü aç":
+                case "belgeler klasörünü aç":
                     HotkeySender.OpenSpecialFolder("belgeler");
                     break;
                 case "resimler aç":
+                case "resimleri aç":
                 case "resimlerim aç":
+                case "resimlerimi aç":
+                case "resimlerim klasörünü aç":
+                case "resimler klasörünü aç":
                     HotkeySender.OpenSpecialFolder("resimler");
                     break;
                 case "müzik aç":
+                case "müziği aç":
                 case "müziğim aç":
+                case "müziğimi aç":
+                case "müziğim klasörünü aç":
+                case "müzik klasörünü aç":
                     HotkeySender.OpenSpecialFolder("müzik");
                     break;
                 case "videolar aç":
+                case "videoları aç":
                 case "videolarım aç":
+                case "videolarımı aç":
+                case "videolarım klasörünü aç":
+                case "videolar klasörünü aç":
                     HotkeySender.OpenSpecialFolder("videolar");
                     break;
                 case "indirilenler aç":
+                case "indirilenleri aç":
                 case "İndirilenler aç":
                 case "downloads aç":
+                case "indirilenler klasörünü aç":
+                case "downloads klasörünü aç":
                     HotkeySender.OpenSpecialFolder("indirilenler");
                     break;
                 case "masaüstü aç":
+                case "masaüstünü aç":
                 case "desktop aç":
+                case "masaüstü klasörünü aç":
+                case "desktop klasörünü aç":
                     HotkeySender.OpenSpecialFolder("masaüstü");
+                    break;
+                case "bilgisayarım aç":
+                case "bilgisayarımı aç":
+                case "bilgisayarım":
+                case "bilgisayarımı":
+                case "bu bilgisayar aç":
+                case "bu bilgisayar":
+                case "this pc":
+                case "bilgisayarım klasörünü aç":
+                case "bu bilgisayar klasörünü aç":
+                    HotkeySender.OpenSpecialFolder("bilgisayarım");
                     break;
                 case "dosya gezginini aç":
                     HotkeySender.OpenFolder("");
+                    break;
+
+                // Hesap Makinesi (custom command from CommandRegistry)
+                case "custom_calculator":
+                    Debug.WriteLine("[SystemCommand] Hesap makinesi açılıyor: calc.exe");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "calc.exe",
+                        UseShellExecute = true
+                    });
                     break;
 
                 default:

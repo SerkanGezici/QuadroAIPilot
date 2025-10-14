@@ -37,11 +37,28 @@ namespace QuadroAIPilot.Infrastructure
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
 
-            // Add HTTP Client Factory
-            services.AddHttpClient();
-            
-            // Add Memory Cache
-            services.AddMemoryCache();
+            // Add HTTP Client Factory with optimized connection pooling
+            services.AddHttpClient("QuadroAIPilot", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+                client.DefaultRequestHeaders.Add("User-Agent", "QuadroAIPilot/1.0");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.SocketsHttpHandler
+            {
+                MaxConnectionsPerServer = 10, // Increased from default 2
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5), // DNS rotation
+                ConnectTimeout = TimeSpan.FromSeconds(10),
+                ResponseDrainTimeout = TimeSpan.FromSeconds(5),
+                AutomaticDecompression = System.Net.DecompressionMethods.All
+            });
+
+            // Add Memory Cache with size limit
+            services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 100; // 100 entries max
+                options.CompactionPercentage = 0.25; // Remove 25% when limit reached
+                options.ExpirationScanFrequency = TimeSpan.FromMinutes(5);
+            });
 
             // Register configuration services
             RegisterConfigurationServices(services);
@@ -146,7 +163,10 @@ namespace QuadroAIPilot.Infrastructure
             // Browser Integration Service
             services.AddSingleton<BrowserIntegrationService>();
             services.AddSingleton<IBrowserIntegrationService>(provider => provider.GetRequiredService<BrowserIntegrationService>());
-            
+
+            // Smart Tab Navigator (Extension olmadan tab kapatma)
+            services.AddSingleton<SmartTabNavigator>();
+
             // Error Feedback Service (static service, no registration needed but included for completeness)
             // ErrorFeedbackService.GetErrorSuggestion() kullanılır
             

@@ -45,27 +45,31 @@ namespace QuadroAIPilot.Commands
         /// </summary>
         private CommandRegistry()
         {
-            // Komutlar dosyasının yolunu belirle - uygulama klasöründe
-            string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string commandsFolder = Path.Combine(appDirectory, "Commands");
-            
+            // Komutlar dosyasının yolunu belirle - AppData klasöründe
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QuadroAIPilot");
+            string commandsFolder = Path.Combine(appDataPath, "Commands");
+
             // Commands klasörü yoksa oluştur
             if (!Directory.Exists(commandsFolder))
             {
                 Directory.CreateDirectory(commandsFolder);
             }
-            
+
             _commandsFilePath = Path.Combine(commandsFolder, "commands.json");
-            
+
             // Komutları yükle veya varsayılan komutları oluştur
             if (File.Exists(_commandsFilePath))
             {
                 LoadCommands();
+
+                // Eksik komutları kontrol et ve ekle (version upgrade için)
+                EnsureMissingCommands();
             }
             else
             {
-                // Önce default_commands.json'dan yüklemeyi dene
-                string defaultCommandsPath = Path.Combine(commandsFolder, "default_commands.json");
+                // Önce default_commands.json'dan yüklemeyi dene - Program Files'da
+                string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string defaultCommandsPath = Path.Combine(appDirectory, "Commands", "default_commands.json");
                 if (File.Exists(defaultCommandsPath))
                 {
                     LoadCommandsFromFile(defaultCommandsPath);
@@ -75,6 +79,40 @@ namespace QuadroAIPilot.Commands
                     CreateDefaultCommands();
                 }
                 SaveCommands();
+            }
+        }
+
+        /// <summary>
+        /// Eksik komutları kontrol eder ve ekler (version upgrade için)
+        /// </summary>
+        private void EnsureMissingCommands()
+        {
+            bool needsSave = false;
+
+            // Hesap makinesi komutu kontrolü
+            var calculatorCommand = _commands.FirstOrDefault(c => c.CommandId == "open_calculator");
+            if (calculatorCommand == null)
+            {
+                _commands.Add(new CommandMetadata
+                {
+                    CommandId = "open_calculator",
+                    CommandName = "Hesap Makinesini Aç",
+                    CommandTriggers = new List<string> { "hesap makinesi aç", "hesap makinesini aç", "calculator aç", "hesap makinesi", "calculator" },
+                    FocusType = CommandFocusType.SystemWide,
+                    KeyCombination = "custom_calculator",
+                    DelayAfterFocusChange = 300,
+                    Description = "Windows Hesap Makinesini açar."
+                });
+                needsSave = true;
+                Debug.WriteLine("[CommandRegistry] Hesap makinesi komutu eklendi (upgrade)");
+            }
+
+            // Gelecekte eklenecek diğer komutlar buraya eklenebilir
+
+            if (needsSave)
+            {
+                SaveCommands();
+                Debug.WriteLine("[CommandRegistry] Eksik komutlar eklendi ve kaydedildi");
             }
         }
 
@@ -456,6 +494,18 @@ namespace QuadroAIPilot.Commands
                 Description = "Dosya gezginini açar."
             });
 
+            // Hesap Makinesi komutu
+            _commands.Add(new CommandMetadata
+            {
+                CommandId = "open_calculator",
+                CommandName = "Hesap Makinesini Aç",
+                CommandTriggers = new List<string> { "hesap makinesi aç", "hesap makinesini aç", "calculator aç", "hesap makinesi", "calculator" },
+                FocusType = CommandFocusType.SystemWide,
+                KeyCombination = "custom_calculator",
+                DelayAfterFocusChange = 300,
+                Description = "Windows Hesap Makinesini açar."
+            });
+
             // Email sistem komutları (MAPI/LocalOutlook)
             _commands.Add(new CommandMetadata
             {
@@ -690,7 +740,18 @@ namespace QuadroAIPilot.Commands
                 KeyCombination = "masaüstü aç",
                 DelayAfterFocusChange = 300,
                 Description = "Masaüstü klasörünü açar."            });
-            
+
+            _commands.Add(new CommandMetadata
+            {
+                CommandId = "open_thispc_folder",
+                CommandName = "Bilgisayarım/This PC Aç",
+                CommandTriggers = new List<string> { "bilgisayarım aç", "bilgisayarımı aç", "bu bilgisayar aç", "this pc" },
+                FocusType = CommandFocusType.SystemWide,
+                KeyCombination = "bilgisayarım aç",
+                DelayAfterFocusChange = 300,
+                Description = "Bilgisayarım (This PC) klasörünü açar."
+            });
+
             // Yeni klasör
             _commands.Add(new CommandMetadata
             {
@@ -730,7 +791,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "browser_back",
                 CommandName = "Tarayıcıda Geri Git",
                 CommandTriggers = new List<string> { "geri", "back", "geriye git" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Alt+Left",
                 DelayAfterFocusChange = 300,
                 Description = "Tarayıcıda geri gider."
@@ -741,7 +802,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "browser_forward",
                 CommandName = "Tarayıcıda İleri Git",
                 CommandTriggers = new List<string> { "ileri", "forward", "ileriye git" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Alt+Right",
                 DelayAfterFocusChange = 300,
                 Description = "Tarayıcıda ileri gider."
@@ -752,7 +813,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "refresh",
                 CommandName = "Yenile",
                 CommandTriggers = new List<string> { "yenile", "refresh", "sayfayı yenile" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "F5",
                 DelayAfterFocusChange = 300,
                 Description = "Sayfayı yeniler."
@@ -764,7 +825,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "new_tab",
                 CommandName = "Yeni Sekme",
                 CommandTriggers = new List<string> { "yeni sekme", "new tab" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+T",
                 DelayAfterFocusChange = 300,
                 Description = "Yeni sekme açar."
@@ -775,7 +836,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "close_tab",
                 CommandName = "Sekmeyi Kapat",
                 CommandTriggers = new List<string> { "sekmeyi kapat", "close tab" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+W",
                 DelayAfterFocusChange = 300,
                 Description = "Aktif sekmeyi kapatır."
@@ -787,7 +848,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "new_window",
                 CommandName = "Yeni Pencere",
                 CommandTriggers = new List<string> { "yeni pencere", "new window" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+N",
                 DelayAfterFocusChange = 300,
                 Description = "Yeni pencere açar."
@@ -798,7 +859,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "close_window",
                 CommandName = "Pencereyi Kapat",
                 CommandTriggers = new List<string> { "pencereyi kapat", "close window" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Alt+F4",
                 DelayAfterFocusChange = 300,
                 Description = "Aktif pencereyi kapatır."
@@ -809,7 +870,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "close_app",
                 CommandName = "Uygulamayı Kapat",
                 CommandTriggers = new List<string> { "uygulamayı kapat", "close app" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Alt+F4",
                 DelayAfterFocusChange = 300,
                 Description = "Aktif uygulamayı kapatır."
@@ -827,7 +888,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "save",
                 CommandName = "Kaydet",
                 CommandTriggers = new List<string> { "kaydet", "save", "dosyayı kaydet" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+S",
                 DelayAfterFocusChange = 300,
                 Description = "Aktif belgeyi kaydeder."
@@ -838,7 +899,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "save_as",
                 CommandName = "Farklı Kaydet",
                 CommandTriggers = new List<string> { "farklı kaydet", "save as", "yeni isimle kaydet" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+Shift+S",
                 DelayAfterFocusChange = 300,
                 Description = "Aktif belgeyi farklı isimle kaydeder."
@@ -849,7 +910,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "print",
                 CommandName = "Yazdır",
                 CommandTriggers = new List<string> { "yazdır", "print", "belgeyi yazdır" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+P",
                 DelayAfterFocusChange = 300,
                 Description = "Aktif belgeyi yazdırır."
@@ -861,7 +922,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "copy",
                 CommandName = "Kopyala",
                 CommandTriggers = new List<string> { "kopyala", "copy" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+C",
                 DelayAfterFocusChange = 300,
                 Description = "Seçili içeriği kopyalar."
@@ -872,7 +933,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "cut",
                 CommandName = "Kes",
                 CommandTriggers = new List<string> { "kes", "cut" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+X",
                 DelayAfterFocusChange = 300,
                 Description = "Seçili içeriği keser."
@@ -883,7 +944,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "paste",
                 CommandName = "Yapıştır",
                 CommandTriggers = new List<string> { "yapıştır", "paste" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+V",
                 DelayAfterFocusChange = 300,
                 Description = "Panodaki içeriği yapıştırır."
@@ -894,7 +955,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "undo",
                 CommandName = "Geri Al",
                 CommandTriggers = new List<string> { "geri al", "undo", "geri" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+Z",
                 DelayAfterFocusChange = 300,
                 Description = "Son işlemi geri alır."
@@ -905,7 +966,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "redo",
                 CommandName = "Yinele",
                 CommandTriggers = new List<string> { "yinele", "redo", "ileri al" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+Y",
                 DelayAfterFocusChange = 300,
                 Description = "Geri alınan işlemi yineler."
@@ -916,7 +977,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "select_all",
                 CommandName = "Tümünü Seç",
                 CommandTriggers = new List<string> { "tümünü seç", "select all", "hepsini seç" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+A",
                 DelayAfterFocusChange = 300,
                 Description = "Tüm içeriği seçer."
@@ -924,21 +985,10 @@ namespace QuadroAIPilot.Commands
 
             _commands.Add(new CommandMetadata
             {
-                CommandId = "find",
-                CommandName = "Bul",
-                CommandTriggers = new List<string> { "bul", "find", "ara" },
-                FocusType = CommandFocusType.ActiveWindow,
-                KeyCombination = "Ctrl+F",
-                DelayAfterFocusChange = 300,
-                Description = "Arama penceresini açar."
-            });
-
-            _commands.Add(new CommandMetadata
-            {
                 CommandId = "replace",
                 CommandName = "Değiştir",
-                CommandTriggers = new List<string> { "değiştir", "replace", "bul ve değiştir" },
-                FocusType = CommandFocusType.ActiveWindow,
+                CommandTriggers = new List<string> { "değiştir", "replace" },
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+H",
                 DelayAfterFocusChange = 300,
                 Description = "Bul ve değiştir penceresini açar."
@@ -950,7 +1000,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "zoom_in",
                 CommandName = "Yakınlaştır",
                 CommandTriggers = new List<string> { "yakınlaştır", "zoom in", "büyüt" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+Plus",
                 DelayAfterFocusChange = 300,
                 Description = "Görünümü yakınlaştırır."
@@ -961,7 +1011,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "zoom_out",
                 CommandName = "Uzaklaştır",
                 CommandTriggers = new List<string> { "uzaklaştır", "zoom out", "küçült" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+Minus",
                 DelayAfterFocusChange = 300,
                 Description = "Görünümü uzaklaştırır."
@@ -972,7 +1022,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "reset_zoom",
                 CommandName = "Yakınlaştırmayı Sıfırla",
                 CommandTriggers = new List<string> { "yakınlaştırmayı sıfırla", "reset zoom", "normal boyut" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+0",
                 DelayAfterFocusChange = 300,
                 Description = "Yakınlaştırmayı varsayılan değere döndürür."
@@ -982,7 +1032,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "fullscreen",
                 CommandName = "Tam Ekran",
                 CommandTriggers = new List<string> { "tam ekran", "fullscreen", "full screen" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "F11",
                 DelayAfterFocusChange = 300,
                 Description = "Tam ekran moduna geçer."
@@ -994,7 +1044,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "navigate_up",
                 CommandName = "Yukarı",
                 CommandTriggers = new List<string> { "yukarı", "up", "yukarı ok" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Up",
                 DelayAfterFocusChange = 300,
                 Description = "Yukarı yönlü navigasyon."
@@ -1005,7 +1055,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "navigate_down",
                 CommandName = "Aşağı",
                 CommandTriggers = new List<string> { "aşağı", "down", "aşağı ok" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Down",
                 DelayAfterFocusChange = 300,
                 Description = "Aşağı yönlü navigasyon."
@@ -1016,7 +1066,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "navigate_left",
                 CommandName = "Sol",
                 CommandTriggers = new List<string> { "sol", "left", "sol ok" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Left",
                 DelayAfterFocusChange = 300,
                 Description = "Sol yönlü navigasyon."
@@ -1027,7 +1077,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "navigate_right",
                 CommandName = "Sağ",
                 CommandTriggers = new List<string> { "sağ", "right", "sağ ok" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Right",
                 DelayAfterFocusChange = 300,
                 Description = "Sağ yönlü navigasyon."
@@ -1035,8 +1085,8 @@ namespace QuadroAIPilot.Commands
             {
                 CommandId = "navigate_home",
                 CommandName = "Başlangıca Git",
-                CommandTriggers = new List<string> { "başlangıç", "home", "başa git", "en başa git", "sayfa başına git" },
-                FocusType = CommandFocusType.ActiveWindow,
+                CommandTriggers = new List<string> { "sayfa başına git" },
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+Home",
                 DelayAfterFocusChange = 300,
                 Description = "Sayfa veya belgenin başlangıcına gider."
@@ -1046,8 +1096,8 @@ namespace QuadroAIPilot.Commands
             {
                 CommandId = "navigate_end",
                 CommandName = "Sona Git",
-                CommandTriggers = new List<string> { "son", "end", "sona git", "sayfa sonuna git" },
-                FocusType = CommandFocusType.ActiveWindow,
+                CommandTriggers = new List<string> { "sayfa sonuna git" },
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "Ctrl+End",
                 DelayAfterFocusChange = 300,
                 Description = "Sayfa veya belgenin sonuna gider."
@@ -1058,7 +1108,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "page_up",
                 CommandName = "Sayfa Yukarı",
                 CommandTriggers = new List<string> { "sayfa yukarı", "page up", "yukarı sayfa" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "PageUp",
                 DelayAfterFocusChange = 300,
                 Description = "Bir sayfa yukarı çıkar."
@@ -1067,7 +1117,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "page_down",
                 CommandName = "Sayfa Aşağı",
                 CommandTriggers = new List<string> { "sayfa aşağı", "page down", "aşağı sayfa" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "PageDown",
                 DelayAfterFocusChange = 300,
                 Description = "Bir sayfa aşağı iner."
@@ -1079,7 +1129,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "navigate_previous",
                 CommandName = "Önceki",
                 CommandTriggers = new List<string> { "önceki", "previous" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "PageUp",
                 DelayAfterFocusChange = 300,
                 Description = "Önceki sayfaya veya öğeye gider."
@@ -1090,7 +1140,7 @@ namespace QuadroAIPilot.Commands
                 CommandId = "navigate_next",
                 CommandName = "Sonraki",
                 CommandTriggers = new List<string> { "sonraki", "next" },
-                FocusType = CommandFocusType.ActiveWindow,
+                FocusType = CommandFocusType.SystemWide,
                 KeyCombination = "PageDown",
                 DelayAfterFocusChange = 300,
                 Description = "Sonraki sayfaya veya öğeye gider."

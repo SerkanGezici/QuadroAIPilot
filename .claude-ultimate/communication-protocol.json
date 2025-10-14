@@ -1,31 +1,35 @@
 {
+  "version": "1.0.0",
   "protocol": {
-    "version": "1.0",
-    "format": "json",
-    "encoding": "utf-8"
+    "message_format": "json",
+    "encoding": "utf-8",
+    "max_message_size": "10MB",
+    "timeout": 300000
   },
-  "messageStructure": {
-    "taskId": "unique-identifier",
-    "timestamp": "ISO-8601",
-    "userPrompt": "original-user-request",
-    "context": {
-      "project": "project-name",
-      "type": "project-type",
-      "currentFiles": ["affected-files"],
-      "dependencies": ["project-dependencies"]
+  "agent_communication": {
+    "request": {
+      "agent": "string",
+      "task": "string",
+      "context": "object",
+      "priority": "number",
+      "timeout": "number"
     },
-    "orchestration": {
-      "priority": "high|normal|low",
-      "parallelExecution": true,
-      "timeout": 300000
-    },
-    "agentTasks": {
-      "agentName": {
-        "task": "specific-task-description",
-        "inputs": {},
-        "expectedOutput": "description",
-        "dependencies": ["other-agents"]
-      }
+    "response": {
+      "agent": "string",
+      "status": "success|error|timeout",
+      "result": "any",
+      "error": "string",
+      "duration": "number"
     }
+  },
+  "parallel_execution": {
+    "max_concurrent": 10,
+    "queue_size": 100,
+    "priority_levels": 3
+  },
+  "error_handling": {
+    "retry_count": 3,
+    "retry_delay": 1000,
+    "fallback_agent": "orchestrator"
   }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 
@@ -8,7 +9,6 @@ namespace QuadroAIPilot.Managers
 {
     public enum AppTheme
     {
-        GradientParadise,  // Modern mor-pembe gradient (2025 trendi)
         DarkElegance,      // Koyu ve şık gradient
         WarmSunset,        // Sıcak tonlar gradient
         NordicAurora,      // Minimal koyu gri tonları
@@ -24,9 +24,17 @@ namespace QuadroAIPilot.Managers
         PowerSaver   // Güç tasarrufu modu
     }
 
+    public class WindowBounds
+    {
+        public int X { get; set; } = 100; // Güvenli başlangıç pozisyonu
+        public int Y { get; set; } = 100; // Güvenli başlangıç pozisyonu
+        public int Width { get; set; } = 700;
+        public int Height { get; set; } = 1300;
+    }
+    
     public class AppSettings
     {
-        public AppTheme Theme { get; set; } = AppTheme.GradientParadise;
+        public AppTheme Theme { get; set; } = AppTheme.NordicAurora; // Default tema değiştirildi
         public PerformanceProfile Performance { get; set; } = PerformanceProfile.Auto;
         public bool EnableAnimations { get; set; } = true;
         public double AnimationSpeed { get; set; } = 1.0; // 0.5-2.0 arası
@@ -34,6 +42,37 @@ namespace QuadroAIPilot.Managers
         public bool EnableGlowEffects { get; set; } = true;
         public double BlurIntensity { get; set; } = 20.0; // 0-30 arası
         public string TTSVoice { get; set; } = "automatic"; // TTS ses seçimi
+        public WindowBounds WindowBounds { get; set; } = new WindowBounds(); // Pencere konum ve boyutu
+
+        // Auto-update ayarları
+        public bool AutoUpdateEnabled { get; set; } = true; // Otomatik güncelleme aktif mi?
+        public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue; // Son güncelleme kontrol zamanı
+        public string SkippedVersion { get; set; } = string.Empty; // Atlanacak versiyon
+        
+        public AppSettings Clone()
+        {
+            return new AppSettings
+            {
+                Theme = this.Theme,
+                Performance = this.Performance,
+                EnableAnimations = this.EnableAnimations,
+                AnimationSpeed = this.AnimationSpeed,
+                EnableParallaxEffects = this.EnableParallaxEffects,
+                EnableGlowEffects = this.EnableGlowEffects,
+                BlurIntensity = this.BlurIntensity,
+                TTSVoice = this.TTSVoice,
+                WindowBounds = new WindowBounds
+                {
+                    X = this.WindowBounds.X,
+                    Y = this.WindowBounds.Y,
+                    Width = this.WindowBounds.Width,
+                    Height = this.WindowBounds.Height
+                },
+                AutoUpdateEnabled = this.AutoUpdateEnabled,
+                LastUpdateCheck = this.LastUpdateCheck,
+                SkippedVersion = this.SkippedVersion
+            };
+        }
     }
 
     public class SettingsManager
@@ -89,7 +128,11 @@ namespace QuadroAIPilot.Managers
                 if (File.Exists(_settingsPath))
                 {
                     var json = File.ReadAllText(_settingsPath);
-                    _settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    var options = new JsonSerializerOptions
+                    {
+                        Converters = { new JsonStringEnumConverter() }
+                    };
+                    _settings = JsonSerializer.Deserialize<AppSettings>(json, options) ?? new AppSettings();
                 }
                 else
                 {
@@ -117,7 +160,8 @@ namespace QuadroAIPilot.Managers
                 {
                     var options = new JsonSerializerOptions
                     {
-                        WriteIndented = true
+                        WriteIndented = true,
+                        Converters = { new JsonStringEnumConverter() }
                     };
                     var json = JsonSerializer.Serialize(_settings, options);
                     File.WriteAllText(_settingsPath, json);
@@ -207,7 +251,6 @@ namespace QuadroAIPilot.Managers
         {
             return _settings.Theme switch
             {
-                AppTheme.GradientParadise => ElementTheme.Light,
                 AppTheme.DarkElegance => ElementTheme.Dark,
                 AppTheme.WarmSunset => ElementTheme.Light,
                 AppTheme.NordicAurora => ElementTheme.Dark,

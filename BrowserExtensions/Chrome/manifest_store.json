@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "QuadroAI Okuyucu",
+  "version": "1.0.0",
+  "description": "Seçili metni QuadroAI Pilot ile Türkçe okutun",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "contextMenus",
+    "clipboardWrite",
+    "activeTab",
+    "scripting",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:19741/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "QuadroAI Pilot",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  }
+}

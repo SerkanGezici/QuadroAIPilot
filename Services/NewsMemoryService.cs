@@ -15,6 +15,14 @@ namespace QuadroAIPilot.Services
         private static List<RSSItem> _lastNewsItems = new List<RSSItem>();
         private static DateTime _lastUpdateTime = DateTime.MinValue;
         private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(2);
+        
+        // Zaman damgası özellikleri
+        private static DateTime _lastCommandTime = DateTime.MinValue;
+        private static HashSet<string> _lastShownNewsGuids = new HashSet<string>();
+        
+        // Kategori bazlı zaman takibi
+        private static Dictionary<string, DateTime> _lastCategoryCommandTimes = new Dictionary<string, DateTime>();
+        private static Dictionary<string, HashSet<string>> _lastCategoryShownGuids = new Dictionary<string, HashSet<string>>();
 
         /// <summary>
         /// Haber listesini saklar
@@ -32,6 +40,31 @@ namespace QuadroAIPilot.Services
                 else
                 {
                     LogService.LogInfo("[NewsMemoryService] Boş veya null haber listesi geldi");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Son komut zamanını günceller ve gösterilen haberleri işaretler
+        /// </summary>
+        public static void UpdateLastCommandTime(List<RSSItem> shownItems)
+        {
+            lock (_lock)
+            {
+                _lastCommandTime = DateTime.Now;
+                
+                if (shownItems != null && shownItems.Any())
+                {
+                    // Gösterilen haberlerin GUID'lerini sakla
+                    _lastShownNewsGuids.Clear();
+                    foreach (var item in shownItems)
+                    {
+                        if (!string.IsNullOrEmpty(item.Guid))
+                        {
+                            _lastShownNewsGuids.Add(item.Guid);
+                        }
+                    }
+                    LogService.LogInfo($"[NewsMemoryService] Son komut zamanı güncellendi, {_lastShownNewsGuids.Count} haber işaretlendi");
                 }
             }
         }
@@ -191,6 +224,163 @@ namespace QuadroAIPilot.Services
             {
                 _lastNewsItems.Clear();
                 _lastUpdateTime = DateTime.MinValue;
+                _lastCommandTime = DateTime.MinValue;
+                _lastShownNewsGuids.Clear();
+            }
+        }
+        
+        /// <summary>
+        /// Belirli bir zamandan sonraki haberleri getirir
+        /// </summary>
+        public static List<RSSItem> GetNewsSince(DateTime sinceTime)
+        {
+            lock (_lock)
+            {
+                if (DateTime.Now - _lastUpdateTime > CacheDuration)
+                {
+                    _lastNewsItems.Clear();
+                    return new List<RSSItem>();
+                }
+                
+                // PublishDate'i sinceTime'dan sonra olan haberleri filtrele
+                var newItems = _lastNewsItems.Where(item => 
+                    item.PublishDate > sinceTime && 
+                    !_lastShownNewsGuids.Contains(item.Guid))
+                    .OrderByDescending(item => item.PublishDate)
+                    .ToList();
+                    
+                LogService.LogInfo($"[NewsMemoryService] {sinceTime:HH:mm:ss} sonrası {newItems.Count} yeni haber bulundu");
+                return newItems;
+            }
+        }
+        
+        /// <summary>
+        /// Son komuttan sonra yeni haber var mı kontrol eder
+        /// </summary>
+        public static bool HasNewNews()
+        {
+            lock (_lock)
+            {
+                if (_lastCommandTime == DateTime.MinValue)
+                    return true; // İlk komut
+                    
+                return GetNewsSince(_lastCommandTime).Any();
+            }
+        }
+        
+        /// <summary>
+        /// Son komut zamanını getirir
+        /// </summary>
+        public static DateTime GetLastCommandTime()
+        {
+            lock (_lock)
+            {
+                return _lastCommandTime;
+            }
+        }
+        
+        /// <summary>
+        /// Tüm haberleri yeni olarak işaretle (zaman damgasını sıfırla)
+        /// </summary>
+        public static void ResetTimeFilter()
+        {
+            lock (_lock)
+            {
+                _lastCommandTime = DateTime.MinValue;
+                _lastShownNewsGuids.Clear();
+                LogService.LogInfo("[NewsMemoryService] Zaman filtresi sıfırlandı");
+            }
+        }
+        
+        /// <summary>
+        /// Kategori bazlı son komut zamanını günceller
+        /// </summary>
+        public static void UpdateLastCommandTimeForCategory(string category, List<RSSItem> shownItems)
+        {
+            lock (_lock)
+            {
+                if (string.IsNullOrEmpty(category))
+                    category = "genel";
+                    
+                category = category.ToLowerInvariant();
+                _lastCategoryCommandTimes[category] = DateTime.Now;
+                
+                if (shownItems != null && shownItems.Any())
+                {
+                    if (!_lastCategoryShownGuids.ContainsKey(category))
+                        _lastCategoryShownGuids[category] = new HashSet<string>();
+                        
+                    _lastCategoryShownGuids[category].Clear();
+                    foreach (var item in shownItems)
+                    {
+                        if (!string.IsNullOrEmpty(item.Guid))
+                        {
+                            _lastCategoryShownGuids[category].Add(item.Guid);
+                        }
+                    }
+                    LogService.LogInfo($"[NewsMemoryService] {category} kategorisi için son komut zamanı güncellendi, {_lastCategoryShownGuids[category].Count} haber işaretlendi");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Kategori için son komut zamanını getirir
+        /// </summary>
+        public static DateTime GetLastCommandTimeForCategory(string category)
+        {
+            lock (_lock)
+            {
+                if (string.IsNullOrEmpty(category))
+                    category = "genel";
+                    
+                category = category.ToLowerInvariant();
+                return _lastCategoryCommandTimes.ContainsKey(category) ? _lastCategoryCommandTimes[category] : DateTime.MinValue;
+            }
+        }
+        
+        /// <summary>
+        /// Belirli bir kategori ve zamandan sonraki haberleri getirir
+        /// </summary>
+        public static List<RSSItem> GetNewsSinceForCategory(string category, DateTime sinceTime)
+        {
+            lock (_lock)
+            {
+                if (DateTime.Now - _lastUpdateTime > CacheDuration)
+                {
+                    _lastNewsItems.Clear();
+                    return new List<RSSItem>();
+                }
+                
+                if (string.IsNullOrEmpty(category))
+                    category = "genel";
+                    
+                category = category.ToLowerInvariant();
+                var categoryGuids = _lastCategoryShownGuids.ContainsKey(category) ? _lastCategoryShownGuids[category] : new HashSet<string>();
+                
+                // PublishDate'i sinceTime'dan sonra olan VE daha önce gösterilmemiş haberleri filtrele
+                var newItems = _lastNewsItems.Where(item => 
+                    item.PublishDate > sinceTime && 
+                    !categoryGuids.Contains(item.Guid))
+                    .OrderByDescending(item => item.PublishDate)
+                    .ToList();
+                    
+                LogService.LogInfo($"[NewsMemoryService] {category} kategorisi için {sinceTime:HH:mm:ss} sonrası {newItems.Count} yeni haber bulundu");
+                return newItems;
+            }
+        }
+        
+        /// <summary>
+        /// Kategori için yeni haber var mı kontrol eder
+        /// </summary>
+        public static bool HasNewNewsForCategory(string category)
+        {
+            lock (_lock)
+            {
+                var lastTime = GetLastCommandTimeForCategory(category);
+                if (lastTime == DateTime.MinValue)
+                    return true; // İlk komut
+                    
+                return GetNewsSinceForCategory(category, lastTime).Any();
             }
         }
     }

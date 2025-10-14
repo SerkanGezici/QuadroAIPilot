@@ -107,17 +107,5 @@
     "action": "open_application",
     "target": "code",
     "description": "Visual Studio Code uygulamasını açar"
-  },
-  {
-    "name": "FindFile",
-    "intent": "find_file",
-    "patterns": [
-      ".*dosya.*bul",
-      ".*dosya.*ara",
-      ".*file.*find",
-      ".*file.*search"
-    ],
-    "action": "find_file",
-    "description": "Belirtilen dosyayı bulur"
   }
 ]

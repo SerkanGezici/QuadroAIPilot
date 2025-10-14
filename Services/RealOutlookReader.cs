@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace QuadroAIPilot.Services
 {
@@ -16,6 +17,9 @@ namespace QuadroAIPilot.Services
     {
         private dynamic _outlookApp;
         private dynamic _nameSpace;
+
+        // Compiled regex for better performance (HTML tag removal)
+        private static readonly Regex HtmlTagRegex = new Regex("<.*?>", RegexOptions.Compiled | RegexOptions.Singleline);
         
         public class RealEmailInfo
         {
@@ -185,42 +189,57 @@ namespace QuadroAIPilot.Services
                 
                 for (int i = 1; i <= stores.Count; i++)
                 {
+                    dynamic store = null;
                     try
                     {
-                        var store = stores[i];
-                        
+                        store = stores[i];
+
                         // Timeout için task wrapper
                         var storeTask = Task.Run(() => {
-                            try 
+                            dynamic folder = null;
+                            try
                             {
                                 // Inbox klasörünü al
-                                var folder = store.GetDefaultFolder(6); // olFolderInbox = 6
+                                folder = store.GetDefaultFolder(6); // olFolderInbox = 6
                                 var accountEmails = GetUnreadEmailsFromFolder(folder, store.DisplayName, maxCount);
-                                
-                                // COM cleanup
-                                Marshal.ReleaseComObject(folder);
+
                                 return accountEmails;
                             }
                             catch (Exception)
                             {
                                 return new List<RealEmailInfo>();
                             }
+                            finally
+                            {
+                                // COM cleanup - ALWAYS
+                                if (folder != null)
+                                {
+                                    try { Marshal.ReleaseComObject(folder); } catch { }
+                                }
+                            }
                         });
-                        
-                        // 30 saniye timeout
-                        if (storeTask.Wait(30000))
+
+                        // 10 saniye timeout (30'dan düşürüldü - performans için)
+                        if (storeTask.Wait(10000))
                         {
                             emails.AddRange(storeTask.Result);
                         }
                         else
                         {
+                            Debug.WriteLine($"[RealOutlookReader] Store {i} timeout - COM cleanup yapılacak");
                         }
-                        
-                        // COM cleanup
-                        Marshal.ReleaseComObject(store);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine($"[RealOutlookReader] Store {i} error: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // COM cleanup - ALWAYS
+                        if (store != null)
+                        {
+                            try { Marshal.ReleaseComObject(store); } catch { }
+                        }
                     }
                 }
                 
@@ -257,42 +276,57 @@ namespace QuadroAIPilot.Services
                 
                 for (int i = 1; i <= stores.Count; i++)
                 {
+                    dynamic store = null;
                     try
                     {
-                        var store = stores[i];
-                        
+                        store = stores[i];
+
                         // Timeout için task wrapper
                         var storeTask = Task.Run(() => {
-                            try 
+                            dynamic folder = null;
+                            try
                             {
                                 // Inbox klasörünü al
-                                var folder = store.GetDefaultFolder(6); // olFolderInbox = 6
+                                folder = store.GetDefaultFolder(6); // olFolderInbox = 6
                                 var accountEmails = GetRecentEmailsFromFolder(folder, store.DisplayName, maxCount);
-                                
-                                // COM cleanup
-                                Marshal.ReleaseComObject(folder);
+
                                 return accountEmails;
                             }
                             catch (Exception)
                             {
                                 return new List<RealEmailInfo>();
                             }
+                            finally
+                            {
+                                // COM cleanup - ALWAYS
+                                if (folder != null)
+                                {
+                                    try { Marshal.ReleaseComObject(folder); } catch { }
+                                }
+                            }
                         });
-                        
-                        // 30 saniye timeout
-                        if (storeTask.Wait(30000))
+
+                        // 10 saniye timeout (30'dan düşürüldü - performans için)
+                        if (storeTask.Wait(10000))
                         {
                             emails.AddRange(storeTask.Result);
                         }
                         else
                         {
+                            Debug.WriteLine($"[RealOutlookReader] GetRecent Store {i} timeout");
                         }
-                        
-                        // COM cleanup
-                        Marshal.ReleaseComObject(store);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine($"[RealOutlookReader] GetRecent Store {i} error: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // COM cleanup - ALWAYS
+                        if (store != null)
+                        {
+                            try { Marshal.ReleaseComObject(store); } catch { }
+                        }
                     }
                 }
                 
@@ -329,42 +363,57 @@ namespace QuadroAIPilot.Services
                 
                 for (int i = 1; i <= stores.Count; i++)
                 {
+                    dynamic store = null;
                     try
                     {
-                        var store = stores[i];
-                        
+                        store = stores[i];
+
                         // Timeout için task wrapper
                         var storeTask = Task.Run(() => {
-                            try 
+                            dynamic folder = null;
+                            try
                             {
                                 // Sent Items klasörünü al
-                                var folder = store.GetDefaultFolder(5); // olFolderSentMail = 5
+                                folder = store.GetDefaultFolder(5); // olFolderSentMail = 5
                                 var accountEmails = GetSentEmailsFromFolder(folder, store.DisplayName, maxCount);
-                                
-                                // COM cleanup
-                                Marshal.ReleaseComObject(folder);
+
                                 return accountEmails;
                             }
                             catch (Exception)
                             {
                                 return new List<RealEmailInfo>();
                             }
+                            finally
+                            {
+                                // COM cleanup - ALWAYS
+                                if (folder != null)
+                                {
+                                    try { Marshal.ReleaseComObject(folder); } catch { }
+                                }
+                            }
                         });
-                        
-                        // 30 saniye timeout
-                        if (storeTask.Wait(30000))
+
+                        // 10 saniye timeout (30'dan düşürüldü - performans için)
+                        if (storeTask.Wait(10000))
                         {
                             emails.AddRange(storeTask.Result);
                         }
                         else
                         {
+                            Debug.WriteLine($"[RealOutlookReader] GetSent Store {i} timeout");
                         }
-                        
-                        // COM cleanup
-                        Marshal.ReleaseComObject(store);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine($"[RealOutlookReader] GetSent Store {i} error: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // COM cleanup - ALWAYS
+                        if (store != null)
+                        {
+                            try { Marshal.ReleaseComObject(store); } catch { }
+                        }
                     }
                 }
                 
@@ -439,32 +488,41 @@ namespace QuadroAIPilot.Services
                 int totalCount = items.Count;
                 int startIndex = Math.Max(1, totalCount - 100);
                 
-                // Sort yerine restrict kullan - daha performanslı
-                var restrictedItems = items.Restrict("[UnRead] = True");
+                // Önce tarihe göre sırala (en yeniler önce)
+                items.Sort("[ReceivedTime]", true);
                 
                 int processedCount = 0;
-                for (int i = 1; i <= restrictedItems.Count && processedCount < maxCount; i++)
+                int checkedCount = 0;
+                int maxChecks = Math.Min(items.Count, 200); // En fazla 200 mail kontrol et
+                
+                for (int i = 1; i <= items.Count && processedCount < maxCount && checkedCount < maxChecks; i++)
                 {
                     try
                     {
-                        var item = restrictedItems[i];
+                        var item = items[i];
+                        checkedCount++;
                         
                         // Mail item mı kontrol et
                         if (item.Class == 43) // olMail = 43
                         {
-                            emails.Add(ConvertToRealEmailInfo(item, accountName));
-                            processedCount++;
+                            // Okunmamış mı kontrol et
+                            if (item.UnRead == true)
+                            {
+                                emails.Add(ConvertToRealEmailInfo(item, accountName));
+                                processedCount++;
+                                Debug.WriteLine($"[RealOutlookReader] Okunmamış mail bulundu: {item.Subject}");
+                            }
                         }
                         
                         if (item != null) Marshal.ReleaseComObject(item);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine($"[RealOutlookReader] Mail işleme hatası: {ex.Message}");
                     }
                 }
                 
-                
-                Marshal.ReleaseComObject(restrictedItems);
+                Debug.WriteLine($"[RealOutlookReader] {checkedCount} mail kontrol edildi, {processedCount} okunmamış bulundu");
                 Marshal.ReleaseComObject(items);
             }
             catch (Exception)
@@ -529,8 +587,8 @@ namespace QuadroAIPilot.Services
                     string body = mailItem.Body ?? "";
                     if (!string.IsNullOrEmpty(body))
                     {
-                        // HTML taglarını temizle ve ilk 200 karakteri al
-                        bodyPreview = System.Text.RegularExpressions.Regex.Replace(body, "<.*?>", "");
+                        // HTML taglarını temizle ve ilk 200 karakteri al (compiled regex kullan)
+                        bodyPreview = HtmlTagRegex.Replace(body, "");
                         if (bodyPreview.Length > 200)
                             bodyPreview = bodyPreview.Substring(0, 200) + "...";
                     }
@@ -613,8 +671,8 @@ namespace QuadroAIPilot.Services
                     string body = mailItem.Body ?? "";
                     if (!string.IsNullOrEmpty(body))
                     {
-                        // HTML taglarını temizle ve ilk 200 karakteri al
-                        bodyPreview = System.Text.RegularExpressions.Regex.Replace(body, "<.*?>", "");
+                        // HTML taglarını temizle ve ilk 200 karakteri al (compiled regex kullan)
+                        bodyPreview = HtmlTagRegex.Replace(body, "");
                         if (bodyPreview.Length > 200)
                             bodyPreview = bodyPreview.Substring(0, 200) + "...";
                     }
@@ -910,35 +968,98 @@ namespace QuadroAIPilot.Services
                         return appointments;
                     }
 
+                    // Microsoft önerisi: ÖNCE SORT, SONRA IncludeRecurrences, SONRA RESTRICT
+                    items.Sort("[Start]", false);
                     items.IncludeRecurrences = true;
-                    // items.Sort("[Start]"); // KALDIRILDI: 15 dakika timeout riski
 
-                    // Tarih filtresi - Günlük ve haftalık sorgular için farklı formatlar
-                    string startStr, endStr;
-                    
-                    // Günlük sorgu mu kontrol et (startDate ve endDate arasında 1 gün fark var mı)
-                    bool isDailyQuery = (endDate - startDate).TotalDays == 1 && startDate.TimeOfDay == TimeSpan.Zero;
-                    
-                    if (isDailyQuery)
-                    {
-                        // Günlük sorgu için dd/MM/yyyy formatı kullan (Türkçe tarih formatı)
-                        startStr = startDate.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-                        endStr = endDate.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-                    }
-                    else
-                    {
-                        // Haftalık ve diğer sorgular için ISO formatı kullan
-                        startStr = startDate.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-                        endStr = endDate.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-                    }
-                    
+                    // Tarih filtresi - Outlook DASL formatı
+                    // Format: d/M/yyyy h:mm tt (Türkiye formatı: Gün/Ay/Yıl)
+                    string startStr = startDate.ToString("d/M/yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+                    string endStr = endDate.ToString("d/M/yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+
                     string filter = $"[Start] >= '{startStr}' AND [Start] < '{endStr}'";
-                    
-                    
+
+                    LogService.LogInfo($"[RealOutlookReader] GetAppointmentsByDateSync - Tarih aralığı: {startStr} - {endStr}");
+                    LogService.LogInfo($"[RealOutlookReader] GetAppointmentsByDateSync - Filter: {filter}");
+
                     restrictedItems = items.Restrict(filter);
+
+                    LogService.LogInfo($"[RealOutlookReader] GetAppointmentsByDateSync - Restrict() sonucu: {(restrictedItems == null ? "NULL" : "SUCCESS")}");
+
+                    if (restrictedItems != null)
+                    {
+                        try
+                        {
+                            int restrictCount = restrictedItems.Count;
+                            LogService.LogInfo($"[RealOutlookReader] GetAppointmentsByDateSync - Restrict().Count = {restrictCount}");
+                        }
+                        catch (Exception countEx)
+                        {
+                            LogService.LogInfo($"[RealOutlookReader] GetAppointmentsByDateSync - Count property hatası: {countEx.Message}");
+                        }
+                    }
 
                     if (restrictedItems == null)
                     {
+                        LogService.LogInfo("[RealOutlookReader] GetAppointmentsByDateSync - Restrict NULL döndü, MANUEL FİLTRELEME başlatılıyor...");
+
+                        // FALLBACK: Manuel filtreleme
+                        int totalItems = items.Count;
+                        int maxCheck = Math.Min(totalItems, 500); // Maksimum 500 item kontrol et
+
+                        LogService.LogInfo($"[RealOutlookReader] Manuel filtreleme: {totalItems} item içinden {maxCheck} tanesini kontrol ediliyor...");
+
+                        for (int i = 1; i <= maxCheck; i++)
+                        {
+                            dynamic appt = null;
+                            try
+                            {
+                                appt = items[i];
+                                if (appt == null) continue;
+
+                                DateTime start = appt.Start;
+
+                                // Tarih aralığını kontrol et
+                                if (start >= startDate && start < endDate)
+                                {
+                                    string subject = appt.Subject ?? "";
+                                    string location = appt.Location ?? "";
+                                    DateTime end = appt.End;
+                                    bool isRecurring = appt.IsRecurring;
+                                    bool isAllDay = appt.AllDayEvent;
+                                    int attendeeCount = 0;
+
+                                    try { attendeeCount = appt.Recipients.Count; } catch { }
+
+                                    appointments.Add(new CalendarEventInfo
+                                    {
+                                        Subject = subject,
+                                        Location = location,
+                                        StartTime = start,
+                                        EndTime = end,
+                                        IsRecurring = isRecurring,
+                                        IsAllDay = isAllDay
+                                    });
+                                }
+                            }
+                            catch (Exception itemEx)
+                            {
+                                LogService.LogInfo($"[RealOutlookReader] Manuel filtreleme - Item {i} işlenemedi: {itemEx.Message}");
+                            }
+                            finally
+                            {
+                                if (appt != null)
+                                {
+                                    try { Marshal.ReleaseComObject(appt); }
+                                    catch { }
+                                }
+                            }
+                        }
+
+                        LogService.LogInfo($"[RealOutlookReader] Manuel filtreleme tamamlandı: {appointments.Count} sonuç");
+                        Marshal.ReleaseComObject(items);
+                        Marshal.ReleaseComObject(calendarFolder);
+
                         return appointments;
                     }
 
@@ -990,8 +1111,16 @@ namespace QuadroAIPilot.Services
                             var appointmentInfo = ConvertToCalendarEventInfo(appointment);
                             if (appointmentInfo != null)
                             {
-                                appointments.Add(appointmentInfo);
-                                
+                                // MANUEL DOĞRULAMA: Tarih aralığını kontrol et
+                                if (appointmentInfo.StartTime >= startDate && appointmentInfo.StartTime < endDate)
+                                {
+                                    appointments.Add(appointmentInfo);
+                                }
+                                else
+                                {
+                                    // Yanlış tarihli appointment, atla ve logla
+                                    LogService.LogInfo($"[RealOutlookReader] ATLA: '{appointmentInfo.Subject}' - Tarih: {appointmentInfo.StartTime:yyyy-MM-dd} (aralık dışı: {startDate:yyyy-MM-dd} - {endDate:yyyy-MM-dd})");
+                                }
                             }
                         }
                         catch (Exception)
@@ -1289,41 +1418,168 @@ namespace QuadroAIPilot.Services
             {
                 try
                 {
-                    if (_nameSpace == null) return 0;
+                    LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync başladı");
+                    
+                    if (_nameSpace == null) 
+                    {
+                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - _nameSpace null");
+                        return 0;
+                    }
 
                     dynamic calendar = _nameSpace.GetDefaultFolder(9); // 9 = olFolderCalendar
-                    if (calendar == null) return 0;
+                    if (calendar == null) 
+                    {
+                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - calendar null");
+                        return 0;
+                    }
 
                     dynamic items = calendar.Items;
-                    if (items == null) return 0;
+                    if (items == null)
+                    {
+                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - items null");
+                        return 0;
+                    }
 
-                    // Bugün için tarih filtresi
+                    // Microsoft önerisi: ÖNCE SORT, SONRA IncludeRecurrences, SONRA RESTRICT
+                    items.Sort("[Start]", false);
+                    items.IncludeRecurrences = true;
+
+                    // Bugün için tarih filtresi - Outlook COM API formatı
                     DateTime today = DateTime.Today;
                     DateTime tomorrow = today.AddDays(1);
-                    
-                    string startStr = today.ToString("MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture);
-                    string endStr = tomorrow.ToString("MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture);
-                    
+
+                    // Outlook DASL formatı
+                    // Format: d/M/yyyy h:mm tt (Türkiye formatı: Gün/Ay/Yıl)
+                    string startStr = today.ToString("d/M/yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+                    string endStr = tomorrow.ToString("d/M/yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+
                     string filter = $"[Start] >= '{startStr}' AND [Start] < '{endStr}'";
+
+                    LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Today: {today:yyyy-MM-dd}");
+                    LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Filter: {filter}");
+
                     dynamic todayItems = items.Restrict(filter);
-                    
-                    if (todayItems == null) return 0;
-                    
-                    int count = todayItems.Count;
-                    
-                    // Güvenlik kontrolü
-                    if (count < 0 || count > 100)
+
+                    LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict() sonucu: {(todayItems == null ? "NULL" : "SUCCESS")}");
+
+                    if (todayItems != null)
+                    {
+                        try
+                        {
+                            int restrictCount = todayItems.Count;
+                            LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict().Count = {restrictCount}");
+                        }
+                        catch (Exception countEx)
+                        {
+                            LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Count property hatası: {countEx.Message}");
+                        }
+                    }
+
+                    if (todayItems == null)
+                    {
+                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict NULL döndü, MANUEL SAYIM başlatılıyor...");
+
+                        // FALLBACK: Manuel sayım
+                        int manualCount = 0;
+                        int totalItems = items.Count;
+                        int maxCheck = Math.Min(totalItems, 500); // Maksimum 500 item kontrol et
+
+                        LogService.LogInfo($"[RealOutlookReader] Manuel sayım: {totalItems} item içinden {maxCheck} tanesini kontrol ediliyor...");
+
+                        for (int i = 1; i <= maxCheck; i++)
+                        {
+                            dynamic appt = null;
+                            try
+                            {
+                                appt = items[i];
+                                if (appt == null) continue;
+
+                                DateTime start = appt.Start;
+
+                                // SADECE BUGÜNE AİT OLANLARI SAY
+                                if (start.Date == today.Date)
+                                {
+                                    manualCount++;
+                                    string subject = appt.Subject ?? "Başlık yok";
+                                    LogService.LogInfo($"[RealOutlookReader] ✓ Bulundu #{manualCount}: '{subject}' - {start:yyyy-MM-dd HH:mm}");
+                                }
+                            }
+                            catch (Exception itemEx)
+                            {
+                                LogService.LogInfo($"[RealOutlookReader] Manuel sayım - Item {i} kontrol edilemedi: {itemEx.Message}");
+                            }
+                            finally
+                            {
+                                if (appt != null)
+                                {
+                                    try { Marshal.ReleaseComObject(appt); }
+                                    catch { }
+                                }
+                            }
+                        }
+
+                        LogService.LogInfo($"[RealOutlookReader] Manuel sayım tamamlandı: {manualCount} toplantı bulundu");
+                        Marshal.ReleaseComObject(items);
+                        Marshal.ReleaseComObject(calendar);
+
+                        return manualCount;
+                    }
+
+                    // Count property güvenilir değil (Int32.MaxValue dönebilir), iteration yap
+                    int count = 0;
+                    try
+                    {
+                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Manuel iteration başlıyor...");
+
+                        foreach (dynamic appt in todayItems)
+                        {
+                            try
+                            {
+                                DateTime start = appt.Start;
+
+                                // MANUEL DOĞRULAMA: Sadece bugüne ait olanları say
+                                if (start.Date == today.Date)
+                                {
+                                    count++;
+                                    string subject = appt.Subject ?? "Başlık yok";
+                                    LogService.LogInfo($"[RealOutlookReader] ✓ #{count}: '{subject}' - {start:yyyy-MM-dd HH:mm}");
+                                }
+                                else
+                                {
+                                    string subject = appt.Subject ?? "Başlık yok";
+                                    LogService.LogInfo($"[RealOutlookReader] ✗ ATLA: '{subject}' - {start:yyyy-MM-dd} (bugün değil)");
+                                }
+
+                                try { Marshal.ReleaseComObject(appt); } catch { }
+                            }
+                            catch (Exception itemEx)
+                            {
+                                LogService.LogInfo($"[RealOutlookReader] Item kontrol hatası: {itemEx.Message}");
+                            }
+
+                            // Güvenlik limiti
+                            if (count > 100) break;
+                        }
+
+                        LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Manuel iteration tamamlandı: {count} toplantı");
+                    }
+                    catch (Exception iterEx)
+                    {
+                        LogService.LogInfo($"[RealOutlookReader] Iteration hatası: {iterEx.Message}");
                         count = 0;
+                    }
                     
                     Marshal.ReleaseComObject(todayItems);
                     Marshal.ReleaseComObject(items);
                     Marshal.ReleaseComObject(calendar);
                     
+                    LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync tamamlandı - Sonuç: {count}");
                     return count;
                 }
                 catch (Exception ex)
                 {
                     LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync hatası: {ex.Message}");
+                    LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync stack trace: {ex.StackTrace}");
                     return 0;
                 }
             });

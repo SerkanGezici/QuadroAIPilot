@@ -1,4 +1,5 @@
 ﻿using QuadroAIPilot.Commands;
+using QuadroAIPilot.Services;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
@@ -16,6 +17,7 @@ namespace QuadroAIPilot.Modes
         public bool HandleSpeech(string text)
         {
             Debug.WriteLine($"[CommandMode] HandleSpeech received: '{text}'");
+            LogService.LogInfo($"[CommandMode] HandleSpeech received: '{text}'");
             _ = Task.Run(async () => await _processor.ProcessCommandAsync(text));
             return true; // ele aldım
         }
