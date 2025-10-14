@@ -17,7 +17,7 @@
 
     <!-- Setup dosyası indirme URL'i (GitHub Release'den) -->
     <!-- ÖRNEK: https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1.exe -->
-    <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v17.exe</url>
+    <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v18.exe</url>
 
     <!-- Release notes sayfası (GitHub Release sayfası) -->
     <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.1</changelog>
