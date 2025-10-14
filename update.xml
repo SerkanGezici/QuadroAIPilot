@@ -1,106 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-    QuadroAIPilot Auto-Update Manifest
-    Bu dosya GitHub repository'nizin root klasöründe olmalı (main branch)
-
-    KULLANIM TALİMATLARI:
-    1. Yeni versiyon yayınladığınızda bu dosyayı güncelleyin
-    2. GitHub'a commit/push yapın
-    3. UpdateService.cs içindeki URL'yi kendi repo'nuza göre ayarlayın
-
-    URL FORMAT:
-    https://raw.githubusercontent.com/YOUR_USERNAME/QuadroAIPilot/main/update.xml
--->
-<item>
-    <!-- Yeni versiyon numarası (MAJOR.MINOR.PATCH formatında) -->
-    <version>1.2.1</version>
-
-    <!-- Setup dosyası indirme URL'i (GitHub Release'den) -->
-    <!-- ÖRNEK: https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.0/QuadroAIPilot_Setup_1.2.0.exe -->
-    <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v18.exe</url>
-
-    <!-- Release notes sayfası (GitHub Release sayfası) --1
-    <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.1</changelog>
-
-    <!-- Zorunlu güncelleme mi? (Kritik bug fix için "true", normal güncelleme için "false") -->
-    <mandatory>false</mandatory>
-
-    <!-- Güncelleme türü (Normal=0, ForcedDownload=1, Notify=2) -->
-    <mode>0</mode>
-
-    <!-- Minimum gereken Windows build numarası (22000 = Windows 11) -->
-    <args>/SILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS</args>
-
-    <!-- Setup dosyasının SHA256 hash'i (güvenlik için - opsiyonel) -->
-    <!-- PowerShell ile hesaplama: Get-FileHash -Algorithm SHA256 "QuadroAIPilot_Setup.exe" -->
-    <checksum algorithm="SHA256"></checksum>
-</item>
-
-<!--
-ADIM ADIM KURULUM REHBERİ:
-
-1. GitHub Repository Oluşturma:
-   - GitHub'da yeni repo oluşturun: QuadroAIPilot
-   - Public veya Private seçin (public önerilir - ücretsiz)
-
-2. İlk Release Oluşturma:
-   a) GitHub repo sayfanızda "Releases" → "Create a new release"
-   b) Tag: v1.2.0 (versiyon numarasıyla aynı olmalı!)
-   c) Title: QuadroAIPilot v1.2.0
-   d) Description: Release notları yazın (ne değişti, yeni özellikler, vs.)
-   e) "Attach binaries" ile setup dosyasını yükleyin
-   f) "Publish release" tıklayın
-
-3. update.xml Güncelleme:
-   a) Bu dosyayı düzenleyin
-   b) YOUR_USERNAME kısmını GitHub kullanıcı adınızla değiştirin
-   c) <version> değerini güncelleyin
-   d) <url> değerini GitHub Release URL'i ile güncelleyin
-   e) <changelog> değerini Release sayfası ile güncelleyin
-   f) Dosyayı repo root'a commit/push edin (main branch)
-
-4. UpdateService.cs Güncelleme:
-   Services/UpdateService.cs dosyasını açın
-   UPDATE_XML_URL satırını bulun:
-
-   const string UPDATE_XML_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/QuadroAIPilot/main/update.xml";
-
-   YOUR_USERNAME kısmını kendi GitHub kullanıcı adınızla değiştirin
-
-5. Test:
-   a) Uygulamayı derleyin ve çalıştırın
-   b) Ayarlar → Güncellemeler → "Güncellemeleri Kontrol Et" tıklayın
-   c) Debug Output'ta log'ları kontrol edin
-
-6. Yeni Versiyon Yayınlama (İlerde):
-   a) Kodu güncelleyin
-   b) Package.appxmanifest'te Version değerini artırın (örn: 1.3.0.0)
-   c) Setup/QuadroAIPilot.iss'te AppVersion değerini artırın (örn: 1.3.0)
-   d) BuildAndSetup.ps1 ile build alın
-   e) GitHub'da yeni release oluşturun (v1.3.0)
-   f) Setup dosyasını yükleyin
-   g) update.xml dosyasını güncelleyip commit/push edin
-   h) Kullanıcılar otomatik olarak bildirim alacak!
-
-HASH HESAPLAMA (Opsiyonel - Güvenlik İçin):
-PowerShell'de şunu çalıştırın:
-Get-FileHash -Algorithm SHA256 "Output\QuadroAIPilot_Setup_1.2.0.exe"
-
-Çıkan hash değerini <checksum> içine yapıştırın.
-
-SORUN GİDERME:
-- "404 Not Found" hatası → GitHub repo public mi kontrol edin
-- "XML parse error" → XML syntax doğru mu kontrol edin
-- "Update not found" → Versiyon numaraları eşleşiyor mu kontrol edin
-- "Download failed" → Setup dosyası GitHub Release'de var mı kontrol edin
-
-ÖRNEK ÇALIŞAN KONFIGÜRASYON:
-<version>1.2.0</version>
-<url>https://github.com/johndoe/QuadroAIPilot/releases/download/v1.2.0/QuadroAIPilot_Setup_1.2.0_Win11_Final_v10.exe</url>
-<changelog>https://github.com/johndoe/QuadroAIPilot/releases/tag/v1.2.0</changelog>
-<mandatory>false</mandatory>
--->
-
-
-
-
+ <?xml version="1.0" encoding="UTF-8"?>
+  <item>
+      <version>1.2.1</version>
+      <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.
+  2.1_Win11_Final_v18.exe</url>
+      <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.1</changelog>
+      <mandatory>false</mandatory>
+      <mode>0</mode>
+      <args>/SILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS</args>
+      <checksum algorithm="SHA256"></checksum>
+  </item>
