@@ -462,12 +462,10 @@ namespace QuadroAIPilot.Commands
                 switch (intentResult.Type)
                 {                    case CommandIntentType.OpenApplication:
                         return CreateOpenApplicationCommand(intentResult);
-                        
+
                     case CommandIntentType.CloseApplication:
-                        // TODO: CloseApplication komut oluşturucusu eklenecek
-                        Debug.WriteLine("[CommandFactory] CloseApplication komutu şu anda desteklenmiyor.");
-                        return null;
-                        
+                        return CreateCloseApplicationCommand(intentResult);
+
                     case CommandIntentType.FindFile:
                         return CreateFindFileCommand(intentResult);
                         
@@ -561,6 +559,49 @@ namespace QuadroAIPilot.Commands
 
             string appName = intentResult.Parameters[0];
             return new OpenApplicationCommand(intentResult.Command, appName, _applicationService);
+        }
+
+        /// <summary>
+        /// Uygulama kapatma komutu oluşturur
+        /// </summary>
+        private ICommand CreateCloseApplicationCommand(CommandIntentResult intentResult)
+        {
+            // Komut metninden uygulama ismini çıkar
+            string commandText = intentResult.Command.ToLowerInvariant();
+
+            // "whatsapp uygulamasını kapat" -> "whatsapp"
+            // "chrome'u kapat" -> "chrome"
+            string appName = ExtractApplicationNameFromCloseCommand(commandText);
+
+            if (string.IsNullOrWhiteSpace(appName))
+            {
+                Debug.WriteLine("[CommandFactory] Kapatılacak uygulama ismi bulunamadı.");
+                return null;
+            }
+
+            Debug.WriteLine($"[CommandFactory] CloseApplicationCommand oluşturuluyor: {appName}");
+            return new CloseApplicationCommand(intentResult.Command, appName);
+        }
+
+        /// <summary>
+        /// Kapatma komutundan uygulama ismini çıkarır
+        /// </summary>
+        private string ExtractApplicationNameFromCloseCommand(string commandText)
+        {
+            // "uygulamasını kapat", "'u kapat", "'ı kapat", "kapat" gibi kalıpları temizle
+            commandText = commandText.Replace("uygulamasını kapat", "")
+                                     .Replace("uygulaması kapat", "")
+                                     .Replace("uygulamasını", "")
+                                     .Replace("uygulaması", "")
+                                     .Replace("'u kapat", "")
+                                     .Replace("'ı kapat", "")
+                                     .Replace("'i kapat", "")
+                                     .Replace("'ü kapat", "")
+                                     .Replace(" kapat", "")
+                                     .Replace("kapat", "")
+                                     .Trim();
+
+            return commandText;
         }
 
         /// <summary>
