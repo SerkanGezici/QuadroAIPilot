@@ -13,14 +13,14 @@
 -->
 <item>
     <!-- Yeni versiyon numarası (MAJOR.MINOR.PATCH formatında) -->
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 
     <!-- Setup dosyası indirme URL'i (GitHub Release'den) -->
-    <!-- ÖRNEK: https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.0/QuadroAIPilot_Setup_1.2.0.exe -->
-    <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.0/QuadroAIPilot_Setup_1.2.0_Win11_Final_v16.exe</url>
+    <!-- ÖRNEK: https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1.exe -->
+    <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v17.exe</url>
 
     <!-- Release notes sayfası (GitHub Release sayfası) -->
-    <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.0</changelog>
+    <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.1</changelog>
 
     <!-- Zorunlu güncelleme mi? (Kritik bug fix için "true", normal güncelleme için "false") -->
     <mandatory>false</mandatory>
