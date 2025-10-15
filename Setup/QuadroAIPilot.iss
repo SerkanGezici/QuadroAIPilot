@@ -3,7 +3,7 @@
 ; Minimal müdahale prensibi - Sadece eksik olanları kur
 
 #define AppName "QuadroAIPilot"
-#define AppVersion "1.2.0"
+#define AppVersion "1.2.1"
 #define AppPublisher "QuadroAI"
 #define AppURL "https://quadroai.com"
 #define AppExeName "QuadroAIPilot.exe"
@@ -21,7 +21,7 @@ DefaultGroupName={#AppName}
 AllowNoIcons=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=..\Output
-OutputBaseFilename=QuadroAIPilot_Setup_{#AppVersion}_Win11_Final_v10
+OutputBaseFilename=QuadroAIPilot_Setup_{#AppVersion}_Win11_Final_v18
 SetupIconFile=..\Assets\icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -67,7 +67,7 @@ Name: "contextmenu"; Description: "Sağ tık menüsüne ekle"; GroupDescription:
 
 [Files]
 ; Ana uygulama dosyaları - publish klasöründen kopyala
-Source: "..\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main; Excludes: "Logs\*,*.pdb,*.xml,*.vshost.*,af-ZA\*,am-ET\*,ar-SA\*,as-IN\*,az-Latn-AZ\*,bg-BG\*,bn-IN\*,bs-Latn-BA\*,ca-ES\*,ca-Es-VALENCIA\*,cs\*,cs-CZ\*,cy-GB\*,da-DK\*,de-DE\*,el-GR\*,en-GB\*,es-ES\*,es-MX\*,et-EE\*,eu-ES\*,fa-IR\*,fi-FI\*,fil-PH\*,fr-CA\*,fr-FR\*,ga-IE\*,gd-gb\*,gl-ES\*,gu-IN\*,he-IL\*,hi-IN\*,hr-HR\*,hu-HU\*,hy-AM\*,id-ID\*,is-IS\*,it-IT\*,ja-JP\*,ka-GE\*,kk-KZ\*,km-KH\*,kn-IN\*,ko-KR\*,kok-IN\*,lb-LU\*,lo-LA\*,lt-LT\*,lv-LV\*,mi-NZ\*,mk-MK\*,ml-IN\*,mr-IN\*,ms-MY\*,mt-MT\*,nb-NO\*,ne-NP\*,nl-NL\*,nn-NO\*,or-IN\*,pa-IN\*,pl-PL\*,pt-BR\*,pt-PT\*,quz-PE\*,ro-RO\*,ru-RU\*,sk-SK\*,sl-SI\*,sq-AL\*,sr-Cyrl-BA\*,sr-Cyrl-RS\*,sr-Latn-RS\*,sv-SE\*,ta-IN\*,te-IN\*,th-TH\*,tk-TM\*,tt-RU\*,ug-CN\*,uk-UA\*,ur-PK\*,uz-Latn-UZ\*,vi-VN\*,zh-CN\*,zh-HK\*,zh-TW\*"
+Source: "..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main; Excludes: "Logs\*,*.pdb,*.xml,*.vshost.*,af-ZA\*,am-ET\*,ar-SA\*,as-IN\*,az-Latn-AZ\*,bg-BG\*,bn-IN\*,bs-Latn-BA\*,ca-ES\*,ca-Es-VALENCIA\*,cs\*,cs-CZ\*,cy-GB\*,da-DK\*,de-DE\*,el-GR\*,en-GB\*,es-ES\*,es-MX\*,et-EE\*,eu-ES\*,fa-IR\*,fi-FI\*,fil-PH\*,fr-CA\*,fr-FR\*,ga-IE\*,gd-gb\*,gl-ES\*,gu-IN\*,he-IL\*,hi-IN\*,hr-HR\*,hu-HU\*,hy-AM\*,id-ID\*,is-IS\*,it-IT\*,ja-JP\*,ka-GE\*,kk-KZ\*,km-KH\*,kn-IN\*,ko-KR\*,kok-IN\*,lb-LU\*,lo-LA\*,lt-LT\*,lv-LV\*,mi-NZ\*,mk-MK\*,ml-IN\*,mr-IN\*,ms-MY\*,mt-MT\*,nb-NO\*,ne-NP\*,nl-NL\*,nn-NO\*,or-IN\*,pa-IN\*,pl-PL\*,pt-BR\*,pt-PT\*,quz-PE\*,ro-RO\*,ru-RU\*,sk-SK\*,sl-SI\*,sq-AL\*,sr-Cyrl-BA\*,sr-Cyrl-RS\*,sr-Latn-RS\*,sv-SE\*,ta-IN\*,te-IN\*,th-TH\*,tk-TM\*,tt-RU\*,ug-CN\*,uk-UA\*,ur-PK\*,uz-Latn-UZ\*,vi-VN\*,zh-CN\*,zh-HK\*,zh-TW\*"
 
 ; LICENSE.txt dosyasını da kopyala
 Source: "..\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion; Components: main

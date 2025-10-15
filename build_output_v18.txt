@@ -1,0 +1,66 @@
+============================================
+QuadroAIPilot Build & Setup Automation
+============================================
+
+[1/6] Temizlik yapiliyor...
+Oluşturma başlatıldı: 15.10.2025 01:19:36.
+     1>1 düğümünde "C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.sln" projesi (Clean hedef).
+     1>ValidateSolutionConfiguration:
+         "Debug|ARM64" çözüm yapılandırması oluşturuluyor.
+     1>"C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.sln" projesi (1) 1 düğümünde "C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.csproj" (2) oluşturuyor (Clean hedef).
+     2>_CheckForNETCoreSdkIsPreview:
+       C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: Bir .NET önizleme sürümü kullanıyorsunuz. Bkz. https://aka.ms/dotnet-support-policy [C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.csproj]
+     2>"C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.csproj" Projesini Oluşturma İşlemi Tamamlandı (Clean hedef).
+     1>"C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.sln" Projesini Oluşturma İşlemi Tamamlandı (Clean hedef).
+
+Oluşturma başarılı oldu.
+    0 Uyarı
+    0 Hata
+
+Geçen Süre 00:00:00.97
+OK: Temizlik tamamlandi
+
+[2/6] Release build yapiliyor...
+  Determining projects to restore...
+  Geri yükleme için tüm projeler güncel.
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: Bir .NET önizleme sürümü kullanıyorsunuz. Bkz. https://aka.ms/dotnet-support-policy [C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.csproj]
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
+
+Oluşturma başarılı oldu.
+    0 Uyarı
+    0 Hata
+
+Geçen Süre 00:00:24.43
+OK: Build basarili
+
+[3/6] Self-contained publish yapiliyor...
+  Determining projects to restore...
+  Geri yükleme için tüm projeler güncel.
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: Bir .NET önizleme sürümü kullanıyorsunuz. Bkz. https://aka.ms/dotnet-support-policy [C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.csproj]
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\
+OK: Publish tamamlandi
+
+[4/6] Gereksiz dil klasorleri temizleniyor...
+Dil klas��rleri temizleniyor...
+
+�-zet:
+  - 0 dil klas��rǬ silindi
+  - Korunan klas��rler: 
+Temizlik tamamland��!
+
+[5/6] Edge manifest.json kontrol ediliyor...
+  OK: Edge manifest temiz
+  OK: BrowserExtensions publish'e kopyalandi
+
+[6/6] Setup dosyasi olusturuluyor...
+OK: Setup dosyasi basariyla olusturuldu!
+
+Olusturulan Setup Dosyalari:
+  - QuadroAIPilot_Setup_1.2.1_Win11_Final_v18.exe (115.67 MB) - 10/15/2025 01:22:10
+  - QuadroAIPilot_Setup_1.2.1_Win11_Final_v17.exe (115.68 MB) - 10/15/2025 00:15:02
+  - QuadroAIPilot_Setup_1.2.0_Win11_Final_v16.exe (115.67 MB) - 10/14/2025 21:12:51
+
+============================================
+Islem Tamamlandi!
+============================================

@@ -22,9 +22,9 @@
         </Style>
     </ContentDialog.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled"
-                  MaxHeight="500">
+                  MaxHeight="700">
         <StackPanel Spacing="20" MinWidth="400">
             <!-- Tema seçimi -->
             <StackPanel>
@@ -394,7 +394,7 @@
                 </StackPanel>
             </Expander>
 
-<!-- Güncelleme Ayarları -->
+            <!-- Güncelleme Ayarları -->
             <Expander Header="Güncellemeler"
                       HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Left"

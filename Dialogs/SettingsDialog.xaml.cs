@@ -970,34 +970,54 @@ namespace QuadroAIPilot.Dialogs
         /// </summary>
         private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("==== BUTTON CLICK EVENT FIRED ====");
+
             try
             {
-                CheckUpdatesButton.IsEnabled = false;
-                CheckUpdatesButton.Content = "Kontrol ediliyor...";
+                System.Diagnostics.Debug.WriteLine("==== INSIDE TRY BLOCK ====");
 
+                // UI thread'de olduğundan emin ol
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    CheckUpdatesButton.IsEnabled = false;
+                    CheckUpdatesButton.Content = "Kontrol ediliyor...";
+                });
+
+                System.Diagnostics.Debug.WriteLine("==== GETTING UPDATE SERVICE INSTANCE ====");
                 var updateService = Services.UpdateService.Instance;
+
+                System.Diagnostics.Debug.WriteLine("==== CALLING CheckForUpdatesManualAsync ====");
                 await updateService.CheckForUpdatesManualAsync();
 
+                System.Diagnostics.Debug.WriteLine("==== UPDATE CHECK COMPLETED ====");
+
                 // Son kontrol zamanını güncelle
-                LoadUpdateInfo();
+                DispatcherQueue.TryEnqueue(() => LoadUpdateInfo());
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"CheckUpdates_Click error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"==== EXCEPTION: {ex.Message} ====");
+                System.Diagnostics.Debug.WriteLine($"==== STACK TRACE: {ex.StackTrace} ====");
 
-                var errorDialog = new ContentDialog
+                DispatcherQueue.TryEnqueue(async () =>
                 {
-                    Title = "Güncelleme Hatası",
-                    Content = $"Güncelleme kontrolü sırasında hata oluştu:\n{ex.Message}",
-                    CloseButtonText = "Tamam",
-                    XamlRoot = this.XamlRoot
-                };
-                await errorDialog.ShowAsync();
+                    var errorDialog = new ContentDialog
+                    {
+                        Title = "Güncelleme Hatası",
+                        Content = $"Güncelleme kontrolü sırasında hata oluştu:\n{ex.Message}",
+                        CloseButtonText = "Tamam",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await errorDialog.ShowAsync();
+                });
             }
             finally
             {
-                CheckUpdatesButton.IsEnabled = true;
-                CheckUpdatesButton.Content = "Güncellemeleri Kontrol Et";
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    CheckUpdatesButton.IsEnabled = true;
+                    CheckUpdatesButton.Content = "Güncellemeleri Kontrol Et";
+                });
             }
         }
 

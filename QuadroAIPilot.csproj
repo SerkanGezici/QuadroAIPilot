@@ -20,6 +20,10 @@
 		<PublishSingleFile>false</PublishSingleFile>
 		<PublishReadyToRun>true</PublishReadyToRun>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<!-- Assembly version bilgisi -->
+		<Version>1.2.1</Version>
+		<AssemblyVersion>1.2.1.0</AssemblyVersion>
+		<FileVersion>1.2.1.0</FileVersion>
 	</PropertyGroup>
 	<ItemGroup>
 	

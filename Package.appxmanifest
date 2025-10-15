@@ -9,7 +9,7 @@
 	<Identity
 	  Name="com.quadro.aipilot"
 	  Publisher="CN=QuadroAIPilot"
-	  Version="1.2.0.0" />
+	  Version="1.2.1.0" />
 
 	<Properties>
 		<DisplayName>Quadro AI Pilot</DisplayName>
