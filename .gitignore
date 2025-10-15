@@ -364,3 +364,6 @@ Logs/
 .claude/logs/*
 *.env
 .claude-temp/
+
+# Build output - setup executables
+Output/*.exe

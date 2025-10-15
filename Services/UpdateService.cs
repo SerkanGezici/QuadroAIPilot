@@ -21,6 +21,7 @@ namespace QuadroAIPilot.Services
         private const string UPDATE_XML_URL = "https://raw.githubusercontent.com/SerkanGezici/QuadroAIPilot/main/update.xml";
         private bool _isConfigured = false;
         private readonly object _configLock = new object();
+        private Action<bool, string, string>? _updateCheckCallback;
 
         /// <summary>
         /// Singleton instance
@@ -100,6 +101,9 @@ namespace QuadroAIPilot.Services
                 {
                     System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent - args NULL! ====");
                     Log.Warning("[UpdateService] UpdateInfoEventArgs null!");
+
+                    // Callback varsa hata durumunu bildir
+                    _updateCheckCallback?.Invoke(false, "Hata", "Güncelleme bilgisi alınamadı.");
                     return;
                 }
 
@@ -110,6 +114,9 @@ namespace QuadroAIPilot.Services
                     System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - ERROR: {args.Error.Message} ====");
                     System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - ERROR STACK: {args.Error.StackTrace} ====");
                     Log.Error(args.Error, "[UpdateService] Güncelleme kontrolü hatası: {Message}", args.Error.Message);
+
+                    // Callback varsa hata durumunu bildir
+                    _updateCheckCallback?.Invoke(false, "Güncelleme Hatası", $"Güncelleme kontrolü sırasında hata oluştu:\n{args.Error.Message}");
                     return;
                 }
 
@@ -125,6 +132,10 @@ namespace QuadroAIPilot.Services
                 {
                     System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent - Güncelleme YOK ====");
                     Log.Warning("[UpdateService] Güncelleme yok, uygulama güncel");
+
+                    // Callback varsa güncelleme yok durumunu bildir
+                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - Callback çağrılıyor (güncelleme yok) ====");
+                    _updateCheckCallback?.Invoke(false, "Uygulama Güncel", $"Mevcut versiyon: {args.InstalledVersion}\n\nUygulamanız güncel durumda.");
                     return;
                 }
 
@@ -133,12 +144,24 @@ namespace QuadroAIPilot.Services
 
                 Log.Warning("[UpdateService] Yeni versiyon bulundu: {InstalledVersion} → {CurrentVersion}", args.InstalledVersion, args.CurrentVersion);
                 Log.Warning("[UpdateService] İndirme URL: {DownloadURL}", args.DownloadURL);
+
+                // Callback varsa güncelleme mevcut durumunu bildir
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - Callback çağrılıyor (güncelleme var) ====");
+                string updateMessage = $"Yeni versiyon mevcut!\n\n";
+                updateMessage += $"Mevcut versiyon: {args.InstalledVersion}\n";
+                updateMessage += $"Yeni versiyon: {args.CurrentVersion}\n\n";
+                updateMessage += $"Güncellemek için indirme sayfasını açmak ister misiniz?";
+
+                _updateCheckCallback?.Invoke(true, "Güncelleme Mevcut", updateMessage);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - EXCEPTION: {ex.Message} ====");
                 System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - STACK TRACE: {ex.StackTrace} ====");
                 Log.Error(ex, "[UpdateService] CheckForUpdateEvent hatası: {Message}", ex.Message);
+
+                // Callback varsa hata durumunu bildir
+                _updateCheckCallback?.Invoke(false, "Hata", $"Beklenmeyen hata:\n{ex.Message}");
             }
         }
 
@@ -229,12 +252,17 @@ namespace QuadroAIPilot.Services
         /// Güncelleme kontrolünü zorla (manuel)
         /// UI gösterir, kullanıcı etkileşimlidir
         /// </summary>
-        public async Task CheckForUpdatesManualAsync()
+        /// <param name="callback">Güncelleme sonucu callback: (updateAvailable, title, message)</param>
+        public async Task CheckForUpdatesManualAsync(Action<bool, string, string>? callback = null)
         {
             System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesManualAsync BAŞLADI ====");
             System.Diagnostics.Debug.WriteLine("==== CHECK FOR UPDATES MANUEL BUTTON CLICKED ====");
             Console.WriteLine("==== CHECK FOR UPDATES MANUEL BUTTON CLICKED ====");
             Log.Warning("[UpdateService] Manuel güncelleme kontrolü başlatılıyor...");
+
+            // Callback'i kaydet
+            _updateCheckCallback = callback;
+            System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesManualAsync - Callback kaydedildi: {callback != null} ====");
 
             System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesManualAsync - CheckForUpdatesAsync(false) çağrılıyor ====");
             await CheckForUpdatesAsync(silentCheck: false);

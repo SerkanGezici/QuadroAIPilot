@@ -986,8 +986,49 @@ namespace QuadroAIPilot.Dialogs
                 System.Diagnostics.Debug.WriteLine("==== GETTING UPDATE SERVICE INSTANCE ====");
                 var updateService = Services.UpdateService.Instance;
 
-                System.Diagnostics.Debug.WriteLine("==== CALLING CheckForUpdatesManualAsync ====");
-                await updateService.CheckForUpdatesManualAsync();
+                System.Diagnostics.Debug.WriteLine("==== CALLING CheckForUpdatesManualAsync WITH CALLBACK ====");
+
+                // Callback ile güncelleme kontrolü başlat
+                await updateService.CheckForUpdatesManualAsync((updateAvailable, title, message) =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"==== CALLBACK TRIGGERED - UpdateAvailable: {updateAvailable}, Title: {title} ====");
+
+                    // UI thread'de dialog göster
+                    DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine("==== SHOWING UPDATE RESULT DIALOG ====");
+
+                            var resultDialog = new ContentDialog
+                            {
+                                Title = title,
+                                Content = message,
+                                CloseButtonText = updateAvailable ? "İptal" : "Tamam",
+                                XamlRoot = this.XamlRoot
+                            };
+
+                            // Güncelleme varsa "İndir" butonu ekle
+                            if (updateAvailable)
+                            {
+                                resultDialog.PrimaryButtonText = "İndir";
+                            }
+
+                            var result = await resultDialog.ShowAsync();
+
+                            // Güncelleme varsa ve kullanıcı "İndir" dedi ise GitHub Release sayfasını aç
+                            if (updateAvailable && result == ContentDialogResult.Primary)
+                            {
+                                System.Diagnostics.Debug.WriteLine("==== USER CLICKED DOWNLOAD - OPENING RELEASE PAGE ====");
+                                updateService.OpenReleasePage();
+                            }
+                        }
+                        catch (Exception dialogEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"==== DIALOG SHOW ERROR: {dialogEx.Message} ====");
+                        }
+                    });
+                });
 
                 System.Diagnostics.Debug.WriteLine("==== UPDATE CHECK COMPLETED ====");
 
