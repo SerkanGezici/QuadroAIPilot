@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoUpdaterDotNET;
 using QuadroAIPilot.Managers;
 using QuadroAIPilot.Services;
+using Serilog;
 
 namespace QuadroAIPilot.Services
 {
@@ -18,6 +19,8 @@ namespace QuadroAIPilot.Services
         private readonly SettingsManager _settingsManager;
         private static UpdateService? _instance;
         private const string UPDATE_XML_URL = "https://raw.githubusercontent.com/SerkanGezici/QuadroAIPilot/main/update.xml";
+        private bool _isConfigured = false;
+        private readonly object _configLock = new object();
 
         /// <summary>
         /// Singleton instance
@@ -27,34 +30,57 @@ namespace QuadroAIPilot.Services
         private UpdateService()
         {
             _settingsManager = SettingsManager.Instance;
-            ConfigureAutoUpdater();
+            // AutoUpdater.NET UI thread'de çalışmalı - constructor'da yapma
+            // İlk kullanımda ConfigureAutoUpdater() çağrılacak
         }
 
         /// <summary>
-        /// AutoUpdater.NET konfigürasyonu
+        /// AutoUpdater.NET konfigürasyonu (Lazy initialization - UI thread'de çalışır)
         /// </summary>
         private void ConfigureAutoUpdater()
         {
-            try
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater METODU ÇAĞRILDI ====");
+
+            lock (_configLock)
             {
-                // Türkçe dil desteği
-                AutoUpdater.Mandatory = false;
-                AutoUpdater.UpdateMode = Mode.Normal;
-                AutoUpdater.ReportErrors = true;
-                AutoUpdater.ShowSkipButton = true;
-                AutoUpdater.ShowRemindLaterButton = true;
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater - Lock alındı ====");
 
-                // Update dialog'u kapatıldığında event
-                AutoUpdater.ApplicationExitEvent += AutoUpdater_ApplicationExitEvent;
+                if (_isConfigured)
+                {
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater - Zaten yapılandırılmış, atlanıyor ====");
+                    return;
+                }
 
-                // Güncelleme kontrolü başarısız olursa
-                AutoUpdater.CheckForUpdateEvent += AutoUpdater_CheckForUpdateEvent;
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater - TRY bloğu başladı ====");
+                    Log.Warning("[UpdateService] AutoUpdater.NET yapılandırılıyor...");
 
-                LogService.LogDebug("[UpdateService] AutoUpdater.NET yapılandırıldı");
-            }
-            catch (Exception ex)
-            {
-                LogService.LogError($"[UpdateService] AutoUpdater yapılandırma hatası: {ex.Message}", ex);
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater - AutoUpdater özellikleri ayarlanıyor ====");
+                    // Türkçe dil desteği
+                    AutoUpdater.Mandatory = false;
+                    AutoUpdater.UpdateMode = Mode.Normal;
+                    AutoUpdater.ReportErrors = true;
+                    AutoUpdater.ShowSkipButton = true;
+                    AutoUpdater.ShowRemindLaterButton = true;
+
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater - Event handlers ekleniyor ====");
+                    // Update dialog'u kapatıldığında event
+                    AutoUpdater.ApplicationExitEvent += AutoUpdater_ApplicationExitEvent;
+
+                    // Güncelleme kontrolü başarısız olursa
+                    AutoUpdater.CheckForUpdateEvent += AutoUpdater_CheckForUpdateEvent;
+
+                    _isConfigured = true;
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] ConfigureAutoUpdater - BAŞARIYLA TAMAMLANDI ====");
+                    Log.Warning("[UpdateService] AutoUpdater.NET yapılandırıldı ✓");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] ConfigureAutoUpdater - EXCEPTION: {ex.Message} ====");
+                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] ConfigureAutoUpdater - STACK TRACE: {ex.StackTrace} ====");
+                    Log.Error(ex, "[UpdateService] AutoUpdater yapılandırma hatası: {Message}", ex.Message);
+                }
             }
         }
 
@@ -63,19 +89,57 @@ namespace QuadroAIPilot.Services
         /// </summary>
         private void AutoUpdater_CheckForUpdateEvent(UpdateInfoEventArgs args)
         {
-            if (args.Error != null)
-            {
-                LogService.LogError($"[UpdateService] Güncelleme kontrolü hatası: {args.Error.Message}", args.Error);
-                return;
-            }
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent TETİKLENDİ ====");
 
-            if (!args.IsUpdateAvailable)
+            try
             {
-                LogService.LogDebug("[UpdateService] Güncelleme yok, uygulama güncel");
-                return;
-            }
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent - TRY bloğu başladı ====");
+                Log.Warning("[UpdateService] CheckForUpdateEvent tetiklendi");
 
-            LogService.LogInfo($"[UpdateService] Yeni versiyon bulundu: {args.CurrentVersion} → {args.InstalledVersion}");
+                if (args == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent - args NULL! ====");
+                    Log.Warning("[UpdateService] UpdateInfoEventArgs null!");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent - args geçerli ====");
+
+                if (args.Error != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - ERROR: {args.Error.Message} ====");
+                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - ERROR STACK: {args.Error.StackTrace} ====");
+                    Log.Error(args.Error, "[UpdateService] Güncelleme kontrolü hatası: {Message}", args.Error.Message);
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - InstalledVersion: {args.InstalledVersion} ====");
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - CurrentVersion: {args.CurrentVersion} ====");
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - IsUpdateAvailable: {args.IsUpdateAvailable} ====");
+
+                Log.Warning("[UpdateService] Mevcut versiyon: {InstalledVersion}", args.InstalledVersion);
+                Log.Warning("[UpdateService] Sunucu versiyonu: {CurrentVersion}", args.CurrentVersion);
+                Log.Warning("[UpdateService] Güncelleme mevcut: {IsUpdateAvailable}", args.IsUpdateAvailable);
+
+                if (!args.IsUpdateAvailable)
+                {
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdateEvent - Güncelleme YOK ====");
+                    Log.Warning("[UpdateService] Güncelleme yok, uygulama güncel");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - YENİ VERSİYON BULUNDU: {args.InstalledVersion} → {args.CurrentVersion} ====");
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - Download URL: {args.DownloadURL} ====");
+
+                Log.Warning("[UpdateService] Yeni versiyon bulundu: {InstalledVersion} → {CurrentVersion}", args.InstalledVersion, args.CurrentVersion);
+                Log.Warning("[UpdateService] İndirme URL: {DownloadURL}", args.DownloadURL);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - EXCEPTION: {ex.Message} ====");
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdateEvent - STACK TRACE: {ex.StackTrace} ====");
+                Log.Error(ex, "[UpdateService] CheckForUpdateEvent hatası: {Message}", ex.Message);
+            }
         }
 
         /// <summary>
@@ -83,58 +147,82 @@ namespace QuadroAIPilot.Services
         /// </summary>
         private void AutoUpdater_ApplicationExitEvent()
         {
-            LogService.LogInfo("[UpdateService] Uygulama güncelleme için kapatılıyor");
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] ApplicationExitEvent TETİKLENDİ ====");
+            Log.Warning("[UpdateService] Uygulama güncelleme için kapatılıyor");
             System.Windows.Application.Current?.Shutdown();
         }
 
         /// <summary>
-        /// Güncellemeleri kontrol et (arka planda)
+        /// Güncellemeleri kontrol et (UI thread'de)
         /// </summary>
         /// <param name="silentCheck">Sessiz kontrol (UI gösterme)</param>
         /// <returns></returns>
-        public async Task CheckForUpdatesAsync(bool silentCheck = true)
+        public Task CheckForUpdatesAsync(bool silentCheck = true)
         {
-            await Task.Run(() =>
+            System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync BAŞLADI (silentCheck: {silentCheck}) ====");
+
+            try
             {
-                try
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - TRY bloğu başladı ====");
+
+                // AutoUpdater.NET'i yapılandır (ilk kez çağrıldığında)
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - ConfigureAutoUpdater() çağrılıyor ====");
+                ConfigureAutoUpdater();
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - ConfigureAutoUpdater() tamamlandı ====");
+
+                // Otomatik güncelleme kapalıysa ve sessiz kontrol ise çık
+                if (silentCheck && !_settingsManager.Settings.AutoUpdateEnabled)
                 {
-                    // Otomatik güncelleme kapalıysa ve sessiz kontrol ise çık
-                    if (silentCheck && !_settingsManager.Settings.AutoUpdateEnabled)
-                    {
-                        LogService.LogDebug("[UpdateService] Otomatik güncelleme kapalı, kontrol atlanıyor");
-                        return;
-                    }
-
-                    // Son kontrol zamanını güncelle
-                    _settingsManager.Settings.LastUpdateCheck = DateTime.Now;
-                    _ = _settingsManager.SaveSettingsAsync();
-
-                    LogService.LogInfo($"[UpdateService] Güncelleme kontrolü başlatılıyor... (Silent: {silentCheck})");
-                    LogService.LogInfo($"[UpdateService] URL: {UPDATE_XML_URL}");
-                    LogService.LogInfo($"[UpdateService] Mevcut versiyon: {GetCurrentVersion()}");
-
-                    // AutoUpdater.NET kullanarak kontrol
-                    if (silentCheck)
-                    {
-                        // Sessiz mod: Sadece güncelleme varsa bildirim göster
-                        AutoUpdater.Mandatory = false;
-                        AutoUpdater.UpdateMode = Mode.Normal;
-                    }
-                    else
-                    {
-                        // Manuel kontrol: Her durumda dialog göster
-                        AutoUpdater.Mandatory = false;
-                        AutoUpdater.UpdateMode = Mode.ForcedDownload;
-                    }
-
-                    // Güncelleme kontrolü başlat
-                    AutoUpdater.Start(UPDATE_XML_URL);
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Otomatik güncelleme kapalı, çıkılıyor ====");
+                    Log.Warning("[UpdateService] Otomatik güncelleme kapalı, kontrol atlanıyor");
+                    return Task.CompletedTask;
                 }
-                catch (Exception ex)
+
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Son kontrol zamanı güncelleniyor ====");
+                // Son kontrol zamanını güncelle
+                _settingsManager.Settings.LastUpdateCheck = DateTime.Now;
+                _ = _settingsManager.SaveSettingsAsync();
+
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Güncelleme kontrolü parametreleri loglanıyor ====");
+                Log.Warning("[UpdateService] Güncelleme kontrolü başlatılıyor... (Silent: {SilentCheck})", silentCheck);
+                Log.Warning("[UpdateService] URL: {URL}", UPDATE_XML_URL);
+                Log.Warning("[UpdateService] Mevcut versiyon: {Version}", GetCurrentVersion());
+
+                // AutoUpdater.NET kullanarak kontrol
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - AutoUpdater.UpdateMode ayarlanıyor (silent: {silentCheck}) ====");
+                if (silentCheck)
                 {
-                    LogService.LogError($"[UpdateService] Güncelleme kontrolü hatası: {ex.Message}", ex);
+                    // Sessiz mod: Sadece güncelleme varsa bildirim göster
+                    AutoUpdater.Mandatory = false;
+                    AutoUpdater.UpdateMode = Mode.Normal;
                 }
-            });
+                else
+                {
+                    // Manuel kontrol: Her durumda dialog göster
+                    AutoUpdater.Mandatory = false;
+                    AutoUpdater.UpdateMode = Mode.Normal;
+                }
+
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - AutoUpdater.Start() ÇAĞRILIYOR ====");
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - URL: {UPDATE_XML_URL} ====");
+                Log.Warning("[UpdateService] AutoUpdater.Start() çağrılıyor...");
+
+                // Güncelleme kontrolü başlat (UI thread'de çalışmalı)
+                AutoUpdater.Start(UPDATE_XML_URL);
+
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - AutoUpdater.Start() TAMAMLANDI ====");
+                Log.Warning("[UpdateService] AutoUpdater.Start() çağrısı tamamlandı");
+
+                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Task.CompletedTask dönülüyor ====");
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - EXCEPTION: {ex.Message} ====");
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - STACK TRACE: {ex.StackTrace} ====");
+                Log.Error(ex, "[UpdateService] Güncelleme kontrolü hatası: {Message}", ex.Message);
+                return Task.CompletedTask;
+            }
         }
 
         /// <summary>
@@ -143,8 +231,14 @@ namespace QuadroAIPilot.Services
         /// </summary>
         public async Task CheckForUpdatesManualAsync()
         {
-            LogService.LogInfo("[UpdateService] Manuel güncelleme kontrolü başlatılıyor...");
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesManualAsync BAŞLADI ====");
+            System.Diagnostics.Debug.WriteLine("==== CHECK FOR UPDATES MANUEL BUTTON CLICKED ====");
+            Console.WriteLine("==== CHECK FOR UPDATES MANUEL BUTTON CLICKED ====");
+            Log.Warning("[UpdateService] Manuel güncelleme kontrolü başlatılıyor...");
+
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesManualAsync - CheckForUpdatesAsync(false) çağrılıyor ====");
             await CheckForUpdatesAsync(silentCheck: false);
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesManualAsync - CheckForUpdatesAsync(false) TAMAMLANDI ====");
         }
 
         /// <summary>
@@ -160,7 +254,7 @@ namespace QuadroAIPilot.Services
             }
             catch (Exception ex)
             {
-                LogService.LogError($"[UpdateService] Versiyon bilgisi alınamadı: {ex.Message}", ex);
+                Log.Error(ex, "[UpdateService] Versiyon bilgisi alınamadı: {Message}", ex.Message);
                 return "1.0.0";
             }
         }
@@ -172,7 +266,7 @@ namespace QuadroAIPilot.Services
         {
             _settingsManager.Settings.AutoUpdateEnabled = enabled;
             await _settingsManager.SaveSettingsAsync();
-            LogService.LogInfo($"[UpdateService] Otomatik güncelleme: {(enabled ? "Açık" : "Kapalı")}");
+            Log.Warning("[UpdateService] Otomatik güncelleme: {Status}", enabled ? "Açık" : "Kapalı");
         }
 
         /// <summary>
@@ -202,26 +296,26 @@ namespace QuadroAIPilot.Services
                 // Bugün zaten kontrol edildiyse atla
                 if (IsCheckedToday())
                 {
-                    LogService.LogDebug("[UpdateService] Bugün zaten güncelleme kontrolü yapıldı, atlanıyor");
+                    Log.Warning("[UpdateService] Bugün zaten güncelleme kontrolü yapıldı, atlanıyor");
                     return;
                 }
 
                 // Otomatik güncelleme kapalıysa atla
                 if (!_settingsManager.Settings.AutoUpdateEnabled)
                 {
-                    LogService.LogDebug("[UpdateService] Otomatik güncelleme kapalı");
+                    Log.Warning("[UpdateService] Otomatik güncelleme kapalı");
                     return;
                 }
 
                 // UI yüklensin diye 10 saniye bekle
                 await Task.Delay(10000);
 
-                LogService.LogInfo("[UpdateService] Başlangıç güncelleme kontrolü başlatılıyor...");
+                Log.Warning("[UpdateService] Başlangıç güncelleme kontrolü başlatılıyor...");
                 await CheckForUpdatesAsync(silentCheck: true);
             }
             catch (Exception ex)
             {
-                LogService.LogError($"[UpdateService] Başlangıç güncelleme kontrolü hatası: {ex.Message}", ex);
+                Log.Error(ex, "[UpdateService] Başlangıç güncelleme kontrolü hatası: {Message}", ex.Message);
             }
         }
 
@@ -234,7 +328,7 @@ namespace QuadroAIPilot.Services
             {
                 // Bu metod compile-time constant kullandığı için runtime'da değiştirilemez
                 // Gerekirse settings'e eklenebilir
-                LogService.LogWarning("[UpdateService] Update URL değiştirme özelliği henüz desteklenmiyor");
+                Log.Warning("[UpdateService] Update URL değiştirme özelliği henüz desteklenmiyor");
             }
         }
 
@@ -251,11 +345,11 @@ namespace QuadroAIPilot.Services
                     FileName = releaseUrl,
                     UseShellExecute = true
                 });
-                LogService.LogInfo($"[UpdateService] Release sayfası açıldı: {releaseUrl}");
+                Log.Warning("[UpdateService] Release sayfası açıldı: {ReleaseUrl}", releaseUrl);
             }
             catch (Exception ex)
             {
-                LogService.LogError($"[UpdateService] Release sayfası açılamadı: {ex.Message}", ex);
+                Log.Error(ex, "[UpdateService] Release sayfası açılamadı: {Message}", ex.Message);
             }
         }
     }
