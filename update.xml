@@ -6,6 +6,4 @@
       <mandatory>false</mandatory>
       <mode>0</mode>
       <args>/SILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS</args>
-      <checksum algorithm="SHA256"></checksum>
   </item>
-
