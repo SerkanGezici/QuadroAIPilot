@@ -3,15 +3,34 @@
 ; Minimal müdahale prensibi - Sadece eksik olanları kur
 
 #define AppName "QuadroAIPilot"
-#define AppVersion "1.2.1"
+#define MajorVersion "1"
+#define MinorVersion "2"
+#define PatchVersion "1"
 #define AppPublisher "QuadroAI"
 #define AppURL "https://quadroai.com"
 #define AppExeName "QuadroAIPilot.exe"
 
+; Build version - Otomatik versiyon artışı için
+; build_version.txt dosyasından build numarasını oku
+#define FileHandle FileOpen(AddBackslash(SourcePath) + "build_version.txt")
+#define BuildNumberRaw FileRead(FileHandle)
+#expr FileClose(FileHandle)
+; Trim ile whitespace ve BOM'u temizle
+#define BuildNumber Trim(BuildNumberRaw)
+
+; Build numarasını artırma işlemi build_setup.bat tarafından yapılacak
+
+; Hibrit versiyon sistemi
+#define AppVersionDisplay MajorVersion + "." + MinorVersion + "." + PatchVersion
+#define AppVersionFull MajorVersion + "." + MinorVersion + "." + PatchVersion + "." + BuildNumber
+#define AppVersionWithBuild AppVersionDisplay + " (Build " + BuildNumber + ")"
+
 [Setup]
 AppId={{A7B3C4D5-E6F7-8901-2345-6789ABCDEF01}
 AppName={#AppName}
-AppVersion={#AppVersion}
+AppVersion={#AppVersionFull}
+AppVerName={#AppName} {#AppVersionWithBuild}
+VersionInfoVersion={#AppVersionFull}
 AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
@@ -21,13 +40,14 @@ DefaultGroupName={#AppName}
 AllowNoIcons=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=..\Output
-OutputBaseFilename=QuadroAIPilot_Setup_{#AppVersion}_Win11_Final_v18
+OutputBaseFilename=QuadroAIPilot_Setup_{#AppVersionDisplay}_Win11_Final_v{#BuildNumber}
 SetupIconFile=..\Assets\icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 CompressionThreads=auto
 DiskSpanning=no
 UninstallDisplayIcon={app}\QuadroAIPilot.exe
+UninstallDisplayName={#AppName} {#AppVersionWithBuild}
 WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64
@@ -35,6 +55,11 @@ ArchitecturesAllowed=x64
 DisableWelcomePage=no
 DisableDirPage=no
 DisableProgramGroupPage=yes
+; Upgrade davranışı - kullanıcı ayarlarını koru
+AlwaysRestart=no
+CloseApplications=yes
+RestartApplications=yes
+DirExistsWarning=no
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
@@ -82,6 +107,7 @@ Source: "Scripts\ConfigureEmail.ps1"; DestDir: "{app}\Scripts"; Flags: ignorever
 ; Python ve TTS kurulum scripti (optimize edilmis)
 Source: "Scripts\InstallPythonOptimized.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 Source: "Scripts\InstallTurkishVoices.ps1"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
+Source: "Scripts\edge-tts-nossl.py"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 
 ; WebDriver dosyaları
 Source: "Prerequisites\chromedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignoreversion; Components: main
@@ -113,9 +139,11 @@ Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#AppName}"; Filen
 Name: "{userstartmenu}\Programs\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\icon.ico"
 
 [Registry]
-; Uygulama kayıtları
+; Uygulama kayıtları - Hibrit versiyon sistemi
 Root: HKLM; Subkey: "SOFTWARE\QuadroAI\{#AppName}"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\QuadroAI\{#AppName}"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
+Root: HKLM; Subkey: "SOFTWARE\QuadroAI\{#AppName}"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersionFull}"
+Root: HKLM; Subkey: "SOFTWARE\QuadroAI\{#AppName}"; ValueType: string; ValueName: "DisplayVersion"; ValueData: "{#AppVersionDisplay}"
+Root: HKLM; Subkey: "SOFTWARE\QuadroAI\{#AppName}"; ValueType: string; ValueName: "BuildNumber"; ValueData: "{#BuildNumber}"
 
 ; Windows başlangıç
 Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppName}"; ValueData: """{app}\{#AppExeName}"" --startup"; Tasks: startup; Flags: uninsdeletevalue

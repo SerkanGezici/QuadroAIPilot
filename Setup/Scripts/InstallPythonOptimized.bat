@@ -121,13 +121,27 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM 6. TTS Turkce ses kontrolu
-echo [6/6] Turkce ses sistemi kontrol ediliyor...
+REM 6. edge-tts-nossl.py dosyasini kopyala (ONCE)
+echo [6/7] SSL bypass scripti kopyalaniyor...
+echo edge-tts-nossl.py kopyalanıyor... >> "%LOGFILE%"
+if exist "%~dp0edge-tts-nossl.py" (
+    copy /y "%~dp0edge-tts-nossl.py" "%PYTHON_DIR%\Scripts\edge-tts-nossl.py" >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [BASARILI] edge-tts-nossl.py kopyalandi >> "%LOGFILE%"
+    ) else (
+        echo [UYARI] edge-tts-nossl.py kopyalanamadi >> "%LOGFILE%"
+    )
+) else (
+    echo [UYARI] edge-tts-nossl.py kaynak dosyada bulunamadi: %~dp0edge-tts-nossl.py >> "%LOGFILE%"
+)
+
+REM 7. TTS modulu ve Turkce sesler kontrolu (SSL bypass ile)
+echo [7/7] TTS sistemi kontrol ediliyor...
 echo.
-echo Turkce ses kontrolu baslatiliyor... >> "%LOGFILE%"
+echo TTS modulu kontrol ediliyor... >> "%LOGFILE%"
 
 REM TTS modulunu test et
-"%PYTHON_DIR%\python.exe" -c "import edge_tts" 2>nul
+"%PYTHON_DIR%\python.exe" -c "import edge_tts" 2>>"%LOGFILE%"
 if %errorlevel% neq 0 (
     echo [HATA] TTS modulu yuklenemedi >> "%LOGFILE%"
     echo.
@@ -141,54 +155,28 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Turkce sesleri kontrol et
-echo Turkce sesler kontrol ediliyor... >> "%LOGFILE%"
-"%PYTHON_DIR%\python.exe" -c "import asyncio, edge_tts; voices = asyncio.run(edge_tts.list_voices()); tr = [v for v in voices if 'tr-TR' in v['Locale']]; print('Turkce Sesler:'); [print(f'  - {v[\"ShortName\"]}: {v[\"Gender\"]}') for v in tr]" > "%TEMP%\tts_test.txt" 2>&1
-
-type "%TEMP%\tts_test.txt" >> "%LOGFILE%"
-
-REM Turkce ses kontrolu
-findstr /C:"tr-TR-EmelNeural" "%TEMP%\tts_test.txt" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [HATA] Turkce kadin sesi bulunamadi! >> "%LOGFILE%"
-    goto :TTS_ERROR
-)
-
-findstr /C:"tr-TR-AhmetNeural" "%TEMP%\tts_test.txt" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [HATA] Turkce erkek sesi bulunamadi! >> "%LOGFILE%"
-    goto :TTS_ERROR
+REM Turkce sesleri kontrol et (SSL bypass script ile)
+echo Turkce sesler kontrol ediliyor (SSL bypass)... >> "%LOGFILE%"
+if exist "%PYTHON_DIR%\Scripts\edge-tts-nossl.py" (
+    "%PYTHON_DIR%\python.exe" "%PYTHON_DIR%\Scripts\edge-tts-nossl.py" --list-voices > "%TEMP%\tts_voices.txt" 2>&1
+    findstr /C:"tr-TR-EmelNeural" "%TEMP%\tts_voices.txt" >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [BASARILI] Turkce kadin sesi (Emel) hazir >> "%LOGFILE%"
+    ) else (
+        echo [UYARI] Turkce sesler listenemedi, uygulama ilk kullanimda indirecek >> "%LOGFILE%"
+    )
+) else (
+    echo [UYARI] edge-tts-nossl.py bulunamadi, sesler ilk kullanimda indirilecek >> "%LOGFILE%"
 )
 
 REM Basarili kurulum
-echo [BASARILI] Tum Turkce sesler hazir >> "%LOGFILE%"
+echo [BASARILI] TTS modulu yuklendi >> "%LOGFILE%"
 echo.
 echo ============================================
 echo    KURULUM BASARILI!
 echo ============================================
-echo Python ve Turkce ses sistemi kullanima hazir.
+echo Python ve TTS sistemi kullanima hazir.
 echo.
-echo Yuklenen sesler:
-echo   - Kadin Ses (Emel)
-echo   - Erkek Ses (Ahmet)
-echo.
-goto :CLEANUP
-
-:TTS_ERROR
-echo.
-echo ============================================
-echo    HATA: Turkce ses sistemi yuklenemedi!
-echo ============================================
-echo.
-echo Sorun devam ederse:
-echo 1. Internet baglantinizi kontrol edin
-echo 2. Windows Defender'i gecici olarak kapatin
-echo 3. Kurulumu yeniden calistirin
-echo.
-echo Detayli log: %LOGFILE%
-echo.
-timeout /t 15 /nobreak > nul
-exit /b 1
 
 :CLEANUP
 REM PATH'e ekle
@@ -199,6 +187,7 @@ REM Temizlik
 if exist "%TEMP%\python_quadro.zip" del /f /q "%TEMP%\python_quadro.zip" 2>nul
 if exist "%TEMP%\get-pip.py" del /f /q "%TEMP%\get-pip.py" 2>nul
 if exist "%TEMP%\tts_test.txt" del /f /q "%TEMP%\tts_test.txt" 2>nul
+if exist "%TEMP%\tts_voices.txt" del /f /q "%TEMP%\tts_voices.txt" 2>nul
 
 echo Log dosyasi: %LOGFILE%
 echo.

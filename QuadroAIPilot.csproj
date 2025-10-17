@@ -20,10 +20,12 @@
 		<PublishSingleFile>false</PublishSingleFile>
 		<PublishReadyToRun>true</PublishReadyToRun>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-		<!-- Assembly version bilgisi -->
+		<!-- Assembly version bilgisi - Hibrit sistem ile senkronize -->
+		<!-- Not: Build numarası Setup/build_version.txt'den okunacak -->
 		<Version>1.2.1</Version>
 		<AssemblyVersion>1.2.1.0</AssemblyVersion>
 		<FileVersion>1.2.1.0</FileVersion>
+		<!-- Build numarası runtime'da okunacak -->
 	</PropertyGroup>
 	<ItemGroup>
 	
@@ -102,7 +104,38 @@
 		<None Update="Assets\icon128.png">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
-		
+
+		<!-- QAI Logo -->
+		<None Update="Assets\QAI_Logo.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\QAI_Logo_Transparent.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+
+		<!-- WinUI Logos -->
+		<None Update="Assets\LockScreenLogo.scale-200.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\SplashScreen.scale-200.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\Square150x150Logo.scale-200.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\Square44x44Logo.scale-200.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\StoreLogo.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Assets\Wide310x150Logo.scale-200.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+
 		<!-- App.config dosyası -->
 		<None Update="App.config">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>

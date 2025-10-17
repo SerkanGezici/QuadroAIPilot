@@ -967,6 +967,7 @@ namespace QuadroAIPilot.Dialogs
 
         /// <summary>
         /// Güncellemeleri kontrol et butonu
+        /// AutoUpdater.NET built-in dialog kullanır (otomatik indirme ve kurulum)
         /// </summary>
         private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
         {
@@ -976,89 +977,44 @@ namespace QuadroAIPilot.Dialogs
             {
                 System.Diagnostics.Debug.WriteLine("==== INSIDE TRY BLOCK ====");
 
-                // UI thread'de olduğundan emin ol
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    CheckUpdatesButton.IsEnabled = false;
-                    CheckUpdatesButton.Content = "Kontrol ediliyor...";
-                });
+                // Buton durumunu güncelle
+                CheckUpdatesButton.IsEnabled = false;
+                CheckUpdatesButton.Content = "Kontrol ediliyor...";
 
                 System.Diagnostics.Debug.WriteLine("==== GETTING UPDATE SERVICE INSTANCE ====");
                 var updateService = Services.UpdateService.Instance;
 
-                System.Diagnostics.Debug.WriteLine("==== CALLING CheckForUpdatesManualAsync WITH CALLBACK ====");
+                System.Diagnostics.Debug.WriteLine("==== CALLING CheckForUpdatesManualAsync (AutoUpdater.NET built-in dialog) ====");
 
-                // Callback ile güncelleme kontrolü başlat
-                await updateService.CheckForUpdatesManualAsync((updateAvailable, title, message) =>
-                {
-                    System.Diagnostics.Debug.WriteLine($"==== CALLBACK TRIGGERED - UpdateAvailable: {updateAvailable}, Title: {title} ====");
-
-                    // UI thread'de dialog göster
-                    DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        try
-                        {
-                            System.Diagnostics.Debug.WriteLine("==== SHOWING UPDATE RESULT DIALOG ====");
-
-                            var resultDialog = new ContentDialog
-                            {
-                                Title = title,
-                                Content = message,
-                                CloseButtonText = updateAvailable ? "İptal" : "Tamam",
-                                XamlRoot = this.XamlRoot
-                            };
-
-                            // Güncelleme varsa "İndir" butonu ekle
-                            if (updateAvailable)
-                            {
-                                resultDialog.PrimaryButtonText = "İndir";
-                            }
-
-                            var result = await resultDialog.ShowAsync();
-
-                            // Güncelleme varsa ve kullanıcı "İndir" dedi ise GitHub Release sayfasını aç
-                            if (updateAvailable && result == ContentDialogResult.Primary)
-                            {
-                                System.Diagnostics.Debug.WriteLine("==== USER CLICKED DOWNLOAD - OPENING RELEASE PAGE ====");
-                                updateService.OpenReleasePage();
-                            }
-                        }
-                        catch (Exception dialogEx)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"==== DIALOG SHOW ERROR: {dialogEx.Message} ====");
-                        }
-                    });
-                });
+                // AutoUpdater.NET kendi dialog'unu gösterecek
+                // - Güncelleme varsa: İndirme dialog'u ve progress bar
+                // - Güncelleme yoksa: "No update available" mesajı
+                // - Changelog otomatik gösterilir
+                await updateService.CheckForUpdatesManualAsync();
 
                 System.Diagnostics.Debug.WriteLine("==== UPDATE CHECK COMPLETED ====");
 
                 // Son kontrol zamanını güncelle
-                DispatcherQueue.TryEnqueue(() => LoadUpdateInfo());
+                LoadUpdateInfo();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"==== EXCEPTION: {ex.Message} ====");
                 System.Diagnostics.Debug.WriteLine($"==== STACK TRACE: {ex.StackTrace} ====");
 
-                DispatcherQueue.TryEnqueue(async () =>
+                var errorDialog = new ContentDialog
                 {
-                    var errorDialog = new ContentDialog
-                    {
-                        Title = "Güncelleme Hatası",
-                        Content = $"Güncelleme kontrolü sırasında hata oluştu:\n{ex.Message}",
-                        CloseButtonText = "Tamam",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await errorDialog.ShowAsync();
-                });
+                    Title = "Güncelleme Hatası",
+                    Content = $"Güncelleme kontrolü sırasında hata oluştu:\n{ex.Message}",
+                    CloseButtonText = "Tamam",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
             }
             finally
             {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    CheckUpdatesButton.IsEnabled = true;
-                    CheckUpdatesButton.Content = "Güncellemeleri Kontrol Et";
-                });
+                CheckUpdatesButton.IsEnabled = true;
+                CheckUpdatesButton.Content = "Güncellemeleri Kontrol Et";
             }
         }
 

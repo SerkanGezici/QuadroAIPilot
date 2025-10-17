@@ -12,7 +12,7 @@
 	  Version="1.2.1.0" />
 
 	<Properties>
-		<DisplayName>Quadro AI Pilot</DisplayName>
+		<DisplayName>QuadroAIPilot</DisplayName>
 		<PublisherDisplayName>QuadroAIPilot</PublisherDisplayName>
 		<Logo>Assets\StoreLogo.png</Logo>
 	</Properties>
@@ -22,8 +22,7 @@
 	</Dependencies>
 
 	<Resources>
-		<Resource Language="tr-TR"/>
-		<Resource Language="en-US"/>
+		<Resource Language="x-generate"/>
 	</Resources>
 
 	<Applications>
@@ -31,7 +30,7 @@
 		  Executable="$targetnametoken$.exe"
 		  EntryPoint="$targetentrypoint$">
 			<uap:VisualElements
-			  DisplayName="Quadro AI Pilot"
+			  DisplayName="QuadroAIPilot"
 			  Description="Konuşma tanıma asistanı"
 			  BackgroundColor="transparent"
 			  Square150x150Logo="Assets\Square150x150Logo.png"

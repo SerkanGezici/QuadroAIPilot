@@ -14,11 +14,23 @@ namespace QuadroAIPilot.Services
     public class EdgeTTSPythonBridge : IDisposable
     {
         private readonly string _tempDir;
-        
+        private readonly string _pythonPath;
+        private readonly string _edgeTtsScript;
+
         public EdgeTTSPythonBridge()
         {
             _tempDir = Path.Combine(Path.GetTempPath(), "QuadroAI_EdgeTTS");
             Directory.CreateDirectory(_tempDir);
+
+            // Python ve edge-tts path'leri
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            _pythonPath = Path.Combine(localAppData, "QuadroAIPilot", "Python", "python.exe");
+            _edgeTtsScript = Path.Combine(localAppData, "QuadroAIPilot", "Python", "Scripts", "edge-tts-nossl.py");
+
+            LoggingService.LogWarning($"[EdgeTTSPython] Python path: {_pythonPath}");
+            LoggingService.LogWarning($"[EdgeTTSPython] edge-tts-nossl script: {_edgeTtsScript}");
+            LoggingService.LogWarning($"[EdgeTTSPython] Python exists: {File.Exists(_pythonPath)}");
+            LoggingService.LogWarning($"[EdgeTTSPython] Script exists: {File.Exists(_edgeTtsScript)}");
         }
         
         public async Task<byte[]> SynthesizeSpeechAsync(string text, string voice = "tr-TR-EmelNeural")
@@ -26,15 +38,20 @@ namespace QuadroAIPilot.Services
             try
             {
                 LoggingService.LogWarning($"[EdgeTTSPython] TTS başlatılıyor - Voice: {voice}");
-                
+
                 // Geçici dosya adları
                 var outputFile = Path.Combine(_tempDir, $"tts_{Guid.NewGuid()}.webm");
-                
-                // edge-tts komutunu çalıştır
+
+                // Metni escape et (sadece double quote)
+                var escapedText = text.Replace("\"", "\\\"");
+
+                // Python script ile edge-tts çalıştır (SSL bypass ile)
+                var arguments = $"/c \"\"{_pythonPath}\" \"{_edgeTtsScript}\" --voice {voice} --text \"{escapedText}\" --write-media \"{outputFile}\"\"";
+
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = $"/c edge-tts --voice \"{voice}\" --text \"{text.Replace("\"", "\\\"")}\" --write-media \"{outputFile}\"",
+                    Arguments = arguments,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -42,23 +59,30 @@ namespace QuadroAIPilot.Services
                     StandardOutputEncoding = Encoding.UTF8,
                     StandardErrorEncoding = Encoding.UTF8
                 };
-                
+
+                LoggingService.LogWarning($"[EdgeTTSPython] CMD Arguments: {arguments}");
+
                 using var process = new Process { StartInfo = startInfo };
                 process.Start();
-                
+
                 var output = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
-                
+
                 await process.WaitForExitAsync();
-                
+
+                if (!string.IsNullOrEmpty(output))
+                {
+                    LoggingService.LogVerbose($"[EdgeTTSPython] Stdout: {output}");
+                }
+
                 if (!string.IsNullOrEmpty(error))
                 {
                     LoggingService.LogWarning($"[EdgeTTSPython] Stderr: {error}");
                 }
-                
+
                 if (process.ExitCode != 0)
                 {
-                    throw new Exception($"edge-tts failed with exit code {process.ExitCode}");
+                    throw new Exception($"edge-tts failed with exit code {process.ExitCode}. Error: {error}");
                 }
                 
                 // Audio dosyasını oku

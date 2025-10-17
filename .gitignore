@@ -365,5 +365,18 @@ Logs/
 *.env
 .claude-temp/
 
+# Claude Code ve Claude Ultimate klasörleri
+.claude/
+claude/
+claude-ultimate/
+Claude/
+Claude Ultimate/
+
 # Build output - setup executables
 Output/*.exe
+
+# Build logs
+build_output*.txt
+setup_build_output.txt
+Setup/build_output*.txt
+Setup/setup_build*.txt

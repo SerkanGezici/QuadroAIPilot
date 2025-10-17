@@ -112,8 +112,34 @@ QuadroAIPilot/
 ├── Infrastructure/    # Altyapı bileşenleri
 ├── Assets/           # UI assets (HTML, CSS, JS)
 ├── Tests/            # Unit testler
+├── Setup/            # Setup oluşturma araçları
+│   ├── QuadroAIPilot.iss       # Inno Setup script
+│   ├── build_setup.bat         # Otomatik build script
+│   ├── README_SETUP.md         # Detaylı setup kılavuzu
+│   └── Scripts/
+│       ├── edge-tts-nossl.py   # TTS SSL bypass
+│       └── InstallPythonOptimized.bat
 └── Properties/       # Uygulama özellikleri
 ```
+
+### Setup Oluşturma
+
+Yeni bir kurulum dosyası oluşturmak için:
+
+```batch
+cd Setup
+build_setup.bat
+```
+
+Bu script:
+- ✅ Projeyi Release modunda derler
+- ✅ Inno Setup ile installer oluşturur
+- ✅ Version numarasını otomatik artırır
+- ✅ Dosya bütünlüğünü kontrol eder
+
+**Detaylı bilgi:** `Setup/README_SETUP.md`
+
+**Önemli:** Setup oluştururken `edge-tts-nossl.py` dosyasının Inno Setup script'ine eklendiğinden emin olun. Bu dosya TTS'nin çalışması için kritiktir.
 
 ### Yeni Komut Ekleme
 1. `Commands/` klasöründe yeni komut sınıfı oluşturun
@@ -124,6 +150,16 @@ QuadroAIPilot/
 ### Test Çalıştırma
 ```bash
 dotnet test QuadroAIPilot.Tests
+```
+
+### Debug Build
+```bash
+dotnet build QuadroAIPilot.csproj -c Debug -p:Platform=x64
+```
+
+### Release Build
+```bash
+dotnet publish QuadroAIPilot.csproj -c Release -p:Platform=x64 --self-contained -r win-x64
 ```
 
 ### Logging
