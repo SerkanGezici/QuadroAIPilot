@@ -1,1 +1,247 @@
-QuadroAIPilot - Tüm hakları saklıdır © 2025
+================================================================================
+                    QUADROAIPILOT SON KULLANICI LİSANS SÖZLEŞMESİ
+                         END-USER LICENSE AGREEMENT (EULA)
+================================================================================
+
+Copyright © 2025 QuadroAI - Tüm hakları saklıdır.
+All Rights Reserved.
+
+SON GÜNCELLEME / LAST UPDATE: 20 Ekim 2025
+VERSİYON / VERSION: 1.2.1
+
+
+================================================================================
+1. LİSANS VERİLMESİ / LICENSE GRANT
+================================================================================
+
+Bu yazılım ("QuadroAIPilot"), QuadroAI tarafından geliştirilmiş özel mülkiyet
+yazılımıdır. Bu sözleşmeyi kabul ederek, aşağıdaki şartlar dahilinde
+QuadroAIPilot'u kullanma hakkı elde edersiniz:
+
+• Yazılımı kişisel veya ticari amaçlarla kullanabilirsiniz
+• Tek bir bilgisayarda kurulum yapabilirsiniz
+• Yazılımın kopyalarını yedekleme amaçlı oluşturabilirsiniz
+
+This software ("QuadroAIPilot") is proprietary software developed by QuadroAI.
+By accepting this agreement, you obtain the right to use QuadroAIPilot under
+the following conditions.
+
+
+================================================================================
+2. KULLANIM KISITLAMALARI / USAGE RESTRICTIONS
+================================================================================
+
+AŞAĞIDAKİLER YASAKTIR / THE FOLLOWING ARE PROHIBITED:
+
+✗ Yazılımı tersine mühendislik, decompile veya disassemble etmek
+✗ Kaynak kodunu çıkarmaya çalışmak
+✗ Yazılımı değiştirmek, türev eserler oluşturmak
+✗ Yazılımı lisanssız dağıtmak veya satmak
+✗ Telif hakkı ve mülkiyet bildirimlerini kaldırmak
+✗ Yazılımı kötü amaçlı faaliyetler için kullanmak
+
+
+================================================================================
+3. KİŞİSEL VERİLERİN KORUNMASI / DATA PROTECTION (KVKK/GDPR UYUMU)
+================================================================================
+
+3.1 VERİ SORUMLUSU / DATA CONTROLLER
+-------------------------------------
+QuadroAI, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve AB Genel
+Veri Koruma Tüzüğü (GDPR) kapsamında veri sorumlusudur.
+
+QuadroAI is the data controller under Turkish Personal Data Protection Law
+(KVKK No. 6698) and EU General Data Protection Regulation (GDPR).
+
+
+3.2 İŞLENEN KİŞİSEL VERİLER / PROCESSED PERSONAL DATA
+------------------------------------------------------
+QuadroAIPilot aşağıdaki verileri işleyebilir:
+
+✓ Kullanıcı tercih ve ayarları (yerel olarak saklanır)
+✓ Uygulama kullanım logları (hata ayıklama için, anonim)
+✓ Mikrofon kayıtları (sadece kullanıcı isteği ile, geçici)
+✓ Sohbet geçmişi (yerel olarak, şifrelenmiş)
+✓ E-posta meta verileri (Outlook entegrasyonu kullanılıyorsa)
+
+ÖNEMLİ: QuadroAIPilot, tüm verileri yerel olarak saklar. Verileriniz
+sunucularımıza yüklenmez veya saklanmaz.
+
+IMPORTANT: QuadroAIPilot stores all data locally. Your data is NOT uploaded
+to or stored on our servers.
+
+
+3.3 ÜÇÜNCÜ TARAF SERVİSLER / THIRD-PARTY SERVICES
+--------------------------------------------------
+Yazılım, aşağıdaki üçüncü taraf servisleri kullanır:
+
+• ANTHROPIC CLAUDE API: AI sohbet işlevselliği için kullanılır
+  - Sohbet içeriğiniz Anthropic sunucularına gönderilir
+  - Anthropic Gizlilik Politikası: https://www.anthropic.com/privacy
+  - GDPR Uyumlu, veri işleme süresi: 90 gün
+
+• MICROSOFT EDGE TTS: Sesli okuma için kullanılır
+  - Metin Microsoft sunucularına gönderilir (sadece TTS için)
+  - Microsoft Gizlilik Bildirimi: https://privacy.microsoft.com
+
+
+3.4 KULLANICI HAKLARI / USER RIGHTS (KVKK/GDPR)
+------------------------------------------------
+KVKK ve GDPR kapsamında aşağıdaki haklara sahipsiniz:
+
+✓ Kişisel verilerinizin işlenip işlenmediğini öğrenme
+✓ İşlenmişse buna ilişkin bilgi talep etme
+✓ İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme
+✓ Verilerin düzeltilmesini veya silinmesini talep etme
+✓ Veri taşınabilirliği hakkı
+✓ Otomatik karar verme süreçlerine itiraz etme
+
+Bu hakları kullanmak için: info@quadroai.com
+
+
+3.5 VERİ GÜVENLİĞİ / DATA SECURITY
+-----------------------------------
+QuadroAI, verilerinizi korumak için:
+
+✓ Uçtan uca şifreleme (sohbet geçmişi için)
+✓ Güvenli yerel depolama (Windows Credential Manager)
+✓ En az yetki prensibi
+✓ Düzenli güvenlik güncellemeleri
+✓ Veri minimizasyonu (sadece gerekli veriler işlenir)
+
+
+3.6 ÇEREZ VE TELEMETRI / COOKIES AND TELEMETRY
+-----------------------------------------------
+✓ Uygulama çerez kullanmaz (web tabanlı değil)
+✓ Anonim kullanım istatistikleri toplama: KAPALI (varsayılan)
+✓ Hata raporlama: Sadece kullanıcı onayı ile
+
+
+================================================================================
+4. FİKRİ MÜLKİYET HAKLARI / INTELLECTUAL PROPERTY RIGHTS
+================================================================================
+
+QuadroAIPilot, QuadroAI'nin tescilli markası ve fikri mülkiyetidir.
+Tüm telif hakları, ticari markalar, patentler ve diğer fikri mülkiyet
+hakları QuadroAI'ye aittir.
+
+Yazılımdaki üçüncü taraf kütüphaneler kendi lisanslarına tabidir:
+• .NET Runtime - MIT License
+• Selenium WebDriver - Apache 2.0 License
+• NAudio - MIT License
+• Serilog - Apache 2.0 License
+
+
+================================================================================
+5. GARANTİ REDDİ / WARRANTY DISCLAIMER
+================================================================================
+
+BU YAZILIM "OLDUĞU GİBİ" SAĞLANMAKTADIR. QUADROAI, YAZILIMIN
+KESİNTİSİZ, HATASIZ VEYA GÜVENLİ OLACAĞINA DAİR HİÇBİR GARANTİ VERMEMEKTEDİR.
+
+SATILABİLİRLİK, BELİRLİ BİR AMACA UYGUNLUK VEYA İHLAL ETMEME DAHİL
+ANCAK BUNLARLA SINIRLI OLMAMAK ÜZERE HİÇBİR AÇIK VEYA ZIMNİ GARANTİ
+VERİLMEMEKTEDİR.
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+
+================================================================================
+6. SORUMLULUK SINIRLAMASI / LIMITATION OF LIABILITY
+================================================================================
+
+QUADROAI, HİÇBİR KOŞULDA YAZILIMIN KULLANIMINDAN VEYA KULLANILAMAMASINDAN
+KAYNAKLANAN DOĞRUDAN, DOLAYLI, ARIZİ, ÖZEL VEYA SONUÇ OLARAK ORTAYA ÇIKAN
+ZARARLARDAN (KAR KAYBI, VERİ KAYBI, İŞ KESİNTİSİ DAHİL) SORUMLU OLMAYACAKTIR.
+
+IN NO EVENT SHALL QUADROAI BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+INABILITY TO USE THE SOFTWARE.
+
+
+================================================================================
+7. GÜNCELLEMELER VE DESTEK / UPDATES AND SUPPORT
+================================================================================
+
+✓ Otomatik güncellemeler: Evet (kullanıcı kontrolü ile)
+✓ Güvenlik yamaları: Düzenli olarak sağlanır
+✓ Özellik güncellemeleri: Mevcut
+✓ Teknik destek: info@quadroai.com
+
+
+================================================================================
+8. SÖZLEŞMENİN FESHİ / TERMINATION
+================================================================================
+
+Bu lisans, aşağıdaki durumlarda otomatik olarak sona erer:
+
+• Kullanıcı tarafından yazılımın kaldırılması
+• Lisans şartlarının ihlali
+• QuadroAI tarafından bildirimin yapılması
+
+Fesih durumunda, yazılımı kaldırmalı ve tüm kopyalarını imha etmelisiniz.
+
+
+================================================================================
+9. UYGULANACAK HUKUK / GOVERNING LAW
+================================================================================
+
+Bu sözleşme, Türkiye Cumhuriyeti yasalarına tabidir. Sözleşmeden doğacak
+uyuşmazlıklar İstanbul Mahkemeleri ve İcra Dairelerinde çözülecektir.
+
+This agreement shall be governed by and construed in accordance with the
+laws of the Republic of Turkey. Disputes arising from this agreement shall
+be resolved in Istanbul Courts and Enforcement Offices.
+
+
+================================================================================
+10. KVKK AYDINLATMA METNİ / KVKK DISCLOSURE TEXT
+================================================================================
+
+6698 sayılı KVKK kapsamında, veri sorumlusu sıfatıyla QuadroAI, kişisel
+verilerinizi aşağıdaki amaçlarla işlemektedir:
+
+✓ Yazılım hizmetlerinin sunulması ve geliştirilmesi
+✓ Teknik destek sağlanması
+✓ Hukuki yükümlülüklerin yerine getirilmesi
+✓ Güvenlik ve hata ayıklama
+
+İşlenen veriler, ilgili mevzuatta öngörülen veya işlendikleri amaç için
+gerekli olan azami süre boyunca muhafaza edilir.
+
+Detaylı bilgi için: https://quadroai.com/kvkk
+
+
+================================================================================
+11. İLETİŞİM BİLGİLERİ / CONTACT INFORMATION
+================================================================================
+
+QuadroAI
+E-posta / Email: info@quadroai.com
+Web: https://quadroai.com
+Veri Koruma Görevlisi / DPO: dpo@quadroai.com
+
+KVKK ve GDPR ile ilgili talepleriniz için yukarıdaki iletişim bilgilerini
+kullanabilirsiniz.
+
+
+================================================================================
+12. KABUL / ACCEPTANCE
+================================================================================
+
+QUADROAIPILOT YAZILIMINI YÜKLEYEREK, KULLANIRAK VEYA ERİŞEREK, BU
+SÖZLEŞMENİN TÜM ŞARTLARINI OKUDUĞUNUZU, ANLADIĞINIZI VE KABUL ETTİĞİNİZİ
+BEYAN EDERSİNİZ.
+
+BY INSTALLING, USING, OR ACCESSING QUADROAIPILOT SOFTWARE, YOU ACKNOWLEDGE
+THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY ALL TERMS OF THIS
+AGREEMENT.
+
+Bu sözleşmeyi kabul etmiyorsanız, yazılımı kullanmayınız ve derhal
+kaldırınız.
+
+================================================================================
+                              SON / END OF LICENSE
+================================================================================

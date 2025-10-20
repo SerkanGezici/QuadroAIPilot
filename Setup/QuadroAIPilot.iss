@@ -578,19 +578,25 @@ begin
     // Test batch dosyası oluştur
     CreatePostInstallTestBatch;
     
-    // Kullanıcı bilgilendirmesi
-    MsgBox('Kurulum başarıyla tamamlandı!' + #13#10#13#10 +
-           'İlk çalıştırmada:' + #13#10 +
-           '• Mikrofon erişim izni istenecek' + #13#10 +
+    // Kullanıcı bilgilendirmesi - Gelişmiş mikrofon bilgisi
+    MsgBox('✅ Kurulum başarıyla tamamlandı!' + #13#10#13#10 +
+           '📌 İLK ÇALIŞTIRMADA:' + #13#10 +
+           '• Mikrofon erişim izni popup''ı gelecek → "İzin Ver" butonuna basın' + #13#10 +
            '• Temel ayarlar yapılandırılacak' + #13#10#13#10 +
-           'DİKKAT: Dikte özelliği için:' + #13#10 +
-           '• İnternet bağlantısı gerekli' + #13#10 +
-           '• İlk kullanımda mikrofon izni istenecek (tek seferlik)' + #13#10 +
-           '• Windows Gizlilik ayarlarından mikrofon erişimini kontrol edin' + #13#10#13#10 +
-           'Tarayıcı Eklentileri (İsteğe Bağlı):' + #13#10 +
-           '• Chrome: chrome://extensions → Geliştirici modu → Paketi açılmış öğe yükle' + #13#10 +
-           '• Edge: edge://extensions → Geliştirici modu → Paketi açılmış öğe yükle' + #13#10#13#10 +
-           'E-posta özelliklerini kullanmak için Outlook gereklidir.',
+           '🎤 MİKROFON KURULUMU:' + #13#10 +
+           '✓ Otomatik mikrofon ayarları yapılandırıldı' + #13#10 +
+           '✓ Windows gizlilik ayarları güncellendi' + #13#10 +
+           '✓ Kurulum log: C:\Temp\QuadroAI_MicSetup.log' + #13#10#13#10 +
+           '⚠️ EĞER MİKROFON ÇALIŞMAZSA:' + #13#10 +
+           '1. Windows Ayarlar → Gizlilik ve Güvenlik → Mikrofon' + #13#10 +
+           '2. "Mikrofon erişimi" → AÇIK' + #13#10 +
+           '3. "Masaüstü uygulamalarının erişimi" → AÇIK' + #13#10 +
+           '4. QuadroAIPilot''u yeniden başlatın' + #13#10#13#10 +
+           '🔌 DİĞER ÖZELLİKLER:' + #13#10 +
+           '• İnternet bağlantısı: Çeviri ve AI özellikleri için gerekli' + #13#10 +
+           '• Tarayıcı Eklentileri: Chrome/Edge için opsiyonel' + #13#10 +
+           '• E-posta: Outlook gereklidir' + #13#10#13#10 +
+           '📞 Destek: info@quadroai.com',
            mbInformation, MB_OK);
   end;
 end;

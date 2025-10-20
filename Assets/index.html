@@ -3076,11 +3076,52 @@
                         stream.getTracks().forEach(track => track.stop());
                     })
                     .catch(err => {
-                        console.error('[DOMContentLoaded] Mikrofon izni reddedildi:', err);
-                        appendFeedback('⚠️ Mikrofon erişimi reddedildi! Lütfen izin verin.');
+                        console.error('[DOMContentLoaded] Mikrofon izni HATASI:', err);
+                        console.error('[DOMContentLoaded] Hata adı:', err.name);
+                        console.error('[DOMContentLoaded] Hata mesajı:', err.message);
+
+                        // Kullanıcıya detaylı rehberlik
+                        let errorMessage = '⚠️ MİKROFON ERİŞİMİ SORUNU!\n\n';
+
+                        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                            errorMessage += '❌ İzin Reddedildi\n\n' +
+                                          'ÇÖZÜM:\n' +
+                                          '1. Windows Ayarlar → Gizlilik ve Güvenlik → Mikrofon\n' +
+                                          '2. "Mikrofon erişimi" → AÇIK yapın\n' +
+                                          '3. "Masaüstü uygulamalarının erişimi" → AÇIK yapın\n' +
+                                          '4. QuadroAIPilot\'u yeniden başlatın\n\n' +
+                                          'Veya tarayıcı adres çubuğundaki mikrofon simgesine tıklayıp "İzin Ver" seçin.';
+                        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                            errorMessage += '❌ Mikrofon Bulunamadı\n\n' +
+                                          'ÇÖZÜM:\n' +
+                                          '1. Mikrofon bağlı olduğundan emin olun\n' +
+                                          '2. Windows Ayarlar → Sistem → Ses → Giriş cihazını kontrol edin\n' +
+                                          '3. Ses sürücülerini güncelleyin';
+                        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                            errorMessage += '❌ Mikrofon Kullanımda\n\n' +
+                                          'ÇÖZÜM:\n' +
+                                          '1. Başka uygulamalar (Teams, Zoom, Discord) kapatın\n' +
+                                          '2. QuadroAIPilot\'u yeniden başlatın';
+                        } else {
+                            errorMessage += '❌ Beklenmeyen Hata: ' + err.name + '\n\n' +
+                                          'ÇÖZÜM:\n' +
+                                          '1. Windows Ayarlar → Gizlilik → Mikrofon kontrol edin\n' +
+                                          '2. Uygulamayı yeniden başlatın\n' +
+                                          '3. Sorun devam ederse: info@quadroai.com';
+                        }
+
+                        appendFeedback(errorMessage);
+
+                        // Konsola da tam hata bilgisi yaz
+                        console.error('[DOMContentLoaded] Mikrofon erişim hatası detayı:', {
+                            name: err.name,
+                            message: err.message,
+                            stack: err.stack
+                        });
                     });
             } catch (error) {
-                console.error('[DOMContentLoaded] Mikrofon erişim hatası:', error);
+                console.error('[DOMContentLoaded] Mikrofon erişim exception:', error);
+                appendFeedback('⚠️ Kritik mikrofon hatası! Lütfen uygulamayı yeniden başlatın.');
             }
             
             // TTS seslerini önceden yükle - ÇOK ÖNEMLİ!

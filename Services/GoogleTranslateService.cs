@@ -97,8 +97,9 @@ namespace QuadroAIPilot.Services
                 {
                     // Cache'e ekle
                     var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetSlidingExpiration(TimeSpan.FromMinutes(CACHE_DURATION_MINUTES));
-                    
+                        .SetSlidingExpiration(TimeSpan.FromMinutes(CACHE_DURATION_MINUTES))
+                        .SetSize(1); // SizeLimit constraint için gerekli
+
                     _cache.Set(cacheKey, translatedText, cacheOptions);
                     
                     _logger.LogInformation($"Çeviri tamamlandı: {text.Length} karakter -> {translatedText.Length} karakter");

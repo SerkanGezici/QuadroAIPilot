@@ -1,9 +1,5 @@
-  Geri yüklenecek projeler belirleniyor...
+  Determining projects to restore...
   Geri yükleme için tüm projeler güncel.
-  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
-
-Oluşturma başarılı oldu.
-    0 Uyarı
-    0 Hata
-
-Geçen Süre 00:00:28.85
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: Bir .NET önizleme sürümü kullanıyorsunuz. Bkz. https://aka.ms/dotnet-support-policy [C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\QuadroAIPilot.csproj]
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\QuadroAIPilot.dll
+  QuadroAIPilot -> C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\

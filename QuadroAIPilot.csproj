@@ -96,11 +96,28 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 
-		<!-- BrowserExtensions klasörünü çıktıya ve publish'e kopyala -->
-		<Content Include="BrowserExtensions\**\*">
+		<!-- BrowserExtensions - Sadece gerekli klasörler (Chrome, Edge) ve destek dosyaları -->
+		<Content Include="BrowserExtensions\Chrome\**\*">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
 		</Content>
+		<Content Include="BrowserExtensions\Edge\**\*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+		<Content Include="BrowserExtensions\*.pem">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+		<Content Include="BrowserExtensions\*.sh">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+		<Content Include="BrowserExtensions\*.crx">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+		<!-- Firefox ve StorePackages dahil edilmedi - gereksiz -->
 		<None Update="Assets\icon128.png">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
