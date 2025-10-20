@@ -364,6 +364,7 @@ Logs/
 .claude/logs/*
 *.env
 .claude-temp/
+.claude-codex-reports/
 
 # Claude Code ve Claude Ultimate klasörleri
 .claude/
