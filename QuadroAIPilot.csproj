@@ -25,6 +25,12 @@
 		<Version>1.2.1</Version>
 		<AssemblyVersion>1.2.1.0</AssemblyVersion>
 		<FileVersion>1.2.1.0</FileVersion>
+		<!-- Şirket ve Ürün Bilgileri -->
+		<Company>Quadro Computer (Tesla Teknoloji)</Company>
+		<Authors>Quadro Computer</Authors>
+		<Copyright>Copyright © 2025 Quadro Computer</Copyright>
+		<Description>Quadro Pilot AI - AI Powered Voice Assistant for Windows</Description>
+		<Product>Quadro Pilot AI</Product>
 		<!-- Build numarası runtime'da okunacak -->
 	</PropertyGroup>
 	<ItemGroup>

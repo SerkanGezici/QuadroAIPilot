@@ -58,9 +58,6 @@ namespace QuadroAIPilot.Dialogs
         {
             // Load current settings to UI
             LoadSettingsToUI(_tempSettings);
-            
-            // Update animation speed text
-            UpdateAnimationSpeedText();
         }
 
         private void SetupEventHandlers()
@@ -85,17 +82,7 @@ namespace QuadroAIPilot.Dialogs
                     // Şimdilik sadece local olarak saklayalım
                 }
             };
-            
-            // Sliders
-            AnimationSpeedSlider.ValueChanged += (s, e) =>
-            {
-                if (s is Slider slider)
-                {
-                    _tempSettings.AnimationSpeed = slider.Value;
-                    UpdateAnimationSpeedText();
-                }
-            };
-            
+
             // BlurIntensitySlider kaldırıldı
             
             // Görsel efekt toggle'ları kaldırıldı
@@ -127,7 +114,6 @@ namespace QuadroAIPilot.Dialogs
             // Update system event handlers
             AutoUpdateToggle.Toggled += AutoUpdateToggle_Toggled;
             CheckUpdatesButton.Click += CheckUpdates_Click;
-            ReleaseNotesLink.Click += ReleaseNotes_Click;
 
             // Load update info
             LoadUpdateInfo();
@@ -146,9 +132,6 @@ namespace QuadroAIPilot.Dialogs
             }
             
             // Performance profili kaldırıldı
-            
-            // Sliders
-            AnimationSpeedSlider.Value = settings.AnimationSpeed;
 
             // Görsel efekt ayarları kaldırıldı
             
@@ -167,11 +150,6 @@ namespace QuadroAIPilot.Dialogs
             
             // Haber kaynakları listesini yükle
             LoadNewsSourcesList();
-        }
-
-        private void UpdateAnimationSpeedText()
-        {
-            AnimationSpeedText.Text = $"{AnimationSpeedSlider.Value:F1}x";
         }
 
         private async void LoadSystemInfo()
@@ -1018,22 +996,6 @@ namespace QuadroAIPilot.Dialogs
             }
         }
 
-        /// <summary>
-        /// Release notes linkine tıklandığında
-        /// </summary>
-        private void ReleaseNotes_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var updateService = Services.UpdateService.Instance;
-                updateService.OpenReleasePage();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"ReleaseNotes_Click error: {ex.Message}");
-            }
-        }
-
         #endregion
     }
 
@@ -1048,7 +1010,6 @@ namespace QuadroAIPilot.Dialogs
             {
                 Theme = original.Theme,
                 Performance = original.Performance,
-                AnimationSpeed = original.AnimationSpeed,
                 EnableAnimations = original.EnableAnimations,
                 EnableGlowEffects = original.EnableGlowEffects,
                 EnableParallaxEffects = original.EnableParallaxEffects,

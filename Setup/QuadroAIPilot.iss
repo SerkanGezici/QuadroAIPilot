@@ -38,7 +38,6 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
-LicenseFile=..\LICENSE.txt
 OutputDir=..\Output
 OutputBaseFilename=QuadroAIPilot_Setup_{#AppVersionDisplay}_Win11_Final_v{#BuildNumber}
 SetupIconFile=..\Assets\icon.ico
@@ -62,8 +61,8 @@ RestartApplications=yes
 DirExistsWarning=no
 
 [Languages]
-Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"; LicenseFile: "..\LICENSE_TR.txt"
+Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "..\LICENSE_EN.txt"
 
 [Types]
 Name: "typical"; Description: "Tipik Kurulum (Önerilen)"
@@ -94,8 +93,9 @@ Name: "contextmenu"; Description: "Sağ tık menüsüne ekle"; GroupDescription:
 ; Ana uygulama dosyaları - publish klasöründen kopyala
 Source: "..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main; Excludes: "Logs\*,*.pdb,*.xml,*.vshost.*,af-ZA\*,am-ET\*,ar-SA\*,as-IN\*,az-Latn-AZ\*,bg-BG\*,bn-IN\*,bs-Latn-BA\*,ca-ES\*,ca-Es-VALENCIA\*,cs\*,cs-CZ\*,cy-GB\*,da-DK\*,de-DE\*,el-GR\*,en-GB\*,es-ES\*,es-MX\*,et-EE\*,eu-ES\*,fa-IR\*,fi-FI\*,fil-PH\*,fr-CA\*,fr-FR\*,ga-IE\*,gd-gb\*,gl-ES\*,gu-IN\*,he-IL\*,hi-IN\*,hr-HR\*,hu-HU\*,hy-AM\*,id-ID\*,is-IS\*,it-IT\*,ja-JP\*,ka-GE\*,kk-KZ\*,km-KH\*,kn-IN\*,ko-KR\*,kok-IN\*,lb-LU\*,lo-LA\*,lt-LT\*,lv-LV\*,mi-NZ\*,mk-MK\*,ml-IN\*,mr-IN\*,ms-MY\*,mt-MT\*,nb-NO\*,ne-NP\*,nl-NL\*,nn-NO\*,or-IN\*,pa-IN\*,pl-PL\*,pt-BR\*,pt-PT\*,quz-PE\*,ro-RO\*,ru-RU\*,sk-SK\*,sl-SI\*,sq-AL\*,sr-Cyrl-BA\*,sr-Cyrl-RS\*,sr-Latn-RS\*,sv-SE\*,ta-IN\*,te-IN\*,th-TH\*,tk-TM\*,tt-RU\*,ug-CN\*,uk-UA\*,ur-PK\*,uz-Latn-UZ\*,vi-VN\*,zh-CN\*,zh-HK\*,zh-TW\*"
 
-; LICENSE.txt dosyasını da kopyala
-Source: "..\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+; LICENSE dosyalarını dil bazlı kopyala
+Source: "..\LICENSE_TR.txt"; DestDir: "{app}"; Flags: ignoreversion; Components: main; Languages: turkish
+Source: "..\LICENSE_EN.txt"; DestDir: "{app}"; Flags: ignoreversion; Components: main; Languages: english
 
 ; PowerShell scriptleri - Sadece gerekli olanlar
 Source: "Scripts\EnableWindowsFeatures.ps1"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
@@ -160,7 +160,7 @@ Filename: "{tmp}\VC_redist.x64.exe"; Parameters: "/quiet /norestart"; StatusMsg:
 ; WebView2 Runtime - Kontrol et, yoksa kur
 Filename: "{tmp}\MicrosoftEdgeWebView2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Microsoft Edge WebView2 kuruluyor..."; Flags: waituntilterminated runhidden; Check: not IsWebView2Installed
 
-; Python ve Edge-TTS kurulumu (EN ÖNCE) - optimize edilmis
+; Python ve TTS kurulumu (EN ÖNCE) - optimize edilmis
 Filename: "{app}\Scripts\InstallPythonOptimized.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Python ve TTS kuruluyor... (Bu islem 2-5 dakika surebilir)"; Flags: waituntilterminated runhidden; BeforeInstall: LogInstallStart('Python'); AfterInstall: CheckPythonInstallation; Components: main
 
 ; Python kurulumunu test et ve cache olustur
@@ -220,8 +220,8 @@ begin
   end;
 end;
 
-// Edge-TTS kontrolü
-function IsEdgeTTSInstalled: Boolean;
+// TTS kontrolü
+function IsTTSInstalled: Boolean;
 var
   ResultCode: Integer;
 begin
@@ -320,16 +320,16 @@ begin
   // .NET 8 Runtime - Self-contained deployment
   Result := Result + '✓ .NET 8 Runtime: Uygulama içinde mevcut (Self-contained)' + #13#10;
   
-  // Python ve Edge-TTS kontrolü
+  // Python ve TTS kontrolü
   if IsPythonInstalled then
     Result := Result + '✓ Python: Kurulu' + #13#10
   else
     Result := Result + '✗ Python: Eksik (Kurulacak)' + #13#10;
-    
-  if IsEdgeTTSInstalled then
-    Result := Result + '✓ Edge-TTS: Kurulu' + #13#10
+
+  if IsTTSInstalled then
+    Result := Result + '✓ TTS: Kurulu' + #13#10
   else
-    Result := Result + '✗ Edge-TTS: Eksik (Kurulacak)' + #13#10;
+    Result := Result + '✗ TTS: Eksik (Kurulacak)' + #13#10;
     
   if IsWebView2Installed then
     Result := Result + '✓ WebView2: Kurulu' + #13#10
@@ -534,7 +534,7 @@ begin
                 'if exist "%LOCALAPPDATA%\QuadroAIPilot\Python\python.exe" (' + #13#10 +
                 '    echo OK: Python kurulu' + #13#10 +
                 '    "%LOCALAPPDATA%\QuadroAIPilot\Python\python.exe" -c "import edge_tts" 2>nul' + #13#10 +
-                '    if %errorlevel% equ 0 (echo OK: Edge-TTS modulu kurulu) else (echo HATA: Edge-TTS modulu bulunamadi)' + #13#10 +
+                '    if %errorlevel% equ 0 (echo OK: TTS modulu kurulu) else (echo HATA: TTS modulu bulunamadi)' + #13#10 +
                 ') else (' + #13#10 +
                 '    echo HATA: Python kurulumu bulunamadi' + #13#10 +
                 ')' + #13#10 +
