@@ -1,5 +1,0 @@
-- benimle her zaman türkçe konuş
-- benimle türkçe konuş
-- bana herzaman türkçe cevap ver
-- bana her zaman türkçe cevap ver
-- benimle herzaman türkçe konuş
