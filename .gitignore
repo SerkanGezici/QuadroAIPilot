@@ -353,25 +353,20 @@ MigrationBackup/
 # Application-specific ignores
 Logs/
 *.log
-.claude/settings.local.json
 
 # Temporary files
 *.tmp
 *.temp
 
-# Claude-specific files
+# Claude-specific files - SADECE GEÇİCİ DOSYALAR IGNORE EDİLİYOR
+# .claude/commands/, .claude/prompts/, CLAUDE.md gibi dosyalar Git'e dahil edilecek
+.claude/settings.local.json
 .claude/state/*
 .claude/logs/*
-*.env
+.claude/.cache/
 .claude-temp/
 .claude-codex-reports/
-
-# Claude Code ve Claude Ultimate klasörleri
-.claude/
-claude/
-claude-ultimate/
-Claude/
-Claude Ultimate/
+*.env
 
 # Build output - setup executables
 Output/*.exe
