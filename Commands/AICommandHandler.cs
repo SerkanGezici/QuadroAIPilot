@@ -41,36 +41,51 @@ namespace QuadroAIPilot.Commands
         {
             command = command.ToLowerInvariant().Trim();
 
-            // OCR komutları
-            if (command.Contains("ekrandan metin oku") || command.Contains("ekran oku") || command.Contains("ocr"))
+            _logger.LogInformation($"[AICommandHandler] Komut alındı: '{command}'");
+
+            // OCR komutları - daha esnek pattern
+            if ((command.Contains("ekran") && command.Contains("metin") && command.Contains("oku")) ||
+                command.Contains("ekran oku") ||
+                command.Contains("ocr"))
             {
+                _logger.LogInformation("[AICommandHandler] OCR komutu eşleşti");
                 return await HandleOCRCommandAsync();
             }
 
-            // Panodan OCR
-            if (command.Contains("panodaki") && (command.Contains("metin") || command.Contains("oku")))
+            // Panodan OCR - daha esnek
+            if ((command.Contains("pano") || command.Contains("panodaki") || command.Contains("clipboard")) &&
+                (command.Contains("oku") || command.Contains("görsel")))
             {
+                _logger.LogInformation("[AICommandHandler] Pano OCR komutu eşleşti");
                 return await HandleClipboardOCRAsync();
             }
 
-            // Görsel açıklama
-            if (command.Contains("ekranı açıkla") || command.Contains("ekran açıkla") || command.Contains("görsel açıkla"))
+            // Görsel açıklama - ÇOK ESNEK PATTERN
+            if ((command.Contains("ekran") || command.Contains("görsel") || command.Contains("görüntü")) &&
+                command.Contains("açıkla"))
             {
+                _logger.LogInformation("[AICommandHandler] Görsel açıklama komutu eşleşti");
                 return await HandleImageDescriptionAsync();
             }
 
-            // Görsel büyütme
-            if (command.Contains("ekranı büyüt") || command.Contains("görüntüyü büyüt") || command.Contains("çözünürlük artır"))
+            // Görsel büyütme - esnek pattern
+            if ((command.Contains("ekran") || command.Contains("görüntü") || command.Contains("görsel")) &&
+                (command.Contains("büyüt") || command.Contains("çözünürlük")))
             {
+                _logger.LogInformation("[AICommandHandler] Görsel büyütme komutu eşleşti");
                 return await HandleImageEnhancementAsync();
             }
 
-            // Ekran görüntüsü kaydet
-            if (command.Contains("ekran görüntüsü") && command.Contains("kaydet"))
+            // Ekran görüntüsü kaydet - esnek pattern
+            if (command.Contains("ekran") &&
+                (command.Contains("görüntüsü") || command.Contains("screenshot")) &&
+                command.Contains("kaydet"))
             {
+                _logger.LogInformation("[AICommandHandler] Screenshot komutu eşleşti");
                 return await HandleScreenshotAsync();
             }
 
+            _logger.LogInformation("[AICommandHandler] Hiçbir AI komutu eşleşmedi");
             return (false, null);
         }
 
