@@ -28,6 +28,7 @@ namespace QuadroAIPilot.Commands
         private readonly LocalIntentDetector _intentDetector;
         private IWebViewManager _webViewManager;
         private ModeManager _modeManager;
+        private AICommandHandler _aiCommandHandler;
 
         public event EventHandler<CommandProcessResult>? CommandProcessed;
 
@@ -65,6 +66,19 @@ namespace QuadroAIPilot.Commands
         {
             _webViewManager = webViewManager;
             _logger.LogInformation("WebViewManager set in CommandProcessor");
+
+            // AICommandHandler'ı başlat (DispatcherQueue al)
+            try
+            {
+                _aiCommandHandler = new AICommandHandler(
+                    Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread(),
+                    LoggingService.CreateLogger<AICommandHandler>());
+                _logger.LogInformation("AICommandHandler initialized in CommandProcessor");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AICommandHandler initialization failed");
+            }
         }
 
         /// <summary>
@@ -125,11 +139,45 @@ namespace QuadroAIPilot.Commands
                 }
 
                 _logger.LogInformation("Komut işleme başlatıldı: {Command}", raw);
-                
+
                 // Tırnak işaretlerini temizle
                 char[] trimChars = { '"', '\'', '\u201C', '\u201D', '\u2018', '\u2019' }; // Normal ve fancy tırnaklar
                 raw = raw.TrimEnd(trimChars);
                 Debug.WriteLine($"[CommandProcessor] Tırnak temizleme sonrası: '{raw}'");
+
+                // Windows AI komutları kontrolü (en öncelikli)
+                if (_aiCommandHandler != null)
+                {
+                    try
+                    {
+                        var (handled, result) = await _aiCommandHandler.HandleAICommandAsync(raw);
+                        if (handled)
+                        {
+                            Debug.WriteLine($"[CommandProcessor] AI komutu işlendi: '{raw}'");
+
+                            if (!string.IsNullOrEmpty(result))
+                            {
+                                if (_webViewManager != null)
+                                {
+                                    await _webViewManager.AppendOutput(result, isError: false);
+                                }
+
+                                // TTS ile de oku
+                                await TextToSpeechService.SpeakTextAsync(result);
+                            }
+
+                            stopwatch.Stop();
+                            _logger.LogInformation("AI komutu başarıyla işlendi: {Command} - {Elapsed}ms", raw, stopwatch.ElapsedMilliseconds);
+                            LoggingService.LogCommandExecution(raw, true, stopwatch.ElapsedMilliseconds, "AI command handled");
+                            return true;
+                        }
+                    }
+                    catch (Exception aiEx)
+                    {
+                        _logger.LogError(aiEx, "AI komut işleme hatası: {Command}", raw);
+                        // AI hatası olursa normal komut işlemeye devam et
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -139,7 +187,7 @@ namespace QuadroAIPilot.Commands
                 LoggingService.LogCommandExecution(raw ?? "null", false, stopwatch.ElapsedMilliseconds, ex.Message);
                 return false;
             }
-            
+
             // AI ile intent detection
             IntentResult aiResult = null;
             string txt;
