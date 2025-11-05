@@ -677,18 +677,22 @@ namespace QuadroAIPilot.Managers
             ErrorHandler.SafeExecute(() =>
             {
                 LogService.LogInfo($"[EventCoordinator] Widget clicked: {widgetType}");
-                
+
+                // Mevcut modu sakla - widget tıklaması modu değiştirmemeli
+                var currentMode = AppState.CurrentMode;
+                LogService.LogInfo($"[EventCoordinator] Current mode before widget click: {currentMode}");
+
                 string commandText = widgetType.ToLowerInvariant() switch
                 {
                     "meetings" => "bugünkü toplantıları oku",
                     "mails" => "okunmamış maillerimi oku",
                     _ => null
                 };
-                
+
                 if (!string.IsNullOrEmpty(commandText))
                 {
                     LogService.LogInfo($"[EventCoordinator] Executing command for widget: {commandText}");
-                    
+
                     // Komutu çalıştır
                     _ = Task.Run(async () =>
                     {
@@ -696,9 +700,17 @@ namespace QuadroAIPilot.Managers
                         {
                             // Önce UI feedback ver
                             await _uiManager.ShowInfoMessageAsync($"🔊 {(widgetType == "meetings" ? "Toplantılar" : "Mailler")} okunuyor...");
-                            
+
                             // Komutu çalıştır
                             await _commandProcessor.ProcessCommandAsync(commandText);
+
+                            // Mod değişmişse geri yükle
+                            if (AppState.CurrentMode != currentMode)
+                            {
+                                LogService.LogInfo($"[EventCoordinator] Mode changed during widget command ({AppState.CurrentMode} -> {currentMode}), NOT restoring to prevent conflicts");
+                                // NOT: Modu otomatik geri yükleme - bu CommandProcessor'ın kendi logic'ine müdahale edebilir
+                                // Widget komutları modu değiştirmemeli ama kullanıcı sesli "mod değiştir" diyebilir
+                            }
                         }, "HandleWidgetClick_ProcessCommand");
                     });
                 }

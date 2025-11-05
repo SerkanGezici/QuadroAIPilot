@@ -277,7 +277,92 @@
             align-items: center;
             opacity: 1 !important;
         }
-        
+
+        /* AI Chat Container */
+        .chat-container {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow-y: auto;
+            padding: 20px;
+            max-height: 600px;
+            opacity: 1 !important;
+        }
+
+        /* Chat Message Wrapper */
+        .chat-message {
+            display: flex;
+            margin-bottom: 16px;
+            animation: fadeInChat 0.3s ease;
+            width: 100%;
+        }
+
+        /* Kullanıcı Mesajı - SAĞ */
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+
+        .chat-message.user .bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+
+        /* AI Mesajı - SOL */
+        .chat-message.assistant {
+            justify-content: flex-start;
+        }
+
+        .chat-message.assistant .bubble {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-left: 3px solid #4299e1;
+        }
+
+        /* Chat Bubble */
+        .bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            line-height: 1.4;
+            font-size: 13px;
+        }
+
+        /* Chat Icon */
+        .chat-icon {
+            margin: 0 8px;
+            font-size: 20px;
+            align-self: flex-end;
+            flex-shrink: 0;
+        }
+
+        /* Timestamp */
+        .chat-timestamp {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .chat-message.assistant .chat-timestamp {
+            color: #a0aec0;
+        }
+
+        /* Chat Fade-in Animation */
+        @keyframes fadeInChat {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Dikta alanı */
         #txtCikti {
             height: 48px;
@@ -752,6 +837,9 @@
             }
         }
     </style>
+
+    <!-- VAD (Voice Activity Detection) Kütüphaneleri - UMD Build -->
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.27/dist/index.browser.js"></script>
 </head>
 <body>
     <!-- AI Container -->
@@ -805,6 +893,12 @@
             <!-- Main content area -->
             <div class="flex-grow-area">
                 <div id="outputArea"></div>
+
+                <!-- AI Chat Area - Sadece AI modunda görünür -->
+                <div id="aiChatArea" class="chat-container" style="display: none;">
+                    <!-- Chat mesajları buraya dinamik olarak eklenecek -->
+                </div>
+
                 <div id="feedbackArea">Sistem durumu...</div>
                 <textarea id="txtCikti" placeholder="Komut yazın veya dikte kullanın..."></textarea>
             </div>
@@ -876,7 +970,13 @@
         let selectedVoice = 'automatic';
         let edgeVoices = [];
         let currentAudio = null;
-        
+
+        // VAD (Voice Activity Detection) Değişkenleri
+        let vad = null;
+        let isVADActive = false;
+        let lastTranscript = '';
+        let vadSpeechStartTime = null;
+
         // Merkezi dinleme durumu yönetimi - GLOBAL SCOPE
         const ListeningState = {
             NONE: 'none',
@@ -984,6 +1084,21 @@
                     console.log('[ListeningState] Aktif dinleme başlatılacak');
                     updateActivityTime(); // Aktivite zamanını sıfırla
                     startInactivityCheck(); // İnaktivite kontrolünü başlat
+
+                    // VAD (Voice Activity Detection) başlat
+                    if (!isVADActive) {
+                        console.log('[ListeningState] VAD başlatılıyor...');
+                        startVAD().then(success => {
+                            if (success) {
+                                console.log('[ListeningState] ✅ VAD başarıyla başlatıldı');
+                            } else {
+                                console.error('[ListeningState] ❌ VAD başlatılamadı');
+                            }
+                        }).catch(error => {
+                            console.error('[ListeningState] VAD başlatma hatası:', error);
+                        });
+                    }
+
                     // startWebSpeechRecognition fonksiyonu daha sonra tanımlanacak
                     if (typeof startWebSpeechRecognition === 'function') {
                         startWebSpeechRecognition();
@@ -1088,6 +1203,11 @@
                     modeIcon.textContent = '✍️';
                     modeText.textContent = 'Yazı Modu';
                     break;
+                case 'ai':
+                case 'AI':
+                    modeIcon.textContent = '🤖';
+                    modeText.textContent = 'AI Asistan';
+                    break;
                 default:
                     modeIcon.textContent = '❓';
                     modeText.textContent = 'Bilinmeyen Mod';
@@ -1101,6 +1221,9 @@
         function onTTSStarted() {
             console.log('[TTS] TTS başladı, dinleme durumu: TTS_PLAYING');
             setListeningState(ListeningState.TTS_PLAYING);
+
+            // VAD'i pause et (echo önleme)
+            pauseVADForTTS();
         }
         
         // TTS bittiğinde çağrılacak
@@ -1125,6 +1248,9 @@
                 console.log('[TTS] Dikte aktif değil, pasif dinlemeye dön');
                 setListeningState(ListeningState.PASSIVE);
             }
+
+            // VAD'i resume et (TTS bitti)
+            resumeVADAfterTTS();
         }
         
         let currentAudioUrl = null;
@@ -1269,13 +1395,13 @@
                 "Evet",
                 "Ne istemiştiniz",
                 "Emrinizdeyim",
-                "Size nasıl yardımcı olabilirim?"
+                "Size nasıl yardımcı olabilirim"
             ];
-            
+
             const sleepPhrases = [
                 "Beklemedeyim",
                 "İhtiyacınız olduğunda buradayım",
-                "Tamam, bekliyorum"
+                "Tamam bekliyorum"
             ];
             
             // Rastgele metin seç
@@ -1339,10 +1465,15 @@
         // Web Speech API değişkenleri
         let recognition = null;
         let isWebSpeechActive = false;
-        let currentMode = 'command'; // command | writing
+        let currentMode = 'command'; // command | writing | ai
         let isWakeWordListening = false;
         let wakeWordRecognition = null;
-        
+
+        // AI Mode 3 saniye sessizlik algılama değişkenleri
+        let aiModeTimer = null;
+        let aiModePendingText = '';
+        const AI_MODE_SILENCE_DURATION = 3000; // 3 saniye
+
         // Eski dinleme durumu tanımlamaları kaldırıldı - artık global scope'da
         
         // TTS fonksiyonları artık global scope'da tanımlı
@@ -1353,10 +1484,30 @@
             currentMode = mode;
             console.log('[Mode] Current mode changed from', previousMode, 'to:', mode);
             appendFeedback(`[Mode] Mod değişti: ${previousMode} → ${mode}`);
-            
+
+            // AI Mode timer'ı temizle (mod değiştiğinde)
+            if (aiModeTimer) {
+                clearTimeout(aiModeTimer);
+                aiModeTimer = null;
+                console.log('[Mode] AI Mode timer iptal edildi');
+            }
+            if (aiModePendingText) {
+                console.log('[Mode] AI Mode bekleyen metin temizlendi:', aiModePendingText);
+                aiModePendingText = '';
+            }
+
             // UI göstergesini güncelle
             updateModeIndicator(mode);
-            
+
+            // AI Chat Area kontrolü - AI modunda göster, diğer modlarda gizle
+            if (mode === 'ai') {
+                showAIChatArea();
+                console.log('[Mode] AI mode activated - chat area shown');
+            } else {
+                hideAIChatArea();
+                console.log('[Mode] Non-AI mode activated - chat area hidden');
+            }
+
             // Textarea davranışını güncelle
             const textarea = document.getElementById('txtCikti');
             if (textarea) {
@@ -1368,13 +1519,22 @@
                     textarea.setAttribute('data-mode', 'command');
                 }
             }
-            
+
+            // VAD'ı yeniden başlat (AI mod değişimlerinde) - NON-BLOCKING
+            if ((mode === 'ai' || previousMode === 'ai') && vad) {
+                console.log('[Mode] Mode change involves AI mode, restarting VAD with new parameters...');
+                // Arka planda çalıştır (widget yüklenmesini engelleme)
+                restartVADForMode(mode).catch(error => {
+                    console.error('[Mode] VAD restart error:', error);
+                });
+            }
+
             // Yazı modundayken dinleme devam etmeli
             if (mode === 'writing' && isDictationActive && !isWebSpeechActive) {
                 console.log('[Mode] Writing mode activated, restarting speech recognition...');
                 startWebSpeechRecognition();
             }
-            
+
             // Debug için mevcut modu göster
             console.log('[Mode] Mode update complete. Current mode:', currentMode);
         };
@@ -1724,23 +1884,74 @@
                         }
                         
                         appendFeedback(`🎤 Yakalanan metin: "${trimmedText}"`);
-                        
-                        // TÜM sonuçları C#'a gönder - WebSpeechBridge karar verecek
-                        if (window.chrome && window.chrome.webview) {
-                            console.log('[Web Speech API] Sending webSpeechResult to C#');
-                            updateActivityTime(); // Anlamlı bir komut gönderiliyor, aktivite zamanını güncelle
-                            window.chrome.webview.postMessage(JSON.stringify({
-                                action: 'webSpeechResult',
-                                text: trimmedText,
-                                isFinal: true
-                            }));
-                        } else {
-                            console.error('[Web Speech API] window.chrome.webview is not available!');
+
+                        // AI modunda timer ile gönder, diğer modlarda hemen gönder
+                        if (currentMode === 'ai') {
+                            console.log('[Web Speech API] AI Mode - Timer başlatılıyor (3 saniye)');
+
+                            // Önceki timer'ı temizle
+                            if (aiModeTimer) {
+                                clearTimeout(aiModeTimer);
+                                console.log('[Web Speech API] AI Mode - Önceki timer iptal edildi');
+                            }
+
+                            // Metni birleştir
+                            aiModePendingText = aiModePendingText ?
+                                aiModePendingText + ' ' + trimmedText :
+                                trimmedText;
+
+                            console.log('[Web Speech API] AI Mode - Bekleyen metin:', aiModePendingText);
+                            console.log('[Web Speech API] AI Mode - Timer 3 saniye sonra tetiklenecek');
+
+                            // Textarea'yı güncelle (kullanıcı görsel feedback alsın)
+                            textarea.value = aiModePendingText;
+
+                            // Yeni timer başlat
+                            aiModeTimer = setTimeout(() => {
+                                console.log('[Web Speech API] AI Mode - Timer doldu (3s), C#\'a gönderiliyor:', aiModePendingText);
+
+                                if (window.chrome && window.chrome.webview) {
+                                    updateActivityTime();
+                                    window.chrome.webview.postMessage(JSON.stringify({
+                                        action: 'webSpeechResult',
+                                        text: aiModePendingText,
+                                        isFinal: true
+                                    }));
+                                } else {
+                                    console.error('[Web Speech API] window.chrome.webview is not available!');
+                                }
+
+                                // Reset
+                                aiModeTimer = null;
+                                aiModePendingText = '';
+                                console.log('[Web Speech API] AI Mode - Timer ve pending text resetlendi');
+                            }, AI_MODE_SILENCE_DURATION);
+                        }
+                        // Komut ve Yazı modunda hemen gönder (mevcut davranış)
+                        else {
+                            if (window.chrome && window.chrome.webview) {
+                                console.log('[Web Speech API] Command/Writing Mode - Hemen gönderiliyor:', trimmedText);
+                                updateActivityTime();
+                                window.chrome.webview.postMessage(JSON.stringify({
+                                    action: 'webSpeechResult',
+                                    text: trimmedText,
+                                    isFinal: true
+                                }));
+                            } else {
+                                console.error('[Web Speech API] window.chrome.webview is not available!');
+                            }
                         }
                     } else if (interimTranscript) {
                         // Ara sonuçları göster
                         textarea.value = interimTranscript;
                         console.log('[Web Speech API] Showing interim text:', interimTranscript);
+                    }
+
+                    // VAD için son transcript'i sakla
+                    if (finalTranscript) {
+                        lastTranscript = finalTranscript.trim();
+                    } else if (interimTranscript) {
+                        lastTranscript = interimTranscript.trim();
                     }
                 };
                 
@@ -1778,8 +1989,235 @@
                 return false;
             }
         }
-        
-        
+
+
+        // ========== VAD (Voice Activity Detection) Fonksiyonları ==========
+
+        /**
+         * Mod-spesifik VAD parametrelerini döndürür
+         */
+        function getVADParametersForMode(mode) {
+            if (mode === 'ai') {
+                console.log('[VAD] Using AI mode parameters (3 second silence detection)');
+                return {
+                    positiveSpeechThreshold: 0.5,
+                    negativeSpeechThreshold: 0.35,
+                    redemptionMs: 3000,  // AI modunda 3 saniye
+                    minSpeechMs: 400,
+                    preSpeechPadMs: 300
+                };
+            } else {
+                console.log('[VAD] Using standard mode parameters (0.8 second silence detection)');
+                return {
+                    positiveSpeechThreshold: 0.5,
+                    negativeSpeechThreshold: 0.35,
+                    redemptionMs: 800,   // Diğer modlarda 800ms
+                    minSpeechMs: 400,
+                    preSpeechPadMs: 300
+                };
+            }
+        }
+
+        /**
+         * Hybrid VAD sistemini başlat
+         * Web Speech API ile paralel çalışır, ML-based konuşma algılama yapar
+         */
+        async function initializeVAD() {
+            console.log('[VAD] Initializing Voice Activity Detection for mode:', currentMode);
+
+            // MicVAD kütüphanesinin yüklenip yüklenmediğini kontrol et
+            if (typeof MicVAD === 'undefined') {
+                console.error('[VAD] MicVAD library not loaded!');
+                return false;
+            }
+
+            try {
+                // Mod-spesifik parametreleri al
+                const vadParams = getVADParametersForMode(currentMode);
+                console.log('[VAD] Using parameters:', vadParams);
+
+                // VAD instance'ı oluştur
+                vad = await MicVAD.new({
+                    // Konuşma algılama parametreleri (mod-spesifik)
+                    positiveSpeechThreshold: vadParams.positiveSpeechThreshold,
+                    negativeSpeechThreshold: vadParams.negativeSpeechThreshold,
+                    redemptionMs: vadParams.redemptionMs,
+                    minSpeechMs: vadParams.minSpeechMs,
+                    preSpeechPadMs: vadParams.preSpeechPadMs,
+
+                    // Event callbacks
+                    onSpeechStart: () => {
+                        vadSpeechStartTime = Date.now();
+                        console.log('[VAD] 👄 Konuşma başladı');
+
+                        // C# tarafına bildir
+                        if (window.chrome && window.chrome.webview) {
+                            window.chrome.webview.postMessage(JSON.stringify({
+                                action: 'vadSpeechStarted'
+                            }));
+                        }
+                    },
+
+                    onSpeechEnd: (audio) => {
+                        const duration = vadSpeechStartTime ? Date.now() - vadSpeechStartTime : 0;
+                        console.log('[VAD] 🔇 Konuşma bitti (Süre: ' + duration + 'ms)');
+                        console.log('[VAD] Audio data length:', audio.length, 'samples @ 16kHz');
+
+                        // Web Speech API'den son transcript'i al
+                        const transcript = lastTranscript;
+
+                        if (transcript && transcript.trim()) {
+                            console.log('[VAD] Transcript alındı:', transcript);
+
+                            // C# tarafına gönder (AI Mode için)
+                            if (window.chrome && window.chrome.webview) {
+                                window.chrome.webview.postMessage(JSON.stringify({
+                                    action: 'vadSpeechEnded',
+                                    transcript: transcript,
+                                    duration: duration,
+                                    audioLength: audio.length
+                                }));
+                            }
+                        } else {
+                            console.log('[VAD] Transcript boş, gönderilmedi');
+                        }
+
+                        // Transcript'i temizle
+                        lastTranscript = '';
+                        vadSpeechStartTime = null;
+                    },
+
+                    onVADMisfire: () => {
+                        console.log('[VAD] ⚠️ Misfire - TV/müzik algılandı, filtrelendi');
+
+                        // Transcript'i temizle (false positive)
+                        lastTranscript = '';
+                        vadSpeechStartTime = null;
+                    },
+
+                    onFrameProcessed: (probabilities) => {
+                        // Her frame işlendiğinde (debug için)
+                        // console.log('[VAD] Frame processed, speech prob:', probabilities.isSpeech);
+                    }
+                });
+
+                console.log('[VAD] Voice Activity Detection initialized successfully');
+                return true;
+
+            } catch (error) {
+                console.error('[VAD] Initialization error:', error);
+                return false;
+            }
+        }
+
+        /**
+         * VAD'i başlat
+         */
+        async function startVAD() {
+            if (!vad) {
+                console.log('[VAD] VAD not initialized, initializing now...');
+                const success = await initializeVAD();
+                if (!success) {
+                    console.error('[VAD] Failed to initialize');
+                    return false;
+                }
+            }
+
+            try {
+                await vad.start();
+                isVADActive = true;
+                console.log('[VAD] ✅ Started');
+                return true;
+            } catch (error) {
+                console.error('[VAD] Start error:', error);
+                return false;
+            }
+        }
+
+        /**
+         * VAD'i durdur
+         */
+        async function stopVAD() {
+            if (vad && isVADActive) {
+                try {
+                    await vad.pause();
+                    isVADActive = false;
+                    console.log('[VAD] ⏸️ Stopped');
+                } catch (error) {
+                    console.error('[VAD] Stop error:', error);
+                }
+            }
+        }
+
+        /**
+         * Mod değişiminde VAD'ı yeni parametrelerle yeniden başlatır
+         */
+        async function restartVADForMode(mode) {
+            if (!vad) {
+                console.log('[VAD] VAD not initialized, skipping restart');
+                return;
+            }
+
+            try {
+                console.log('[VAD] Restarting VAD for mode:', mode);
+
+                // Mevcut VAD'ı durdur
+                const wasActive = isVADActive;
+                if (wasActive) {
+                    console.log('[VAD] Stopping current VAD instance...');
+                    await vad.pause();
+                    isVADActive = false;
+                }
+
+                // Kısa gecikme
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Yeni parametrelerle yeniden başlat
+                console.log('[VAD] Reinitializing VAD with new parameters...');
+                const success = await initializeVAD();
+
+                if (success && wasActive) {
+                    // VAD'ı tekrar başlat
+                    await vad.start();
+                    isVADActive = true;
+                    console.log('[VAD] ✅ VAD restarted successfully with new parameters');
+                } else if (success) {
+                    console.log('[VAD] ✅ VAD reinitialized (was not active)');
+                } else {
+                    console.error('[VAD] ❌ Failed to reinitialize VAD');
+                }
+            } catch (error) {
+                console.error('[VAD] Error restarting VAD:', error);
+            }
+        }
+
+        /**
+         * TTS başladığında VAD'i pause et (echo önleme)
+         */
+        function pauseVADForTTS() {
+            if (vad && isVADActive) {
+                vad.pause();
+                console.log('[VAD] ⏸️ Paused for TTS');
+            }
+        }
+
+        /**
+         * TTS bittiğinde VAD'i resume et
+         */
+        function resumeVADAfterTTS() {
+            if (vad) {
+                // 500ms gecikme ile resume et (echo kalıntısı için)
+                setTimeout(() => {
+                    vad.start();
+                    isVADActive = true;
+                    console.log('[VAD] ▶️ Resumed after TTS');
+                }, 500);
+            }
+        }
+
+        // ========== VAD Fonksiyonları Sonu ==========
+
+
         async function startWebSpeechRecognition() {
             console.log('[Web Speech API] startWebSpeechRecognition called');
             console.log('[Web Speech API] Recognition object exists:', !!recognition);
@@ -1897,15 +2335,18 @@
             dikteMode.isPaused = false;
             dikteMode.shouldResumeAfterTTS = false;
             dikteMode.source = null;
-            
+
             // Pasif dinlemeye geç
             setListeningState(ListeningState.PASSIVE);
-            
+
             // C#'a durdurma mesajı gönder
             if (window.chrome && window.chrome.webview) {
                 window.chrome.webview.postMessage(JSON.stringify({ action: 'stopDikte' }));
             }
-            
+
+            // VAD'i durdur
+            stopVAD();
+
             // Buton durumu setListeningState tarafından yönetiliyor
             appendFeedback('🎙️ Dikte durduruldu');
         }
@@ -2239,11 +2680,23 @@
         // Çıktı alanına yeni mesaj ekle
         function appendOutput(message, isSystem = false, target = 'outputArea') {
             const outputDiv = document.getElementById(target);
-            
+
             if (!outputDiv) {
                 return;
             }
-            
+
+            // AI modunda sistem mesajlarını filtrele
+            if (currentMode === 'ai' && target === 'outputArea') {
+                const systemEmojis = ['ℹ️', '🎙️', '🔊', '🎤', '📋', '⏸️', '⏯️'];
+                const isSystemMessage = isSystem || systemEmojis.some(emoji => message.includes(emoji));
+                const isAIChatMessage = message.includes('🤖') || message.includes('👤');
+
+                if (isSystemMessage && !isAIChatMessage) {
+                    console.log('[appendOutput] AI modunda sistem mesajı filtrelendi:', message);
+                    return; // Sistem mesajını gösterme
+                }
+            }
+
             // İlk mesajda placeholder'ı temizle
             if (outputDiv.textContent.includes('Çıktılar burada görünecek')) {
                 outputDiv.innerHTML = '';
@@ -2274,6 +2727,130 @@
             }
             outputDiv.scrollTop = 0;
         }
+
+        // ============================================
+        // AI CHAT FONKSİYONLARI
+        // ============================================
+
+        /**
+         * AI chat alanını gösterir, diğer alanları gizler
+         */
+        function showAIChatArea() {
+            const chatArea = document.getElementById('aiChatArea');
+            const outputArea = document.getElementById('outputArea');
+
+            if (chatArea && outputArea) {
+                chatArea.style.display = 'block';
+                outputArea.style.display = 'none';
+                console.log('[AI Chat] Chat area gösterildi, output area gizlendi');
+            }
+        }
+
+        /**
+         * AI chat alanını gizler, output area'yı gösterir
+         */
+        function hideAIChatArea() {
+            const chatArea = document.getElementById('aiChatArea');
+            const outputArea = document.getElementById('outputArea');
+
+            if (chatArea && outputArea) {
+                chatArea.style.display = 'none';
+                outputArea.style.display = 'block';
+                console.log('[AI Chat] Chat area gizlendi, output area gösterildi');
+            }
+        }
+
+        /**
+         * AI chat'e mesaj ekler
+         * @param {string} role - 'user' veya 'assistant'
+         * @param {string} content - Mesaj içeriği
+         * @param {string} timestamp - ISO 8601 timestamp (opsiyonel)
+         * @param {number} duration - AI cevap süresi (opsiyonel, sadece assistant için)
+         */
+        function appendChatMessage(role, content, timestamp = null, duration = null) {
+            const chatArea = document.getElementById('aiChatArea');
+
+            if (!chatArea) {
+                console.error('[AI Chat] aiChatArea elementi bulunamadı!');
+                return;
+            }
+
+            // Message wrapper oluştur
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+
+            // Icon oluştur
+            const icon = document.createElement('span');
+            icon.className = 'chat-icon';
+            icon.textContent = role === 'user' ? '👤' : '🤖';
+
+            // Bubble oluştur
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            // Content oluştur
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = content;
+            bubble.appendChild(contentDiv);
+
+            // Timestamp oluştur
+            if (timestamp) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'chat-timestamp';
+
+                try {
+                    const time = new Date(timestamp);
+                    if (!isNaN(time.getTime())) {
+                        timeDiv.textContent = time.toLocaleTimeString('tr-TR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        // AI mesajında süre varsa ekle
+                        if (duration && role === 'assistant') {
+                            timeDiv.textContent += ` • ${duration}`;
+                        }
+                    }
+                } catch (e) {
+                    console.error('[AI Chat] Timestamp parse hatası:', e);
+                }
+
+                bubble.appendChild(timeDiv);
+            }
+
+            // Mesajı birleştir (icon sol/sağ pozisyona göre)
+            if (role === 'user') {
+                messageDiv.appendChild(bubble);
+                messageDiv.appendChild(icon);
+            } else {
+                messageDiv.appendChild(icon);
+                messageDiv.appendChild(bubble);
+            }
+
+            // Chat area'ya ekle
+            chatArea.appendChild(messageDiv);
+
+            // Auto-scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            console.log(`[AI Chat] ${role} mesajı eklendi:`, content.substring(0, 50) + '...');
+        }
+
+        /**
+         * AI chat'i temizler
+         */
+        function clearAIChat() {
+            const chatArea = document.getElementById('aiChatArea');
+
+            if (chatArea) {
+                chatArea.innerHTML = '';
+                console.log('[AI Chat] Chat temizlendi');
+            }
+        }
+
+        // ============================================
+        // FEEDBACK MESAJLARI
+        // ============================================
 
         // Feedback mesajları
         let feedbackHistory = [];
@@ -2512,17 +3089,79 @@
                 } else if (data.action === 'modeChanged') {
                     // Mod değişikliği geldi
                     console.log('[WebView Message] modeChanged:', data.mode);
-                    
+
                     // currentMode değişkenini güncelle
                     const modeLower = data.mode.toLowerCase();
                     currentMode = modeLower;
                     console.log('[WebView Message] currentMode updated to:', currentMode);
-                    
+
+                    // AI Chat Area kontrolü - AI modunda göster, diğer modlarda gizle
+                    if (modeLower === 'ai') {
+                        showAIChatArea();
+                        console.log('[WebView Message] AI mode activated - chat area shown');
+
+                        const feedbackArea = document.getElementById('feedback');
+                        if (feedbackArea) {
+                            feedbackArea.value = '';
+                            console.log('[WebView Message] AI moduna geçildi, feedback textarea temizlendi');
+                        }
+                    } else {
+                        hideAIChatArea();
+                        console.log('[WebView Message] Non-AI mode activated - chat area hidden');
+                    }
+
                     // UI'ı güncelle
                     updateModeIndicator(modeLower);
-                    
-                    // Feedback göster
-                    appendFeedback(`📋 ${modeLower === 'command' ? 'Komut' : 'Yazı'} moduna geçildi`);
+
+                    // Feedback göster (AI modu hariç, çünkü textarea'yı temizledik)
+                    let modeName = 'Bilinmeyen';
+                    if (modeLower === 'command') {
+                        modeName = 'Komut';
+                        appendFeedback(`📋 ${modeName} moduna geçildi`);
+                    } else if (modeLower === 'writing') {
+                        modeName = 'Yazı';
+                        appendFeedback(`📋 ${modeName} moduna geçildi`);
+                    } else if (modeLower === 'ai') {
+                        modeName = 'AI Asistan';
+                        // AI modunda feedback temiz başlasın, mesaj ekleme
+                    }
+                } else if (data.action === 'aiUserMessage') {
+                    // AI modunda kullanıcı mesajı - CHAT UI'ya ekle
+                    console.log('[AI] User message:', data.data.content);
+                    showAIChatArea();
+                    appendChatMessage('user', data.data.content, data.data.timestamp);
+                } else if (data.action === 'aiAssistantMessage') {
+                    // AI modunda Quadro AI Pilot yanıtı - CHAT UI'ya ekle
+                    console.log('[AI] Assistant message:', data.data.content);
+                    showAIChatArea();
+                    const durationText = data.data.duration ? `${data.data.duration.toFixed(1)}s` : null;
+                    appendChatMessage('assistant', data.data.content, data.data.timestamp, durationText);
+                } else if (data.action === 'aiThinking') {
+                    // Quadro AI Asistan düşünüyor
+                    console.log('[AI] Thinking...');
+                    appendFeedback('🤔 Quadro AI Asistan Düşünüyor...');
+                } else if (data.action === 'aiThinkingDone') {
+                    // Thinking tamamlandı (şu an sadece log)
+                    console.log('[AI] Thinking done');
+                } else if (data.action === 'aiError') {
+                    // AI hatası
+                    console.error('[AI] Error:', data.data.message);
+                    appendFeedback(`❌ ${data.data.message}`);
+                } else if (data.action === 'aiWarning') {
+                    // AI uyarısı
+                    console.warn('[AI] Warning:', data.data.message);
+                    appendFeedback(`⚠️ ${data.data.message}`);
+                } else if (data.action === 'aiModeActivated') {
+                    // AI modu aktifleşti
+                    console.log('[AI] Mode activated');
+                    appendFeedback('🤖 AI Asistan Modu Aktif');
+                } else if (data.action === 'aiModeDeactivated') {
+                    // AI modu deaktif oldu
+                    console.log('[AI] Mode deactivated');
+                } else if (data.action === 'aiSessionReset') {
+                    // Sohbet sıfırlandı
+                    console.log('[AI] Session reset');
+                    appendFeedback('🔄 Sohbet geçmişi temizlendi');
                 } else if (data.action === 'runTestAudio') {
                     testAudioOutput();
                 } else if (data.action === 'playAudioStream') {

@@ -1,0 +1,26 @@
+Özellik	Öncelik	Süre (Hafta)	Zorluk	Kullanıcı Etkisi	Rakiplerde Var mı	Açıklama
+Sohbet Geçmişi Kaydetme	🔴 Kritik	2	Orta	Çok Yüksek	7/7	Kullanıcılar dünkü konuşmaları okuyamıyor - temel beklenti
+Karşılıklı Sesli Sohbet	🔴 Kritik	4	Yüksek	Çok Yüksek	5/7	Telefon görüşmesi gibi konuşma - modern AI'larda standart
+Web/İnternet Araştırması	🔴 Kritik	3	Orta	Çok Yüksek	6/7	Güncel bilgi alma - şu anda kısmi çalışıyor, tam entegrasyon gerekli
+Kaynak Gösterme	🔴 Kritik	1	Düşük	Yüksek	2/7	Bilginin nereden geldiğini gösterme - güvenilirlik için kritik
+Projeler/Klasörler	🟡 Önemli	2	Orta	Yüksek	4/7	Konuşmaları organize etme - iş kullanıcıları için önemli
+Dosya Yükleme (PDF/Word)	🟡 Önemli	3	Orta	Yüksek	6/7	Belge analizi - profesyonel kullanım için gerekli
+Sohbet Export (PDF/Word)	🟡 Önemli	1	Düşük	Orta	3/7	Konuşmaları kaydetme - raporlama için yararlı
+Kamera/Ekran Paylaşımı	🟡 Önemli	5	Yüksek	Yüksek	3/7	Görsel analiz - destek ve eğitim için önemli
+Plugin/Eklenti Sistemi	🟡 Önemli	6	Çok Yüksek	Orta	5/7	Genişletilebilirlik - uzun vadeli büyüme için önemli
+Çoklu Dil (İngilizce)	🟢 İsteğe Bağlı	2	Düşük	Orta	7/7	Şu anda Türkçe odaklı - uluslararası kullanıcılar için gerekli
+Mobil Uygulama	🟢 İsteğe Bağlı	12	Çok Yüksek	Yüksek	7/7	iOS/Android - farklı platform, büyük yatırım gerektirir
+
+Sembol Açıklaması:
+🔴 Kritik = 1-2 ay içinde eklenirse rekabette kalır
+🟡 Önemli = 3-6 ay içinde eklenirse pazar payı artar
+🟢 İsteğe Bağlı = 6-12 ay içinde eklenirse farklılaşma sağlar
+
+Zorluk Seviyeleri:
+Düşük = 1 geliştirici, basit entegrasyon
+Orta = 1 geliştirici, orta karmaşıklık
+Yüksek = 1 geliştirici veya dış kaynak, karmaşık
+Çok Yüksek = Ekip gerektirir veya uzmanlık alanı dışı
+
+Toplam Tahmini Süre (Kritik Özellikler): 10 hafta
+Toplam Tahmini Süre (Tüm Özellikler): 41 hafta

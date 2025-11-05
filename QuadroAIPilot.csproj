@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+		<TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+		<TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
 		<RootNamespace>QuadroAIPilot</RootNamespace>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
@@ -56,8 +56,8 @@
 		<PackageReference Include="Serilog.Formatting.Compact" Version="2.0.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
 		<PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
-		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.3916" />
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
 		<PackageReference Include="NAudio" Version="2.2.1" />
 		<PackageReference Include="System.Speech" Version="9.0.4" />
 		<!-- WebView2 paketi eklendi -->
@@ -96,7 +96,12 @@
 		<None Update="Assets\index.html">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
-		
+
+		<!-- JavaScript kütüphanelerini çıktıya kopyala -->
+		<None Update="Assets\js\**\*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+
 		<!-- Icon dosyalarını çıktıya kopyala -->
 		<None Update="Assets\icon.ico">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>

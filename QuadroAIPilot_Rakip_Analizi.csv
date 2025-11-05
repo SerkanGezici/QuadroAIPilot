@@ -1,0 +1,27 @@
+Özellik	QuadroAIPilot	ChatGPT	Gemini	NotebookLM	Claude.ai	Perplexity	Copilot	Character.AI	Açıklama
+Sesli Komut	✅	✅	✅	❌	❌	✅	✅	✅	Mikrofonla komut verme
+Karşılıklı Sesli Sohbet	❌	✅	✅	❌	❌	✅	✅	✅	Telefon görüşmesi gibi konuşma
+Sohbet Geçmişi Kaydetme	❌	✅	✅	✅	✅	✅	✅	✅	Dünkü konuşmaları okuma
+Sohbet Export (PDF/Word)	❌	✅	❌	✅	❌	❌	✅	❌	Konuşmaları dosyaya kaydetme
+Dosya Yükleme (PDF/Word)	❌	✅	✅	✅	✅	✅	✅	❌	Belge yükleyip analiz ettirme
+Web/İnternet Araştırması	⚠️	✅	✅	✅	❌	✅	✅	❌	Güncel internet bilgisi
+Kaynak Gösterme	❌	⚠️	❌	✅	❌	✅	❌	❌	Bilginin nereden geldiğini gösterme
+Mobil Uygulama	❌	✅	✅	✅	✅	✅	✅	✅	iOS/Android uygulaması
+Kamera/Ekran Paylaşımı	❌	⚠️	✅	❌	❌	⚠️	✅	❌	Ekranı/kamerayı gösterip soru sorma
+Çoklu Dil (İngilizce)	⚠️	✅	✅	✅	✅	✅	✅	✅	İngilizce ve diğer diller
+Projeler/Klasörler	❌	✅	⚠️	✅	✅	❌	⚠️	❌	Konuşmaları klasörlere ayırma
+Plugin/Eklenti Sistemi	❌	✅	✅	✅	✅	❌	✅	❌	Yeni özellikler ekleme
+Windows Entegrasyonu	✅	❌	⚠️	❌	❌	❌	✅	❌	Windows komutları çalıştırma
+Outlook/Mail Entegrasyonu	✅	❌	⚠️	❌	❌	❌	✅	❌	Mail okuma/gönderme
+Türkçe Dikte	✅	⚠️	⚠️	❌	❌	⚠️	⚠️	⚠️	Türkçe sesli yazı yazdırma
+Komut Modu	✅	❌	❌	❌	❌	❌	⚠️	❌	Sistem komutları (kopyala, aç, kapat)
+Yazı Modu	✅	❌	❌	❌	❌	❌	❌	❌	Sesli dikte ile yazı yazma
+Context Window	⚠️	8K-400K	1M-2M	200K	200K	-	-	-	Kaç kelime hatırlayabiliyor
+Streaming Yanıt	✅	✅	✅	✅	✅	✅	✅	✅	Cevabı parça parça gösterme
+Ücretsiz Plan	✅	✅	✅	✅	⚠️	✅	✅	✅	Ücretsiz kullanılabiliyor mu
+
+Sembol Açıklaması:
+✅ = Tam destekli / Çok iyi çalışıyor
+⚠️ = Kısmi destek / Sınırlı çalışıyor
+❌ = Yok / Desteklenmiyor
+- = Bilgi bulunamadı

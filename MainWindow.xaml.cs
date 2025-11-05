@@ -62,6 +62,7 @@ namespace QuadroAIPilot
         private readonly IWebViewManager _webViewManager;
         private readonly IDictationManager _dictationManager;
         private readonly WindowManager _windowManager;
+        private readonly ModeManager _modeManager;
         
         // Animation storyboards
         private Storyboard _voiceIndicatorAnimation;
@@ -120,16 +121,16 @@ namespace QuadroAIPilot
             try
             {
                 SimpleCrashLogger.Log("Getting services from container...");
-                
+
                 // Get dependencies from ServiceContainer after XAML initialization
-                var modeManager = ServiceContainer.GetService<ModeManager>();
+                _modeManager = ServiceContainer.GetService<ModeManager>();
                 SimpleCrashLogger.Log("Got ModeManager");
-                
-                _dictationManager = new DictationManager(modeManager);
+
+                _dictationManager = new DictationManager(_modeManager);
                 SimpleCrashLogger.Log("Created DictationManager");
-                
+
                 // Set DictationManager in ModeManager
-                modeManager.SetDictationManager(_dictationManager);
+                _modeManager.SetDictationManager(_dictationManager);
                 SimpleCrashLogger.Log("Set DictationManager in ModeManager");
                 
                 // Create WebViewManager with the actual WebView2 control from XAML
@@ -153,9 +154,9 @@ namespace QuadroAIPilot
             // Set WebViewManager in CommandProcessor
             var commandProcessor = ServiceContainer.GetService<ICommandProcessor>();
             commandProcessor.SetWebViewManager(_webViewManager);
-            
+
             // Set ModeManager in CommandProcessor
-            commandProcessor.SetModeManager(modeManager);
+            commandProcessor.SetModeManager(_modeManager);
             
             // Create managers that need the window handle and WebView
             _hWnd = WindowNative.GetWindowHandle(this);
@@ -321,22 +322,40 @@ namespace QuadroAIPilot
                         await _webViewManager.ExecuteScriptAsync("toggleCommandPalette()");
                         e.Handled = true;
                         break;
-                        
+
                     case Windows.System.VirtualKey.D:
                         // Toggle dictation
                         await _webViewManager.ExecuteScriptAsync("toggleDikte()");
                         e.Handled = true;
                         break;
-                        
+
                     case Windows.System.VirtualKey.Enter:
                         // Execute command
                         await _webViewManager.ExecuteScriptAsync("executeCommand()");
                         e.Handled = true;
                         break;
-                        
+
                     case Windows.System.VirtualKey.L:
                         // Clear all
                         await _webViewManager.ExecuteScriptAsync("executeCommandAction('clearAll')");
+                        e.Handled = true;
+                        break;
+
+                    case Windows.System.VirtualKey.Number1:
+                        // Ctrl+1: Komut Modu
+                        _modeManager.Switch(AppState.UserMode.Command);
+                        e.Handled = true;
+                        break;
+
+                    case Windows.System.VirtualKey.Number2:
+                        // Ctrl+2: Yazı Modu
+                        _modeManager.Switch(AppState.UserMode.Writing);
+                        e.Handled = true;
+                        break;
+
+                    case Windows.System.VirtualKey.Number3:
+                        // Ctrl+3: AI Asistan Modu
+                        _modeManager.Switch(AppState.UserMode.AI);
                         e.Handled = true;
                         break;
                 }

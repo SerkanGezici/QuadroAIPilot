@@ -22,7 +22,8 @@ namespace QuadroAIPilot.State
         public enum UserMode
         {
             Command,
-            Writing
+            Writing,
+            AI
         }
 
         private static ApplicationState _currentState = ApplicationState.Idle;

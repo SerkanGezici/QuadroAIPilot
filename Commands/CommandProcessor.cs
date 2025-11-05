@@ -185,12 +185,45 @@ namespace QuadroAIPilot.Commands
             }
             
             Debug.WriteLine($"[CommandProcessor] *** TXT DEĞERİ *** txt: '{txt}', uzunluk: {txt?.Length}");
-            
+
+            // WAKE WORD KONTROLÜ - En öncelikli
+            string txtWithoutPunctuation = txt.TrimEnd('.', '!', '?', ',', ';', ':');
+            if (txtWithoutPunctuation == "hey quadro" || txtWithoutPunctuation == "hey cuadro" || txtWithoutPunctuation == "hey kuadro")
+            {
+                Debug.WriteLine($"[CommandProcessor] Wake word algılandı: '{txtWithoutPunctuation}'");
+                LogService.LogInfo($"[CommandProcessor] Wake word detected: '{txtWithoutPunctuation}'");
+
+                // Kullanıcı adını al
+                string userName = Environment.UserName;
+                if (string.IsNullOrEmpty(userName))
+                {
+                    userName = "Serkan"; // Fallback
+                }
+
+                // TTS yanıtı oynat
+                await TextToSpeechService.SpeakTextAsync($"Evet {userName}");
+
+                // Processing complete - flag'i temizle
+                var dictationManager = ServiceContainer.GetService<IDictationManager>();
+                dictationManager?.SetProcessingComplete();
+                LogService.LogInfo("[CommandProcessor] Wake word işlendi, processing flag temizlendi");
+
+                // Event tetikle
+                CommandProcessed?.Invoke(this, new CommandProcessResult
+                {
+                    CommandText = raw,
+                    Success = true,
+                    ResultMessage = $"Wake word detected: {userName}",
+                    DetectedIntent = "WakeWord"
+                });
+
+                return true;
+            }
+
             // Mod geçiş komutları
             if (_modeManager != null)
             {
                 // Önce özel komutları kontrol et
-                string txtWithoutPunctuation = txt.TrimEnd('.', '!', '?', ',', ';', ':');
                 if (txtWithoutPunctuation == "yaz kızım" || txtWithoutPunctuation == "yaz oğlum")
                 {
                     Debug.WriteLine($"[CommandProcessor] Özel yazı modu komutu algılandı: {txtWithoutPunctuation}");

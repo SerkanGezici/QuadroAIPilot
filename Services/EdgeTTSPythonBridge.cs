@@ -22,15 +22,28 @@ namespace QuadroAIPilot.Services
             _tempDir = Path.Combine(Path.GetTempPath(), "QuadroAI_EdgeTTS");
             Directory.CreateDirectory(_tempDir);
 
-            // Python ve edge-tts path'leri
+            // Python ve edge-tts path'leri - System Python'ı kullan
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            _pythonPath = Path.Combine(localAppData, "QuadroAIPilot", "Python", "python.exe");
-            _edgeTtsScript = Path.Combine(localAppData, "QuadroAIPilot", "Python", "Scripts", "edge-tts-nossl.py");
+            var customPythonPath = Path.Combine(localAppData, "QuadroAIPilot", "Python", "python.exe");
+            var customScript = Path.Combine(localAppData, "QuadroAIPilot", "Python", "Scripts", "edge-tts-nossl.py");
+
+            // Önce custom path'i dene, yoksa system Python'ı kullan
+            if (File.Exists(customPythonPath))
+            {
+                _pythonPath = customPythonPath;
+                _edgeTtsScript = customScript;
+                LoggingService.LogWarning($"[EdgeTTSPython] Using custom Python: {_pythonPath}");
+            }
+            else
+            {
+                // System Python'ı kullan
+                _pythonPath = "python";  // System PATH'den
+                _edgeTtsScript = null;    // edge-tts modülünü direkt kullan
+                LoggingService.LogWarning($"[EdgeTTSPython] Using system Python from PATH");
+            }
 
             LoggingService.LogWarning($"[EdgeTTSPython] Python path: {_pythonPath}");
-            LoggingService.LogWarning($"[EdgeTTSPython] edge-tts-nossl script: {_edgeTtsScript}");
-            LoggingService.LogWarning($"[EdgeTTSPython] Python exists: {File.Exists(_pythonPath)}");
-            LoggingService.LogWarning($"[EdgeTTSPython] Script exists: {File.Exists(_edgeTtsScript)}");
+            LoggingService.LogWarning($"[EdgeTTSPython] edge-tts-nossl script: {_edgeTtsScript ?? "using edge-tts module"}");
         }
         
         public async Task<byte[]> SynthesizeSpeechAsync(string text, string voice = "tr-TR-EmelNeural")
@@ -45,8 +58,18 @@ namespace QuadroAIPilot.Services
                 // Metni escape et (sadece double quote)
                 var escapedText = text.Replace("\"", "\\\"");
 
-                // Python script ile edge-tts çalıştır (SSL bypass ile)
-                var arguments = $"/c \"\"{_pythonPath}\" \"{_edgeTtsScript}\" --voice {voice} --text \"{escapedText}\" --write-media \"{outputFile}\"\"";
+                // Python komutunu hazırla
+                string arguments;
+                if (_edgeTtsScript != null && File.Exists(_edgeTtsScript))
+                {
+                    // Custom script var, onu kullan
+                    arguments = $"/c \"\"{_pythonPath}\" \"{_edgeTtsScript}\" --voice {voice} --text \"{escapedText}\" --write-media \"{outputFile}\"\"";
+                }
+                else
+                {
+                    // System Python + edge-tts modülü kullan
+                    arguments = $"/c \"{_pythonPath} -m edge_tts --voice {voice} --text \"{escapedText}\" --write-media \"{outputFile}\"\"";
+                }
 
                 var startInfo = new ProcessStartInfo
                 {

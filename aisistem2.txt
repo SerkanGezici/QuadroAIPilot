@@ -1,0 +1,103 @@
+ 🔍 Windows AI Modellerinin Kullanıldığı Uygulamalar (Tek Tek)
+
+  1️⃣ Phi Silica (Dil Modeli)
+
+  Kullanan Uygulamalar:
+  - Windows Search - Anlamsal arama için
+  - Recall - Geçmiş aktiviteleri doğal dille bulma
+  - Click to Do - Seçili metni özetleme/yeniden yazma
+  - Copilot (Windows) - Komut anlama ve yanıt üretme
+  - Narrator - Görsel betimlemeleri için (Florence ile birlikte)
+
+  2️⃣ Florence Image Encoder
+
+  Kullanan Uygulamalar:
+  - Recall - Ekran görüntülerini indeksleme
+  - Windows Search - Görsel içerik arama
+  - Photos - Görsel içerik kategorileme
+  - Narrator - Görsel açıklamaları oluşturma
+
+  3️⃣ Multimodal Projeksiyon Modülü
+
+  Kullanan Uygulamalar:
+  - Recall - Görsel-metin birleşik arama
+  - Narrator - Zengin görsel betimleme
+
+  4️⃣ DiskANN (Algoritma)
+
+  Kullanan Uygulamalar:
+  - Windows Semantic Index - Sistem geneli vektör araması
+  - Recall - Hızlı benzerlik araması
+  - Windows Search - Anlamsal sonuç sıralama
+
+  5️⃣ OCR Modeli
+
+  Kullanan Uygulamalar:
+  - Snipping Tool - Ekran görüntüsünden metin çekme
+  - Recall - Görüntülerdeki metinleri indeksleme
+  - Photos - Resimlerdeki yazıları okuma
+  - PowerToys (Text Extractor) - Sistem geneli OCR
+
+  6️⃣ Segmentasyon Modeli
+
+  Kullanan Uygulamalar:
+  - Windows Studio Effects - Teams, Zoom, WhatsApp'ta arka plan blur
+  - Photos - Object Erase için nesne seçimi
+  - Camera uygulaması - Portre modu
+
+  7️⃣ Inpainting Modeli
+
+  Kullanan Uygulamalar:
+  - Photos - Object Erase (nesne silme)
+  - Paint - Gelişmiş silgi özelliği
+
+  8️⃣ Süper Çözünürlük (T-ISR)
+
+  Kullanan Uygulamalar:
+  - Photos - Görüntü büyütme/netleştirme
+  - Auto SR (Oyunlar) - DirectX oyunlarda otomatik upscaling
+  - Edge - Web'deki düşük kaliteli görselleri iyileştirme
+
+  9️⃣ Generatif Görüntü Modeli
+
+  Kullanan Uygulamalar:
+  - Paint - Cocreator (metinden görsel üretme)
+  - Photos - Restyle Image (stil değiştirme)
+
+  🔟 ASR (Konuşma Tanıma) Modeli
+
+  Kullanan Uygulamalar:
+  - Live Captions - Sistem geneli altyazı
+  - Voice Access - Sesle Windows kontrolü
+  - Narrator - Sesli komut algılama
+
+  1️⃣1️⃣ Çeviri Modeli
+
+  Kullanan Uygulamalar:
+  - Live Captions - 44 dilden İngilizce'ye çeviri
+  - Edge - Web sayfası çevirisi (lokal)
+
+  1️⃣2️⃣ Gürültü Engelleme Modeli
+
+  Kullanan Uygulamalar:
+  - Windows Studio Effects - Voice Focus özelliği
+  - Teams - Arka plan gürültüsü azaltma
+  - WhatsApp, Zoom, Discord - Sistem geneli ses temizleme
+
+  ---
+  📌 Özet Tablo
+
+  | Model             | Ana Uygulamalar                  |
+  |-------------------|----------------------------------|
+  | Phi Silica        | Windows Search, Recall, Copilot  |
+  | Florence          | Recall, Photos, Narrator         |
+  | OCR               | Snipping Tool, Photos, PowerToys |
+  | Segmentasyon      | Windows Studio Effects, Photos   |
+  | Inpainting        | Photos (Object Erase)            |
+  | Super Resolution  | Photos, Oyunlar (Auto SR)        |
+  | Generative        | Paint (Cocreator)                |
+  | ASR               | Live Captions                    |
+  | Translation       | Live Captions                    |
+  | Noise Suppression | Studio Effects (Teams, Zoom)     |
+
+  Bu modellerin hepsi senin QuadroAIPilot'a entegre edilebilir. Başlamak ister misin?

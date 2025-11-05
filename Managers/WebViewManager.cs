@@ -5,6 +5,7 @@ using QuadroAIPilot.Services;
 using QuadroAIPilot.Interfaces;
 using QuadroAIPilot.Configuration;
 using QuadroAIPilot.Infrastructure;
+using QuadroAIPilot.State;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -341,8 +342,54 @@ namespace QuadroAIPilot.Managers
                         }
                         return;
                     }
-                    
-                    
+
+                    // VAD (Voice Activity Detection) - Konuşma başladı
+                    if (action == "vadSpeechStarted")
+                    {
+                        LogService.LogInfo("[WebViewManager] [VAD] Konuşma başladı");
+                        // İsteğe bağlı: UI güncellemesi yapılabilir
+                        return;
+                    }
+
+                    // VAD (Voice Activity Detection) - Konuşma bitti
+                    if (action == "vadSpeechEnded")
+                    {
+                        if (root.TryGetProperty("transcript", out var transcriptProp) &&
+                            root.TryGetProperty("duration", out var durationProp))
+                        {
+                            var transcript = transcriptProp.GetString();
+                            var duration = durationProp.GetInt32();
+
+                            LogService.LogInfo($"[WebViewManager] [VAD] Konuşma bitti: '{transcript}' (Süre: {duration}ms)");
+
+                            // AI Mode'daysa metni işle
+                            if (AppState.CurrentMode == AppState.UserMode.AI)
+                            {
+                                var dictationManager = ServiceContainer.GetService<IDictationManager>();
+                                if (dictationManager != null && !string.IsNullOrWhiteSpace(transcript))
+                                {
+                                    LogService.LogInfo($"[WebViewManager] [VAD] AI Mode'da, DictationManager'a gönderiliyor: '{transcript}'");
+
+                                    // DictationManager üzerinden işle
+                                    _ = Task.Run(() =>
+                                    {
+                                        dictationManager.HandleTextChanged(transcript);
+                                    });
+                                }
+                                else
+                                {
+                                    LogService.LogWarning("[WebViewManager] [VAD] DictationManager bulunamadı veya transcript boş");
+                                }
+                            }
+                            else
+                            {
+                                LogService.LogDebug($"[WebViewManager] [VAD] AI Mode'da değil (Mevcut mod: {AppState.CurrentMode}), işlenmedi");
+                            }
+                        }
+                        return;
+                    }
+
+
                     // Execute command from Web Speech
                     if (action == "executeCommand")
                     {
@@ -437,13 +484,18 @@ namespace QuadroAIPilot.Managers
                                 LogService.LogDebug($"[WebViewManager] Ready sound TTS: {soundType} - {text}");
                                 
                                 // TextToSpeechService kullan
-                                _ = Task.Run(async () => 
+                                _ = Task.Run(async () =>
                                 {
                                     await TextToSpeechService.SpeakTextAsync(text);
-                                    
+
                                     // TTS bittiğinde JavaScript'e callback yap
                                     await Task.Delay(500); // Kısa bekleme
-                                    SendMessage(new { action = "readySoundCompleted", soundType });
+
+                                    // UI thread'e geç
+                                    _dispatcherQueue?.TryEnqueue(() =>
+                                    {
+                                        SendMessage(new { action = "readySoundCompleted", soundType });
+                                    });
                                 });
                             }
                         }
@@ -460,65 +512,135 @@ namespace QuadroAIPilot.Managers
             }
         }
 
+        private readonly System.Collections.Concurrent.ConcurrentQueue<string> _pendingMessages = new();
+        private System.Threading.Timer _messageFlushTimer;
+
         public void SendMessage(object message)
         {
             try
             {
-                var json = JsonSerializer.Serialize(message);
-                
+                // JSON serialize işlemi - thread-safe
+                string json;
+                try
+                {
+                    json = JsonSerializer.Serialize(message);
+                }
+                catch (Exception jsonEx)
+                {
+                    LogService.LogError($"[WebViewManager] JSON serialization error: {jsonEx.Message}");
+                    return;
+                }
+
                 // Mod değişikliği mesajlarını logla
                 if (json.Contains("modeChanged"))
                 {
                     LogService.LogInfo($"[WebViewManager] Sending modeChanged message: {json}");
                 }
-                
-                // UI thread'inde olduğundan emin olalım
-                if (_dispatcherQueue?.HasThreadAccess == false)
+
+                // WebView null kontrolü - CoreWebView2'ye ERİŞME! (COM exception olur)
+                if (_webView == null)
                 {
-                    LogService.LogDebug("[WebViewManager] Not on UI thread, enqueueing message");
-                    _dispatcherQueue.TryEnqueue(() =>
+                    _pendingMessages.Enqueue(json);
+                    LogService.LogWarning($"[WebViewManager] WebView is null, message queued (Queue size: {_pendingMessages.Count})");
+
+                    // Timer'ı başlat (henüz başlatılmadıysa)
+                    if (_messageFlushTimer == null)
                     {
-                        try
+                        _messageFlushTimer = new System.Threading.Timer(_ => FlushPendingMessages(), null, 500, 500);
+                    }
+                    return;
+                }
+
+                // DispatcherQueue yoksa hata
+                if (_dispatcherQueue == null)
+                {
+                    LogService.LogError("[WebViewManager] DispatcherQueue is null, cannot send message");
+                    _pendingMessages.Enqueue(json); // Kuyruğa al, belki sonra düzelir
+                    return;
+                }
+
+                // HER ZAMAN UI thread'e yönlendir (COM güvenliği için)
+                bool enqueued = _dispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        // Double-check WebView (UI thread içinde)
+                        if (_webView?.CoreWebView2 != null)
                         {
-                            // WebView2 hazır olduğundan emin ol
-                            if (_webView?.CoreWebView2 == null)
-                            {
-                                LogService.LogWarning("[WebViewManager] CoreWebView2 is null, message not sent");
-                                return;
-                            }
                             _webView.CoreWebView2.PostWebMessageAsString(json);
-                            
+
                             if (json.Contains("modeChanged"))
                             {
                                 LogService.LogInfo("[WebViewManager] modeChanged message posted to WebView");
                             }
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            LogService.LogError($"[WebViewManager] UI thread mesaj gönderme hatası: {ex.Message}");
+                            LogService.LogWarning("[WebViewManager] CoreWebView2 became null before sending");
                         }
-                    });
-                }
-                else
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.LogError($"[WebViewManager] UI thread mesaj gönderme hatası: {ex.Message}\nStack: {ex.StackTrace}");
+                    }
+                });
+
+                if (!enqueued)
                 {
-                    // WebView2 hazır olduğundan emin ol
-                    if (_webView?.CoreWebView2 == null)
-                    {
-                        LogService.LogWarning("[WebViewManager] CoreWebView2 is null, message not sent (main thread)");
-                        return;
-                    }
-                    _webView.CoreWebView2.PostWebMessageAsString(json);
-                    
-                    if (json.Contains("modeChanged"))
-                    {
-                        LogService.LogInfo($"[WebViewManager] modeChanged message posted to WebView (main thread): {json}");
-                    }
+                    LogService.LogError($"[WebViewManager] Failed to enqueue message to UI thread");
                 }
             }
             catch (Exception ex)
             {
-                LogService.LogError($"[WebViewManager] Mesaj gönderme hatası: {ex.Message}");
+                LogService.LogError($"[WebViewManager] Mesaj gönderme hatası: {ex.Message}\nStack: {ex.StackTrace}");
             }
+        }
+
+        private void FlushPendingMessages()
+        {
+            // Timer background thread'de çalışır, UI thread'e geçmemiz lazım
+            if (_dispatcherQueue == null)
+            {
+                LogService.LogWarning("[WebViewManager] DispatcherQueue is null, cannot flush messages");
+                return;
+            }
+
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    // WebView hazır mı kontrol et
+                    if (_webView?.CoreWebView2 == null || _pendingMessages.IsEmpty)
+                    {
+                        return;
+                    }
+
+                    LogService.LogInfo($"[WebViewManager] Flushing {_pendingMessages.Count} pending messages");
+
+                    while (_pendingMessages.TryDequeue(out var json))
+                    {
+                        try
+                        {
+                            _webView.CoreWebView2.PostWebMessageAsString(json);
+                            LogService.LogDebug($"[WebViewManager] Pending message flushed");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogService.LogError($"[WebViewManager] Flush error: {ex.Message}");
+                        }
+                    }
+
+                    // Timer'ı durdur
+                    _messageFlushTimer?.Dispose();
+                    _messageFlushTimer = null;
+
+                    LogService.LogInfo("[WebViewManager] Message flush completed");
+                }
+                catch (Exception ex)
+                {
+                    LogService.LogError($"[WebViewManager] FlushPendingMessages error: {ex.Message}");
+                }
+            });
         }
 
         public void UpdateText(string text)

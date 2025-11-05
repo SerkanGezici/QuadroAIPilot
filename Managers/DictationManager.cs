@@ -438,8 +438,16 @@ namespace QuadroAIPilot.Managers
                 return;
             }
 
+            // Wake word kontrolü ÖNCE yapılmalı
+            string lowerText = text.ToLowerInvariant().TrimEnd('.', ',', '!', '?');
+            if (lowerText == "hey quadro" || lowerText == "hey cuadro" || lowerText == "hey kuadro")
+            {
+                LogService.LogInfo($"[DictationManager] Wake word algılandı: '{text}'");
+                StartProcessing(text);
+                return;
+            }
+
             // Mod geçiş komutlarını hemen kontrol et
-            string lowerText = text.ToLowerInvariant();
             if (AppConstants.ModeCommands.Any(cmd => lowerText.Contains(cmd)))
             {
                 _lastModeChangeCommand = text;
@@ -448,10 +456,18 @@ namespace QuadroAIPilot.Managers
                 return;
             }
 
-            // Komut algılama
+            // AI MODUNDA TÜM METİNLER İŞLENİR (FİLTRE YOK!)
+            if (AppState.CurrentMode == AppState.UserMode.AI)
+            {
+                LogService.LogInfo($"[DictationManager] AI modunda, tüm metinler işlenir: '{text}'");
+                StartProcessing(text);
+                return;
+            }
+
+            // KOMUT VE YAZIM MODUNDA: Komut algılama
             bool shouldProcess = ShouldProcessText(text);
             LogService.LogInfo($"[DictationManager] ShouldProcessText('{text}') = {shouldProcess}");
-            
+
             if (shouldProcess)
             {
                 LogService.LogInfo($"[DictationManager] Komut algılandı, StartProcessing çağrılıyor: '{text}'");
@@ -663,21 +679,38 @@ namespace QuadroAIPilot.Managers
         {
             lock (_lockObject)
             {
-                if (_processingDictation) 
+                if (_processingDictation)
                 {
+                    LogService.LogWarning($"[DictationManager] Processing already in progress, skipping: '{text}'");
                     return; // Prevent race condition
                 }
                 _processingDictation = true;
             }
-            
+
             _lastProcessedText = text;
             NotifyStateChanged();
-            
+
             LogService.LogInfo($"[DictationManager] StartProcessing - ModeManager.RouteSpeech çağrılıyor: '{text}'");
-            
+
             // Sadece ModeManager üzerinden yönlendir (duplicate processing önlenir)
             bool routeResult = _modeManager.RouteSpeech(text);
             LogService.LogInfo($"[DictationManager] ModeManager.RouteSpeech('{text}') = {routeResult}");
+
+            // AI Mode async olarak çalıştığı için hemen reset et
+            // Komut mode'da ise CommandProcessor tamamlandığında reset eder
+            if (AppState.CurrentMode == AppState.UserMode.AI)
+            {
+                // AI mode kendi queue sistemini kullanır, flag'i hemen temizle
+                Task.Run(async () =>
+                {
+                    await Task.Delay(100); // Küçük delay ile queue'ya girmeyi sağla
+                    lock (_lockObject)
+                    {
+                        _processingDictation = false;
+                    }
+                    LogService.LogInfo("[DictationManager] AI mode processing flag reset");
+                });
+            }
         }
 
         public void Stop()

@@ -22,7 +22,8 @@ namespace QuadroAIPilot
             _modes = new()
             {
                 { AppState.UserMode.Command, new CommandMode(processor) },
-                { AppState.UserMode.Writing, new WritingMode() }
+                { AppState.UserMode.Writing, new WritingMode() },
+                { AppState.UserMode.AI, new AIMode() }
             };
             _active = _modes[AppState.UserMode.Command];
             _active.Enter();
@@ -121,6 +122,61 @@ namespace QuadroAIPilot
             }
         }
 
-        public bool RouteSpeech(string text) => _active.HandleSpeech(text);
+        public bool RouteSpeech(string text)
+        {
+            // Önce mod geçiş komutlarını kontrol et
+            var lowerText = text.ToLowerInvariant().TrimEnd('.');
+
+            // AI modu geçiş komutları
+            if (lowerText.Contains("ai modu") ||
+                lowerText.Contains("yapay zeka modu") ||
+                lowerText.Contains("asistan modu"))
+            {
+                LogService.LogInfo($"[ModeManager] AI mode switch command detected: '{text}'");
+                Switch(AppState.UserMode.AI);
+
+                // TTS ile bildirim
+                _ = Task.Run(async () =>
+                {
+                    await TextToSpeechService.SpeakTextAsync("Yapay Zeka Asistan Moduna geçildi.");
+                });
+
+                return true;
+            }
+            // Yazı modu geçiş komutları
+            else if (lowerText.Contains("yazı modu") ||
+                     lowerText.Contains("yazma modu") ||
+                     lowerText.Contains("yazım modu") ||
+                     lowerText.Contains("yazın modu"))
+            {
+                LogService.LogInfo($"[ModeManager] Writing mode switch command detected: '{text}'");
+                Switch(AppState.UserMode.Writing);
+
+                // TTS ile bildirim
+                _ = Task.Run(async () =>
+                {
+                    await TextToSpeechService.SpeakTextAsync("Yazı moduna geçildi.");
+                });
+
+                return true;
+            }
+            // Komut modu geçiş komutları
+            else if (lowerText.Contains("komut modu"))
+            {
+                LogService.LogInfo($"[ModeManager] Command mode switch command detected: '{text}'");
+                Switch(AppState.UserMode.Command);
+
+                // TTS ile bildirim
+                _ = Task.Run(async () =>
+                {
+                    await TextToSpeechService.SpeakTextAsync("Komut moduna geçildi.");
+                });
+
+                return true;
+            }
+
+            // Mod geçiş komutu değilse aktif moda gönder
+            return _active.HandleSpeech(text);
+        }
     }
 }
