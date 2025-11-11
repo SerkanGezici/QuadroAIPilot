@@ -3,8 +3,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoUpdaterDotNET;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using QuadroAIPilot.Dialogs;
+using QuadroAIPilot.Helpers;
 using QuadroAIPilot.Managers;
 using QuadroAIPilot.Services;
 using Serilog;
@@ -14,6 +19,7 @@ namespace QuadroAIPilot.Services
     /// <summary>
     /// GitHub Releases tabanlı otomatik güncelleme servisi
     /// AutoUpdater.NET kütüphanesini kullanır
+    /// Modern UI/UX dialog'ları ile kullanıcı dostu deneyim
     /// </summary>
     public class UpdateService
     {
@@ -23,6 +29,12 @@ namespace QuadroAIPilot.Services
         private bool _isConfigured = false;
         private readonly object _configLock = new object();
         private static readonly HttpClient _httpClient = new HttpClient();
+
+        // XamlRoot referansı (dialog'lar için gerekli)
+        private XamlRoot? _xamlRoot;
+
+        // Otomatik kontrol için silent mode flag
+        private bool _isSilentCheck = true;
 
         /// <summary>
         /// Singleton instance
@@ -34,6 +46,19 @@ namespace QuadroAIPilot.Services
             _settingsManager = SettingsManager.Instance;
             // AutoUpdater.NET UI thread'de çalışmalı - constructor'da yapma
             // İlk kullanımda ConfigureAutoUpdater() çağrılacak
+
+            // HttpClient timeout ayarla (büyük dosyalar için)
+            _httpClient.Timeout = TimeSpan.FromMinutes(10);
+        }
+
+        /// <summary>
+        /// XamlRoot'u ayarla (MainWindow'dan çağrılmalı)
+        /// Dialog'ların gösterilmesi için gerekli
+        /// </summary>
+        public void SetXamlRoot(XamlRoot xamlRoot)
+        {
+            _xamlRoot = xamlRoot;
+            Log.Information("[UpdateService] XamlRoot ayarlandı");
         }
 
         /// <summary>
@@ -157,21 +182,84 @@ namespace QuadroAIPilot.Services
         }
 
         /// <summary>
-        /// 📥 OTOMATIK İNDİRME VE KURULUM - Profesyonel sistem
+        /// 📥 MODERN İNDİRME VE KURULUM SİSTEMİ
+        /// Kullanıcı dostu dialog'larla adım adım rehberlik
         /// </summary>
         private async Task DownloadAndInstallUpdateAsync(UpdateInfoEventArgs args)
         {
             System.Diagnostics.Debug.WriteLine("==== [UpdateService] DownloadAndInstallUpdateAsync BAŞLADI ====");
 
-            // Kullanıcıya sor
-            var userConfirmed = await ShowUpdateConfirmationDialogAsync(args);
-            if (!userConfirmed)
+            try
             {
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] Kullanıcı güncellemeyi reddetti ====");
-                Log.Warning("[UpdateService] Kullanıcı güncellemeyi reddetti");
-                return;
-            }
+                // 1. ADIM: Kullanıcıya güncelleme bilgilerini göster ve onay al
+                var userWantsToDownload = await ShowUpdateConfirmationDialogAsync(args);
+                if (!userWantsToDownload)
+                {
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] Kullanıcı indirmeyi reddetti ====");
+                    Log.Warning("[UpdateService] Kullanıcı güncelleme indirmesini iptal etti");
+                    return;
+                }
 
+                // 2. ADIM: Dosya boyutunu HTTP HEAD request ile al
+                long fileSize = 0;
+                try
+                {
+                    using (var headRequest = new HttpRequestMessage(HttpMethod.Head, args.DownloadURL))
+                    {
+                        var headResponse = await _httpClient.SendAsync(headRequest);
+                        fileSize = headResponse.Content.Headers.ContentLength ?? 0;
+                    }
+                }
+                catch
+                {
+                    // Dosya boyutu alınamazsa 0 olarak devam et (progress dialog "Bilinmiyor" gösterir)
+                    fileSize = 0;
+                }
+
+                // 3. ADIM: İndirme dialog'u ile dosyayı indir
+                string setupFilePath;
+                try
+                {
+                    setupFilePath = await DownloadUpdateWithProgressDialogAsync(args, fileSize);
+                }
+                catch (OperationCanceledException)
+                {
+                    Log.Warning("[UpdateService] Kullanıcı indirmeyi iptal etti");
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "[UpdateService] İndirme hatası");
+                    await ShowUpdateErrorDialogAsync($"İndirme sırasında hata oluştu:\n\n{ex.Message}");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] İndirme tamamlandı: {setupFilePath} ====");
+
+                // 3. ADIM: Kurulum onayı al
+                var userWantsToInstall = await ShowInstallConfirmationDialogAsync();
+                if (!userWantsToInstall)
+                {
+                    Log.Information("[UpdateService] Kullanıcı kurulumu erteledi. Dosya saklandı: {Path}", setupFilePath);
+                    return;
+                }
+
+                // 4. ADIM: Kurulumu başlat
+                await LaunchSetupAsync(setupFilePath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] Genel hata: {ex.Message} ====");
+                Log.Error(ex, "[UpdateService] Güncelleme işlemi genel hatası");
+                await ShowUpdateErrorDialogAsync($"Güncelleme sırasında beklenmeyen hata:\n\n{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// İndirme progress dialog'u ile dosyayı indir
+        /// </summary>
+        private async Task<string> DownloadUpdateWithProgressDialogAsync(UpdateInfoEventArgs args, long fileSize)
+        {
             // Temp klasörü oluştur
             var tempFolder = Path.Combine(Path.GetTempPath(), "QuadroAIPilot");
             Directory.CreateDirectory(tempFolder);
@@ -179,58 +267,82 @@ namespace QuadroAIPilot.Services
             var setupFileName = Path.GetFileName(args.DownloadURL);
             var setupFilePath = Path.Combine(tempFolder, setupFileName);
 
-            System.Diagnostics.Debug.WriteLine($"==== [UpdateService] İndirme hedefi: {setupFilePath} ====");
-            Log.Warning($"[UpdateService] Setup indiriliyor: {setupFileName}");
+            // Progress dialog oluştur
+            var progressDialog = new UpdateProgressDialog(setupFileName, fileSize);
+
+            if (_xamlRoot != null)
+            {
+                progressDialog.XamlRoot = _xamlRoot;
+            }
+
+            // Dialog'u non-blocking göster
+            _ = progressDialog.ShowAsync();
 
             try
             {
-                // 🔽 HTTP İLE İNDİRME (Progress tracking ile)
-                using (var response = await _httpClient.GetAsync(args.DownloadURL, HttpCompletionOption.ResponseHeadersRead))
+                // HTTP indirme
+                using (var response = await _httpClient.GetAsync(
+                    args.DownloadURL,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    progressDialog.CancellationToken))
                 {
                     response.EnsureSuccessStatusCode();
 
-                    var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-                    var downloadedBytes = 0L;
-
-                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] Toplam boyut: {totalBytes} bytes ====");
+                    var totalBytes = response.Content.Headers.ContentLength ?? fileSize;
 
                     using (var contentStream = await response.Content.ReadAsStreamAsync())
                     using (var fileStream = new FileStream(setupFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                     {
                         var buffer = new byte[8192];
+                        var downloadedBytes = 0L;
                         int bytesRead;
 
-                        var lastReportedProgress = -1;
-                        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = await contentStream.ReadAsync(
+                            buffer, 0, buffer.Length, progressDialog.CancellationToken)) > 0)
                         {
-                            await fileStream.WriteAsync(buffer, 0, bytesRead);
+                            await fileStream.WriteAsync(buffer, 0, bytesRead, progressDialog.CancellationToken);
                             downloadedBytes += bytesRead;
 
-                            // Progress tracking - sadece %10'luk değişimlerde log bas
-                            if (totalBytes > 0)
-                            {
-                                var progress = (int)((downloadedBytes * 100) / totalBytes);
-                                if (progress >= lastReportedProgress + 10)
-                                {
-                                    lastReportedProgress = progress;
-                                    System.Diagnostics.Debug.WriteLine($"==== [UpdateService] İndirme ilerlemesi: {progress}% ====");
-                                    Log.Warning($"[UpdateService] İndirme: {progress}%");
-                                }
-                            }
+                            // Progress güncelle
+                            progressDialog.UpdateProgress(downloadedBytes);
                         }
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] İndirme TAMAMLANDI ====");
-                Log.Warning($"[UpdateService] Setup indirildi: {setupFilePath}");
+                // İndirme tamamlandı, dialog'u kapat
+                progressDialog.Hide();
 
-                // ✅ DOSYA İNDİRİLDİ - KURULUMU BAŞLAT
-                await LaunchSetupAsync(setupFilePath);
+                // Dialog kapanma animasyonu tamamlansın (ContentDialog conflict önleme)
+                await Task.Delay(300);
+
+                Log.Information("[UpdateService] İndirme başarıyla tamamlandı: {Path}", setupFilePath);
+                return setupFilePath;
+            }
+            catch (OperationCanceledException)
+            {
+                progressDialog.Hide();
+
+                // Dialog kapanma animasyonu tamamlansın
+                await Task.Delay(300);
+
+                Log.Warning("[UpdateService] İndirme kullanıcı tarafından iptal edildi");
+
+                // İndirilen kısmi dosyayı sil
+                if (File.Exists(setupFilePath))
+                {
+                    try { File.Delete(setupFilePath); } catch { }
+                }
+
+                throw;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] İndirme hatası: {ex.Message} ====");
-                Log.Error(ex, "[UpdateService] Setup indirme hatası: {Message}", ex.Message);
+                progressDialog.Hide();
+
+                // Dialog kapanma animasyonu tamamlansın
+                await Task.Delay(300);
+
+                Log.Error(ex, "[UpdateService] İndirme sırasında hata");
                 throw;
             }
         }
@@ -281,36 +393,229 @@ namespace QuadroAIPilot.Services
         }
 
         /// <summary>
-        /// 💬 KULLANICIYA GÜNCELLEME ONAYI SOR
+        /// 💬 KULLANICIYA GÜNCELLEME BİLGİLERİNİ GÖSTER VE ONAY AL
+        /// Modern UpdateNotificationDialog ile
         /// </summary>
         private async Task<bool> ShowUpdateConfirmationDialogAsync(UpdateInfoEventArgs args)
         {
-            // TODO: WinUI 3 ContentDialog ile profesyonel bir dialog göster
-            // Şimdilik basit bir onay sistemi
-            System.Diagnostics.Debug.WriteLine("==== [UpdateService] Kullanıcı onayı bekleniyor (şimdilik otomatik true) ====");
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] UpdateNotificationDialog gösteriliyor ====");
 
-            // Geçici olarak otomatik true döndür - sonra dialog eklenecek
-            return await Task.FromResult(true);
+            try
+            {
+                // XamlRoot null ise bekle (MainWindow yüklenene kadar)
+                for (int wait = 0; wait < 10 && _xamlRoot == null; wait++)
+                {
+                    Log.Warning("[UpdateService] XamlRoot henüz null, {Wait}/10 bekleniyor...", wait + 1);
+                    await Task.Delay(500); // 0.5 saniye bekle
+                }
+
+                // Hala null ise hata
+                if (_xamlRoot == null)
+                {
+                    Log.Error("[UpdateService] XamlRoot 5 saniye sonra hala null! Dialog gösterilemedi.");
+                    return false;
+                }
+
+                // Retry logic: Başka dialog açıksa kısa bekle
+                for (int retry = 0; retry < 3; retry++)
+                {
+                    try
+                    {
+                        // Dialog oluştur ve göster (button click zaten UI thread'de)
+                        var dialog = new UpdateNotificationDialog(args)
+                        {
+                            XamlRoot = _xamlRoot
+                        };
+
+                        var result = await dialog.ShowAsync();
+                        bool userAccepted = result == ContentDialogResult.Primary;
+
+                        Log.Information("[UpdateService] Kullanıcı güncelleme onayı: {Accepted}", userAccepted);
+                        return userAccepted;
+                    }
+                    catch (System.Runtime.InteropServices.COMException comEx) when (comEx.Message.Contains("ContentDialog"))
+                    {
+                        // Başka dialog açık, kısa bekle ve tekrar dene
+                        Log.Warning("[UpdateService] Başka ContentDialog açık, {Retry}/3 tekrar deneniyor...", retry + 1);
+                        await Task.Delay(1000);
+
+                        if (retry == 2)
+                        {
+                            Log.Error("[UpdateService] Dialog gösterilemedi - Başka dialog açık ve kapanmadı");
+                            return false;
+                        }
+                    }
+                    catch (ArgumentException argEx) when (argEx.Message.Contains("XamlRoot"))
+                    {
+                        // XamlRoot hatası - bekle ve tekrar dene
+                        Log.Warning("[UpdateService] XamlRoot hatası, {Retry}/3 tekrar deneniyor...", retry + 1);
+                        await Task.Delay(1000);
+
+                        if (retry == 2)
+                        {
+                            Log.Error("[UpdateService] XamlRoot hatası - 3 deneme sonrası başarısız");
+                            return false;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[UpdateService] UpdateNotificationDialog gösterilirken beklenmeyen hata: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// ✅ KURULUM ONAYI AL
+        /// İndirme tamamlandıktan sonra kurulum için onay
+        /// </summary>
+        private async Task<bool> ShowInstallConfirmationDialogAsync()
+        {
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] InstallConfirmationDialog gösteriliyor ====");
+
+            try
+            {
+                // XamlRoot null ise bekle
+                for (int wait = 0; wait < 10 && _xamlRoot == null; wait++)
+                {
+                    Log.Warning("[UpdateService] [Install] XamlRoot henüz null, {Wait}/10 bekleniyor...", wait + 1);
+                    await Task.Delay(500);
+                }
+
+                if (_xamlRoot == null)
+                {
+                    Log.Error("[UpdateService] [Install] XamlRoot 5 saniye sonra hala null!");
+                    return false;
+                }
+
+                // Retry logic
+                for (int retry = 0; retry < 3; retry++)
+                {
+                    try
+                    {
+                        // Dialog oluştur ve göster (zaten UI thread'deyiz)
+                        var dialog = new UpdateInstallConfirmationDialog()
+                        {
+                            XamlRoot = _xamlRoot
+                        };
+
+                        var result = await dialog.ShowAsync();
+                        bool userAccepted = result == ContentDialogResult.Primary;
+
+                        Log.Information("[UpdateService] Kullanıcı kurulum onayı: {Accepted}", userAccepted);
+                        return userAccepted;
+                    }
+                    catch (System.Runtime.InteropServices.COMException comEx) when (comEx.Message.Contains("ContentDialog"))
+                    {
+                        Log.Warning("[UpdateService] Install dialog - Başka ContentDialog açık, {Retry}/3 tekrar deneniyor...", retry + 1);
+                        await Task.Delay(1000);
+
+                        if (retry == 2)
+                        {
+                            Log.Error("[UpdateService] Install dialog gösterilemedi - Başka dialog açık");
+                            return false;
+                        }
+                    }
+                    catch (ArgumentException argEx) when (argEx.Message.Contains("XamlRoot"))
+                    {
+                        Log.Warning("[UpdateService] [Install] XamlRoot hatası, {Retry}/3 tekrar deneniyor...", retry + 1);
+                        await Task.Delay(1000);
+
+                        if (retry == 2)
+                        {
+                            Log.Error("[UpdateService] [Install] XamlRoot hatası - 3 deneme sonrası başarısız");
+                            return false;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[UpdateService] InstallConfirmationDialog gösterilirken hata: {Message}", ex.Message);
+                return false;
+            }
         }
 
         /// <summary>
         /// ℹ️ GÜNCELLEME YOK DIALOG'U
+        /// Manuel kontrolde güncelleme yoksa gösterilir
         /// </summary>
         private async Task ShowNoUpdateDialogAsync()
         {
-            // TODO: WinUI 3 ContentDialog ile "Uygulama güncel" mesajı
-            System.Diagnostics.Debug.WriteLine("==== [UpdateService] 'Uygulama güncel' dialog'u gösterilmeli (şimdilik log) ====");
-            await Task.CompletedTask;
+            System.Diagnostics.Debug.WriteLine("==== [UpdateService] 'Güncelleme yok' dialog'u gösteriliyor ====");
+
+            try
+            {
+                // Sadece manuel kontrolde göster
+                if (_isSilentCheck)
+                {
+                    Log.Information("[UpdateService] Otomatik kontrol - güncelleme yok mesajı atlandı");
+                    return;
+                }
+
+                // XamlRoot kontrolü
+                if (_xamlRoot == null)
+                {
+                    Log.Warning("[UpdateService] XamlRoot null! Dialog gösterilemedi.");
+                    return;
+                }
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Uygulama Güncel",
+                    Content = "QuadroAI Pilot güncel durumda.\n\nEn son sürümü kullanıyorsunuz.",
+                    CloseButtonText = "Tamam",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = _xamlRoot
+                };
+
+                await dialog.ShowAsync();
+                Log.Information("[UpdateService] 'Güncelleme yok' mesajı gösterildi");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[UpdateService] 'Güncelleme yok' dialog'u gösterilirken hata");
+            }
         }
 
         /// <summary>
         /// ❌ HATA DIALOG'U
+        /// Güncelleme sırasında hata oluştuğunda gösterilir
         /// </summary>
         private async Task ShowUpdateErrorDialogAsync(string errorMessage)
         {
-            // TODO: WinUI 3 ContentDialog ile hata mesajı
-            System.Diagnostics.Debug.WriteLine($"==== [UpdateService] Hata dialog'u gösterilmeli: {errorMessage} ====");
-            await Task.CompletedTask;
+            System.Diagnostics.Debug.WriteLine($"==== [UpdateService] Hata dialog'u gösteriliyor: {errorMessage} ====");
+
+            try
+            {
+                // XamlRoot kontrolü
+                if (_xamlRoot == null)
+                {
+                    Log.Warning("[UpdateService] XamlRoot null! Hata dialog'u gösterilemedi.");
+                    return;
+                }
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Güncelleme Hatası",
+                    Content = errorMessage,
+                    CloseButtonText = "Tamam",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = _xamlRoot
+                };
+
+                await dialog.ShowAsync();
+                Log.Error("[UpdateService] Hata mesajı gösterildi: {Error}", errorMessage);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[UpdateService] Hata dialog'u gösterilirken hata");
+            }
         }
 
         /// <summary>
@@ -326,7 +631,7 @@ namespace QuadroAIPilot.Services
         /// <summary>
         /// Güncellemeleri kontrol et (UI thread'de)
         /// </summary>
-        /// <param name="silentCheck">Sessiz kontrol (UI gösterme)</param>
+        /// <param name="silentCheck">Sessiz kontrol (otomatik) veya manuel kontrol</param>
         /// <returns></returns>
         public Task CheckForUpdatesAsync(bool silentCheck = true)
         {
@@ -334,64 +639,38 @@ namespace QuadroAIPilot.Services
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - TRY bloğu başladı ====");
+                // Silent mode flag'ini kaydet (dialog'larda kullanılacak)
+                _isSilentCheck = silentCheck;
 
                 // AutoUpdater.NET'i yapılandır (ilk kez çağrıldığında)
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - ConfigureAutoUpdater() çağrılıyor ====");
                 ConfigureAutoUpdater();
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - ConfigureAutoUpdater() tamamlandı ====");
 
                 // Otomatik güncelleme kapalıysa ve sessiz kontrol ise çık
                 if (silentCheck && !_settingsManager.Settings.AutoUpdateEnabled)
                 {
-                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Otomatik güncelleme kapalı, çıkılıyor ====");
+                    System.Diagnostics.Debug.WriteLine("==== [UpdateService] Otomatik güncelleme kapalı, kontrol atlanıyor ====");
                     Log.Warning("[UpdateService] Otomatik güncelleme kapalı, kontrol atlanıyor");
                     return Task.CompletedTask;
                 }
 
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Son kontrol zamanı güncelleniyor ====");
                 // Son kontrol zamanını güncelle
                 _settingsManager.Settings.LastUpdateCheck = DateTime.Now;
                 _ = _settingsManager.SaveSettingsAsync();
 
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Güncelleme kontrolü parametreleri loglanıyor ====");
-                Log.Warning("[UpdateService] Güncelleme kontrolü başlatılıyor... (Silent: {SilentCheck})", silentCheck);
-                Log.Warning("[UpdateService] URL: {URL}", UPDATE_XML_URL);
-                Log.Warning("[UpdateService] Mevcut versiyon: {Version}", GetCurrentVersion());
+                Log.Information("[UpdateService] Güncelleme kontrolü başlatılıyor - Mod: {Mode}",
+                    silentCheck ? "Otomatik (Sessiz)" : "Manuel");
+                Log.Information("[UpdateService] URL: {URL}", UPDATE_XML_URL);
+                Log.Information("[UpdateService] Mevcut versiyon: {Version}", GetCurrentVersion());
 
-                // AutoUpdater.NET kullanarak kontrol
-                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - AutoUpdater.UpdateMode ayarlanıyor (silent: {silentCheck}) ====");
-                if (silentCheck)
-                {
-                    // Sessiz mod: Sadece güncelleme varsa bildirim göster
-                    AutoUpdater.Mandatory = false;
-                    AutoUpdater.UpdateMode = Mode.Normal;
-                }
-                else
-                {
-                    // Manuel kontrol: Her durumda dialog göster
-                    AutoUpdater.Mandatory = false;
-                    AutoUpdater.UpdateMode = Mode.Normal;
-                }
-
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - AutoUpdater.Start() ÇAĞRILIYOR ====");
-                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - URL: {UPDATE_XML_URL} ====");
-                Log.Warning("[UpdateService] AutoUpdater.Start() çağrılıyor...");
-
-                // Güncelleme kontrolü başlat (UI thread'de çalışmalı)
+                // Güncelleme kontrolü başlat
                 AutoUpdater.Start(UPDATE_XML_URL);
 
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - AutoUpdater.Start() TAMAMLANDI ====");
-                Log.Warning("[UpdateService] AutoUpdater.Start() çağrısı tamamlandı");
-
-                System.Diagnostics.Debug.WriteLine("==== [UpdateService] CheckForUpdatesAsync - Task.CompletedTask dönülüyor ====");
+                Log.Information("[UpdateService] AutoUpdater.Start() çağrıldı");
                 return Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - EXCEPTION: {ex.Message} ====");
-                System.Diagnostics.Debug.WriteLine($"==== [UpdateService] CheckForUpdatesAsync - STACK TRACE: {ex.StackTrace} ====");
-                Log.Error(ex, "[UpdateService] Güncelleme kontrolü hatası: {Message}", ex.Message);
+                Log.Error(ex, "[UpdateService] Güncelleme kontrolü hatası");
                 return Task.CompletedTask;
             }
         }

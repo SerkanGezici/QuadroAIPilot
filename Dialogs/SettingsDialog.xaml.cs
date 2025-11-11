@@ -986,6 +986,12 @@ namespace QuadroAIPilot.Dialogs
 
                 System.Diagnostics.Debug.WriteLine("==== CALLING CheckForUpdatesManualAsync (AutoUpdater.NET built-in dialog) ====");
 
+                // SettingsDialog'u kapat ki Update dialog'u açılabilsin (ContentDialog conflict yok)
+                this.Hide();
+
+                // Kısa gecikme - dialog kapanma animasyonu tamamlansın
+                await Task.Delay(200);
+
                 // AutoUpdater.NET kendi dialog'unu gösterecek
                 // - Güncelleme varsa: İndirme dialog'u ve progress bar
                 // - Güncelleme yoksa: "No update available" mesajı
@@ -993,15 +999,13 @@ namespace QuadroAIPilot.Dialogs
                 await updateService.CheckForUpdatesManualAsync();
 
                 System.Diagnostics.Debug.WriteLine("==== UPDATE CHECK COMPLETED ====");
-
-                // Son kontrol zamanını güncelle
-                LoadUpdateInfo();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"==== EXCEPTION: {ex.Message} ====");
                 System.Diagnostics.Debug.WriteLine($"==== STACK TRACE: {ex.StackTrace} ====");
 
+                // Hata durumunda da dialog'u göster (SettingsDialog zaten kapalı)
                 var errorDialog = new ContentDialog
                 {
                     Title = "Güncelleme Hatası",
@@ -1010,11 +1014,6 @@ namespace QuadroAIPilot.Dialogs
                     XamlRoot = this.XamlRoot
                 };
                 await errorDialog.ShowAsync();
-            }
-            finally
-            {
-                CheckUpdatesButton.IsEnabled = true;
-                CheckUpdatesButton.Content = "Güncellemeleri Kontrol Et";
             }
         }
 

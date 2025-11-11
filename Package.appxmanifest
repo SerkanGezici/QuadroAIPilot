@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Package
  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -7,7 +7,7 @@
  IgnorableNamespaces="uap rescap desktop">
 
 	<Identity
-	  Name="com.quadro.aipilot"
+	  Name="wj7v92jbmx2kg"
 	  Publisher="CN=QuadroAIPilot"
 	  Version="1.2.1.0" />
 
@@ -15,6 +15,8 @@
 		<DisplayName>QuadroAIPilot</DisplayName>
 		<PublisherDisplayName>QuadroAIPilot</PublisherDisplayName>
 		<Logo>Assets\StoreLogo.png</Logo>
+		<!-- LAF Token for Phi Silica access -->
+		<uap:SupportedUsers>multiple</uap:SupportedUsers>
 	</Properties>
 
 	<Dependencies>
@@ -23,6 +25,8 @@
 
 	<Resources>
 		<Resource Language="x-generate"/>
+		<!-- LAF Token: 31+VmL1ArInu5FrIWfSVTw== -->
+		<!-- Feature: com.microsoft.windows.ai.languagemodel -->
 	</Resources>
 
 	<Applications>
@@ -38,6 +42,14 @@
 				<uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
 				<uap:SplashScreen Image="Assets\SplashScreen.png" />
 			</uap:VisualElements>
+			<Extensions>
+				<!-- LAF Token Extension for Phi Silica -->
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="ms-ai">
+						<uap:DisplayName>Windows AI Protocol</uap:DisplayName>
+					</uap:Protocol>
+				</uap:Extension>
+			</Extensions>
 		</Application>
 	</Applications>
 

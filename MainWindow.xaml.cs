@@ -534,6 +534,20 @@ namespace QuadroAIPilot
                 // Pencere pozisyonunu ayarla (Window tam yüklendikten sonra)
                 SetupWindowPosition();
 
+                // UpdateService için XamlRoot'u ayarla (dialog'lar için gerekli)
+                try
+                {
+                    if (this.Content is FrameworkElement rootElement)
+                    {
+                        UpdateService.Instance.SetXamlRoot(rootElement.XamlRoot);
+                        Debug.WriteLine("[MainWindow] UpdateService XamlRoot ayarlandı");
+                    }
+                }
+                catch (Exception xamlRootEx)
+                {
+                    Debug.WriteLine($"[MainWindow] UpdateService XamlRoot ayarlanamadı: {xamlRootEx.Message}");
+                }
+
                 SimpleCrashLogger.Log("Window_Loaded event completed");
             }
             catch (Exception ex)

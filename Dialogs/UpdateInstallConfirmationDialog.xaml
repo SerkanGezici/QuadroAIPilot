@@ -1,0 +1,59 @@
+<ContentDialog
+    x:Class="QuadroAIPilot.Dialogs.UpdateInstallConfirmationDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Güncelleme Hazır"
+    PrimaryButtonText="Şimdi Kur"
+    CloseButtonText="Daha Sonra"
+    DefaultButton="Primary">
+
+    <StackPanel Spacing="20" Padding="16" MaxWidth="400">
+
+        <!-- Başarı ikonu -->
+        <TextBlock Text="✅" FontSize="64" HorizontalAlignment="Center"/>
+
+        <!-- Mesaj -->
+        <StackPanel Spacing="12">
+            <TextBlock FontSize="18"
+                       FontWeight="SemiBold"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Text="✅ İndirme Tamamlandı"/>
+
+            <TextBlock TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       Foreground="#333333"
+                       LineHeight="24"
+                       Text="Güncelleme başarıyla indirildi.&#x0A;&#x0A;Kurulumu başlatmak için QuadroAI Pilot kapatılacak ve yükleyici çalışacaktır."/>
+        </StackPanel>
+
+        <!-- Uyarı Card -->
+        <Border Background="#FFF3CD"
+                BorderBrush="#FFC107"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="⚠️" FontSize="16"/>
+                    <TextBlock Text="Önemli Hatırlatma" FontWeight="SemiBold" Foreground="#856404"/>
+                </StackPanel>
+
+                <TextBlock TextWrapping="Wrap"
+                           FontSize="12"
+                           Foreground="#856404"
+                           LineHeight="18"
+                           Text="• Açık dosyalarınızı kaydettiğinizden emin olun&#x0A;• Kurulum yaklaşık 1-2 dakika sürecektir&#x0A;• Kurulum sonrası uygulama otomatik açılacaktır"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Daha sonra bilgisi -->
+        <TextBlock TextWrapping="Wrap"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   Foreground="#999999"
+                   FontSize="11"
+                   Text="&quot;Daha Sonra&quot; seçeneğiyle kurulumu istediğiniz zaman başlatabilirsiniz."/>
+
+    </StackPanel>
+</ContentDialog>

@@ -425,17 +425,27 @@ namespace QuadroAIPilot.Managers
                 LogService.LogDebug($"[DictationManager] _assistantIsSpeaking = false, normal işleme: '{text}'");
             }
             
-            if (_processingDictation) 
+            // Windows AI komutları için processing kontrolünü bypass et
+            bool isAICommand = IsWindowsAICommand(text);
+
+            if (!isAICommand)
             {
-                return;
+                if (_processingDictation)
+                {
+                    return;
+                }
+                if (text == _lastProcessedText)
+                {
+                    return;
+                }
+                if (!string.IsNullOrEmpty(_lastTtsResponse) && text.Contains(_lastTtsResponse))
+                {
+                    return;
+                }
             }
-            if (text == _lastProcessedText) 
+            else
             {
-                return;
-            }
-            if (!string.IsNullOrEmpty(_lastTtsResponse) && text.Contains(_lastTtsResponse)) 
-            {
-                return;
+                LogService.LogInfo($"[DictationManager] Windows AI komutu için processing kontrolü bypass edildi: '{text}'");
             }
 
             // Wake word kontrolü ÖNCE yapılmalı
@@ -497,8 +507,15 @@ namespace QuadroAIPilot.Managers
         private bool ShouldProcessText(string text)
         {
             string singleWord = text.Trim().ToLowerInvariant();
-            
-            // 0. Sayfa navigasyon komutlarını kontrol et (tam metin eşleşme)
+
+            // 0. Windows AI komutlarını kontrol et (en öncelikli)
+            if (IsWindowsAICommand(text))
+            {
+                LogService.LogInfo($"[DictationManager] Windows AI komutu algılandı: {text}");
+                return true;
+            }
+
+            // 1. Sayfa navigasyon komutlarını kontrol et (tam metin eşleşme)
             string lowerText = text.ToLowerInvariant().TrimEnd('.');
             if (lowerText == "sayfa başına git" || lowerText == "sayfa sonuna git")
             {
@@ -644,10 +661,47 @@ namespace QuadroAIPilot.Managers
 
         private bool HasCommandVerb(string text)
         {
-            return AppConstants.CommandVerbs.Any(verb => 
+            return AppConstants.CommandVerbs.Any(verb =>
                 text.Contains(verb, StringComparison.OrdinalIgnoreCase)) ||
-                   AppConstants.SystemFolders.Any(folder => 
+                   AppConstants.SystemFolders.Any(folder =>
                 text.Contains(folder, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Windows AI komutlarını kontrol et
+        /// </summary>
+        private bool IsWindowsAICommand(string text)
+        {
+            string normalized = text.ToLowerInvariant();
+
+            // OCR komutları - ekrandan metin okuma
+            if ((normalized.Contains("ekran") && normalized.Contains("metin") && normalized.Contains("oku")) ||
+                normalized.Contains("ekran oku") ||
+                normalized.Contains("ocr"))
+                return true;
+
+            // Pano OCR - panodan görsel okuma
+            if ((normalized.Contains("pano") || normalized.Contains("panodaki") || normalized.Contains("clipboard")) &&
+                (normalized.Contains("oku") || normalized.Contains("görsel")))
+                return true;
+
+            // Görsel açıklama - ekran/görsel açıklama
+            if ((normalized.Contains("ekran") || normalized.Contains("görsel") || normalized.Contains("görüntü")) &&
+                normalized.Contains("açıkla"))
+                return true;
+
+            // Görüntü büyütme - super resolution
+            if ((normalized.Contains("ekran") || normalized.Contains("görüntü") || normalized.Contains("görsel")) &&
+                (normalized.Contains("büyüt") || normalized.Contains("çözünürlük")))
+                return true;
+
+            // Screenshot - ekran görüntüsü kaydetme
+            if (normalized.Contains("ekran") &&
+                (normalized.Contains("görüntüsü") || normalized.Contains("screenshot")) &&
+                normalized.Contains("kaydet"))
+                return true;
+
+            return false;
         }
         
         /// <summary>

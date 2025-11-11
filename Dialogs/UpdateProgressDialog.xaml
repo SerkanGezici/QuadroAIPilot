@@ -1,0 +1,84 @@
+<ContentDialog
+    x:Class="QuadroAIPilot.Dialogs.UpdateProgressDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Güncelleme İndiriliyor"
+    CloseButtonText="İptal"
+    DefaultButton="None"
+    IsPrimaryButtonEnabled="False">
+
+    <StackPanel Spacing="20" Padding="24" Width="450">
+
+        <!-- Başlık -->
+        <StackPanel Spacing="8">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="📥 Güncelleme İndiriliyor..."/>
+            <TextBlock x:Name="FileNameText"
+                       Foreground="#666666"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap"/>
+        </StackPanel>
+
+        <!-- Progress Bar -->
+        <StackPanel Spacing="8">
+            <ProgressBar x:Name="DownloadProgressBar"
+                         Height="8"
+                         CornerRadius="4"
+                         Background="#E0E0E0"
+                         Foreground="#0078D4"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" FontSize="14">
+                    <Run x:Name="DownloadedBytesText" FontWeight="SemiBold" Foreground="#0078D4"/>
+                    <Run Text=" / " Foreground="#999999"/>
+                    <Run x:Name="TotalBytesText"/>
+                </TextBlock>
+
+                <TextBlock Grid.Column="1"
+                           x:Name="PercentageText"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#0078D4"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- İstatistikler -->
+        <Border Background="#F3F3F3"
+                BorderBrush="#CCCCCC"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="⚡" FontSize="16"/>
+                    <TextBlock Text="İndirme Hızı:" Foreground="#666666"/>
+                    <TextBlock x:Name="SpeedText" FontWeight="SemiBold" Text="0 MB/s"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="⏱️" FontSize="16"/>
+                    <TextBlock Text="Tahmini Süre:" Foreground="#666666"/>
+                    <TextBlock x:Name="RemainingTimeText" FontWeight="SemiBold" Text="Hesaplanıyor..."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Bilgilendirme -->
+        <TextBlock TextWrapping="Wrap"
+                   Foreground="#999999"
+                   FontSize="12"
+                   HorizontalAlignment="Center"
+                   Text="İndirme tamamlandığında kurulum onayı istenecektir."/>
+
+    </StackPanel>
+</ContentDialog>
