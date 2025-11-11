@@ -1,0 +1,7 @@
+**Plan**
+- Map JavaScript/JSON surface: gather inventory, count files, estimate LOC.
+- Read mandated core modules and notes; capture architecture, data flow, UX hooks.
+- Pattern-scan for security/perf/error smells; log exact refs.
+- Synthesize DEEPSEARCH → DEEPTHINKING → INTERNET RESEARCH findings into final report.
+
+Will update after the inventory + file review.

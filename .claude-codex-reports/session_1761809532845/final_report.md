@@ -1,0 +1,1 @@
+Kararını bekliyorum! 🎯

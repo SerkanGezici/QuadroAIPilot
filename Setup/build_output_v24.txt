@@ -1,0 +1,591 @@
+Inno Setup 6 Command-Line Compiler
+Copyright (C) 1997-2025 Jordan Russell. All rights reserved.
+Portions Copyright (C) 2000-2025 Martijn Laan. All rights reserved.
+Portions Copyright (C) 2001-2004 Alex Yackimoff. All rights reserved.
+https://www.innosetup.com
+
+Compiler engine version: Inno Setup 6.4.3
+
+Preprocessing
+   Reading file: C:\Users\serkan\AppData\Local\Programs\Inno Setup 6\ISPPBuiltins.iss
+Parsing [Setup] section, line 29
+Parsing [Setup] section, line 30
+Parsing [Setup] section, line 31
+Parsing [Setup] section, line 32
+Parsing [Setup] section, line 33
+Parsing [Setup] section, line 34
+Parsing [Setup] section, line 35
+Parsing [Setup] section, line 36
+Parsing [Setup] section, line 37
+Parsing [Setup] section, line 38
+Parsing [Setup] section, line 39
+Parsing [Setup] section, line 40
+Parsing [Setup] section, line 41
+Parsing [Setup] section, line 42
+Parsing [Setup] section, line 43
+Parsing [Setup] section, line 44
+Parsing [Setup] section, line 45
+Parsing [Setup] section, line 46
+Parsing [Setup] section, line 47
+Parsing [Setup] section, line 48
+Parsing [Setup] section, line 49
+Parsing [Setup] section, line 50
+Parsing [Setup] section, line 51
+Parsing [Setup] section, line 52
+Parsing [Setup] section, line 53
+Parsing [Setup] section, line 54
+Parsing [Setup] section, line 55
+Parsing [Setup] section, line 56
+Parsing [Setup] section, line 57
+Parsing [Setup] section, line 59
+Parsing [Setup] section, line 60
+Parsing [Setup] section, line 61
+Parsing [Setup] section, line 62
+Reading file (LicenseFile)
+Reading file (WizardImageFile)
+Reading file (WizardSmallImageFile)
+Preparing Setup program executable
+   Updating icons (SETUP.E32)
+   Updating version info (SETUP.E32)
+Determining language code pages
+Parsing [Languages] section, line 65
+   Reading file: C:\Users\serkan\AppData\Local\Programs\Inno Setup 6\Languages\Turkish.isl
+Parsing [Languages] section, line 66
+   Reading file: C:\Users\serkan\AppData\Local\Programs\Inno Setup 6\Default.isl
+   Messages in script file
+Reading default messages from Default.isl
+Parsing [Languages] section, line 65
+   Reading file: C:\Users\serkan\AppData\Local\Programs\Inno Setup 6\Languages\Turkish.isl
+Parsing [Languages] section, line 66
+   Reading file: C:\Users\serkan\AppData\Local\Programs\Inno Setup 6\Default.isl
+Parsing [LangOptions], [Messages], and [CustomMessages] sections
+   Messages in script file
+Reading [Code] section
+Parsing [Types] section, line 69
+Parsing [Types] section, line 70
+Parsing [Types] section, line 71
+Parsing [Components] section, line 74
+Parsing [Components] section, line 75
+Parsing [Components] section, line 76
+Parsing [Components] section, line 77
+Parsing [Components] section, line 81
+Parsing [Tasks] section, line 88
+Parsing [Tasks] section, line 89
+Parsing [Tasks] section, line 90
+Parsing [Tasks] section, line 91
+Parsing [Icons] section, line 135
+Parsing [Icons] section, line 136
+Parsing [Icons] section, line 137
+Parsing [Icons] section, line 138
+Parsing [Icons] section, line 139
+Parsing [Registry] section, line 143
+Parsing [Registry] section, line 144
+Parsing [Registry] section, line 145
+Parsing [Registry] section, line 146
+Parsing [Registry] section, line 149
+Parsing [Registry] section, line 152
+Parsing [Registry] section, line 153
+Parsing [Registry] section, line 154
+Parsing [Run] section, line 158
+Parsing [Run] section, line 161
+Parsing [Run] section, line 164
+Parsing [Run] section, line 167
+Parsing [Run] section, line 170
+Parsing [Run] section, line 173
+Parsing [Run] section, line 180
+Parsing [Run] section, line 183
+Parsing [Run] section, line 186
+Parsing [Run] section, line 192
+Parsing [Run] section, line 195
+Parsing [Files] section, line 95
+Parsing [Files] section, line 98
+Parsing [Files] section, line 101
+Parsing [Files] section, line 102
+Parsing [Files] section, line 103
+Parsing [Files] section, line 104
+Parsing [Files] section, line 108
+Parsing [Files] section, line 109
+Parsing [Files] section, line 110
+Parsing [Files] section, line 113
+Parsing [Files] section, line 114
+Parsing [Files] section, line 117
+   Reading version info: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Prerequisites\MicrosoftEdgeWebView2Setup.exe
+Parsing [Files] section, line 118
+   Reading version info: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Prerequisites\VC_redist.x64.exe
+Compiling [Code] section
+Creating setup files
+   Updating icons (SETUP.EXE)
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Accessibility.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\App.config
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\AutoUpdater.NET.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\clretwrc.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\clrgc.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\clrjit.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\coreclr.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\CoreMessagingXP.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\createdump.exe
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\D3DCompiler_47_cor3.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\dcompi.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\DirectWriteForwarder.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\dwmcorei.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\DwmSceneI.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\DWriteCore.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\hostfxr.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\hostpolicy.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\HtmlAgilityPack.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\marshal.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.CSharp.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.DiaSymReader.Native.amd64.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.DirectManipulation.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Caching.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Caching.Memory.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.Binder.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.CommandLine.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.FileExtensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.Json.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Configuration.UserSecrets.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.DependencyInjection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Diagnostics.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Diagnostics.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.FileProviders.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.FileProviders.Physical.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.FileSystemGlobbing.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Hosting.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Hosting.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Http.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.Abstractions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.Configuration.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.Console.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.Debug.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.EventLog.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Logging.EventSource.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Options.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Extensions.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Foundation.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Graphics.Display.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Graphics.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.InputStateManager.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.InteractiveExperiences.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Internal.FrameworkUdk.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Security.Authentication.OAuth.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Security.Authentication.OAuth.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Composition.OSSupport.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Input.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.pri
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Text.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Windowing.Core.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Windowing.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml.Controls.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml.Controls.pri
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.ui.xaml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml.Internal.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml.Phone.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.ui.xaml.resources.19h1.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.ui.xaml.resources.common.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.VisualBasic.Core.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.VisualBasic.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.VisualBasic.Forms.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Web.WebView2.Core.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Web.WebView2.Core.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Win32.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Win32.Registry.AccessControl.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Win32.Registry.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Win32.SystemEvents.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Background.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Background.UniversalBGTask.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Background.UniversalBGTask.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Background.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.DynamicDependency.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.DynamicDependency.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Resources.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.Resources.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.WindowsAppRuntime.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.ApplicationModel.WindowsAppRuntime.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.AppLifecycle.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.AppLifecycle.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.AppNotifications.Builder.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.AppNotifications.Builder.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.AppNotifications.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.AppNotifications.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.BadgeNotifications.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.BadgeNotifications.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Globalization.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Management.Deployment.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Management.Deployment.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Media.Capture.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Media.Capture.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.PushNotifications.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.PushNotifications.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.SDK.NET.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Security.AccessControl.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Security.AccessControl.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Storage.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Storage.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.System.Power.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.System.Power.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.System.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.System.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Widgets.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Widgets.Projection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.Windows.Widgets.winmd
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.WindowsAppRuntime.Bootstrap.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.WindowsAppRuntime.Bootstrap.Net.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.WindowsAppRuntime.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.WindowsAppRuntime.Insights.Resource.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.WinUI.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\MRM.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordaccore.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordaccore_amd64_amd64_8.0.2025.41914.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordbi.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscorlib.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscorrc.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\msquic.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.Asio.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.Core.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.Midi.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.Wasapi.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.WinForms.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\NAudio.WinMM.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\netstandard.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PenImc_cor3.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Polly.Core.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Polly.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationCore.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework-SystemCore.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework-SystemData.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework-SystemDrawing.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework-SystemXml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework-SystemXmlLinq.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.Aero.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.Aero2.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.AeroLite.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.Classic.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.Luna.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationFramework.Royale.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationNative_cor3.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PresentationUI.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PushNotificationsLongRunningTask.ProxyStub.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\QuadroAIPilot.deps.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\QuadroAIPilot.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\QuadroAIPilot.dll.config
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\QuadroAIPilot.exe
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\QuadroAIPilot.runtimeconfig.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\ReachFramework.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\resources.pri
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\RestartAgent.exe
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Enrichers.Environment.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Enrichers.Thread.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Extensions.Hosting.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Extensions.Logging.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Formatting.Compact.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Sinks.Console.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Serilog.Sinks.File.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.AppContext.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Buffers.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.CodeDom.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Collections.Concurrent.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Collections.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Collections.Immutable.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Collections.NonGeneric.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Collections.Specialized.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ComponentModel.Annotations.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ComponentModel.DataAnnotations.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ComponentModel.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ComponentModel.EventBasedAsync.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ComponentModel.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ComponentModel.TypeConverter.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Configuration.ConfigurationManager.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Configuration.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Console.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Core.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Data.Common.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Data.DataSetExtensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Data.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Design.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.Contracts.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.Debug.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.DiagnosticSource.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.EventLog.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.EventLog.Messages.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.FileVersionInfo.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.PerformanceCounter.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.Process.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.StackTrace.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.TextWriterTraceListener.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.Tools.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.TraceSource.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Diagnostics.Tracing.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.DirectoryServices.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Drawing.Common.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Drawing.Design.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Drawing.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Drawing.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Dynamic.Runtime.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Formats.Asn1.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Formats.Tar.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Globalization.Calendars.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Globalization.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Globalization.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Compression.Brotli.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Compression.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Compression.FileSystem.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Compression.Native.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Compression.ZipFile.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.FileSystem.AccessControl.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.FileSystem.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.FileSystem.DriveInfo.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.FileSystem.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.FileSystem.Watcher.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.IsolatedStorage.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.MemoryMappedFiles.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Packaging.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Pipes.AccessControl.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.Pipes.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.IO.UnmanagedMemoryStream.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Linq.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Linq.Expressions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Linq.Parallel.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Linq.Queryable.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Management.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Memory.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Http.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Http.Json.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.HttpListener.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Mail.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.NameResolution.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.NetworkInformation.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Ping.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Quic.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Requests.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Security.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.ServicePoint.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.Sockets.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.WebClient.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.WebHeaderCollection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.WebProxy.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.WebSockets.Client.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Net.WebSockets.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Numerics.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Numerics.Vectors.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ObjectModel.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Printing.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Private.CoreLib.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Private.DataContractSerialization.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Private.Uri.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Private.Xml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Private.Xml.Linq.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.DispatchProxy.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.Emit.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.Emit.ILGeneration.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.Emit.Lightweight.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.Metadata.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Reflection.TypeExtensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Resources.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Resources.Reader.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Resources.ResourceManager.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Resources.Writer.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.CompilerServices.Unsafe.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.CompilerServices.VisualC.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Handles.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.InteropServices.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.InteropServices.JavaScript.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.InteropServices.RuntimeInformation.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Intrinsics.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Loader.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Numerics.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Serialization.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Serialization.Formatters.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Serialization.Json.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Serialization.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Runtime.Serialization.Xml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.AccessControl.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Claims.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Algorithms.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Cng.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Csp.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Encoding.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.OpenSsl.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Pkcs.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.ProtectedData.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.X509Certificates.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Cryptography.Xml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Permissions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Principal.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.Principal.Windows.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Security.SecureString.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ServiceModel.Syndication.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ServiceModel.Web.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ServiceProcess.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Speech.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Text.Encoding.CodePages.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Text.Encoding.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Text.Encoding.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Text.Encodings.Web.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Text.Json.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Text.RegularExpressions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.AccessControl.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Channels.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Overlapped.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Tasks.Dataflow.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Tasks.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Tasks.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Tasks.Parallel.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Thread.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.ThreadPool.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Threading.Timer.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Transactions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Transactions.Local.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.ValueTuple.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Web.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Web.HttpUtility.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Controls.Ribbon.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Extensions.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Forms.Design.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Forms.Design.Editors.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Forms.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Forms.Primitives.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Input.Manipulations.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Windows.Presentation.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xaml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.Linq.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.ReaderWriter.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.Serialization.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.XDocument.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.XmlDocument.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.XmlSerializer.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.XPath.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\System.Xml.XPath.XDocument.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\UIAutomationClient.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\UIAutomationClientSideProviders.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\UIAutomationProvider.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\UIAutomationTypes.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\vcruntime140_cor3.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WebDriver.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WebView2Loader.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WindowsAppRuntime.DeploymentExtensions.OneCore.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WindowsAppRuntime.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WindowsAppSdk.AppxDeploymentExtensions.Desktop-EventLog-Instrumentation.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WindowsAppSdk.AppxDeploymentExtensions.Desktop.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WindowsBase.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WindowsFormsIntegration.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WinRT.Runtime.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WinUIEdit.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\wpfgfx_cor3.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\wuceffectsi.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\icon.ico
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\index.html
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\LockScreenLogo.scale-200.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\QAI_Logo.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\QAI_Logo_Transparent.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\SplashScreen.scale-200.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\Square150x150Logo.scale-200.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\Square44x44Logo.scale-200.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\Square44x44Logo.targetsize-24_altform-unplated.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\StoreLogo.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Assets\Wide310x150Logo.scale-200.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome.pem
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\create_store_packages.ps1
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\create_temp_icons.sh
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge.crx
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge.pem
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\generate_icons.js
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\update_auth.txt
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\BrowserExtensions\Chrome\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\BrowserExtensions\Chrome\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\BrowserExtensions\Chrome\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\BrowserExtensions\Edge\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\BrowserExtensions\Edge\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\BrowserExtensions\Edge\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\background.js
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\manifest.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Chrome\manifest_store.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\background.js
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\manifest.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Edge\manifest_store.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\background.js
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\icon128.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\icon16.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\icon48.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\Firefox\manifest.json
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\StorePackages\QuadroAI_Chrome_Store.zip
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\BrowserExtensions\StorePackages\QuadroAI_Edge_Store.zip
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\en-us\Microsoft.ui.xaml.dll.mui
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\en-us\Microsoft.UI.Xaml.Phone.dll.mui
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml\Assets\map.html
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Microsoft.UI.Xaml\Assets\NoiseAsset_256x256_PNG.png
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\selenium-manager\linux\selenium-manager
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\selenium-manager\macos\selenium-manager
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\selenium-manager\windows\selenium-manager.exe
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\AutoUpdater.NET.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\Microsoft.VisualBasic.Forms.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\PresentationCore.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\PresentationFramework.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\PresentationUI.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\ReachFramework.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\System.Windows.Controls.Ribbon.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\System.Windows.Forms.Design.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\System.Windows.Forms.Primitives.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\System.Windows.Forms.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\System.Windows.Input.Manipulations.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\System.Xaml.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\UIAutomationClient.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\UIAutomationClientSideProviders.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\UIAutomationProvider.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\UIAutomationTypes.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\WindowsBase.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr\WindowsFormsIntegration.resources.dll
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr-TR\Microsoft.ui.xaml.dll.mui
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\tr-TR\Microsoft.UI.Xaml.Phone.dll.mui
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\..\LICENSE.txt
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\EnableWindowsFeatures.ps1
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\ConfigureSecurity.ps1
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\CheckMicrophoneAccess.ps1
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\ConfigureEmail.ps1
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\InstallPythonOptimized.bat
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\InstallTurkishVoices.ps1
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Scripts\edge-tts-nossl.py
+   Compressing: C:\Users\serkan\source\repos\QuadroAIPilot setup so so outlook not setup deneme2\Setup\Prerequisites\chromedriver.exe

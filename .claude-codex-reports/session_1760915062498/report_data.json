@@ -1,0 +1,29 @@
+{
+  "sessionId": 1760915062498,
+  "timestamp": "2025-10-19T22:39:36.866Z",
+  "timing": {
+    "totalDuration": 1485631,
+    "aiWorkTime": 2053582,
+    "userWaitTime": 3
+  },
+  "turns": {
+    "turn1": {
+      "claudeDuration": 301123,
+      "codexDuration": 539570,
+      "claudeStatus": "completed",
+      "codexStatus": "completed"
+    },
+    "turn2": {
+      "claudeDuration": 266836,
+      "codexDuration": 466239
+    },
+    "turn3": {
+      "duration": 479814,
+      "approvalWaitTime": 3
+    }
+  },
+  "diffs": [],
+  "appliedChanges": 0,
+  "errors": [],
+  "warnings": []
+}
