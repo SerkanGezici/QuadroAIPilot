@@ -1,0 +1,94 @@
+<ContentDialog
+    x:Class="QuadroAIPilot.Dialogs.UpdateNotificationDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Güncelleme Mevcut"
+    PrimaryButtonText="Şimdi İndir"
+    CloseButtonText="Daha Sonra"
+    DefaultButton="Primary">
+
+    <ScrollViewer MaxHeight="500">
+        <StackPanel Spacing="16" Padding="16">
+
+            <!-- Header -->
+            <Border Background="#0078D4"
+                    BorderBrush="#005A9E"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="White">
+                        <Run Text="🚀 QuadroAI Pilot v"/>
+                        <Run x:Name="NewVersionText"/>
+                        <Run Text=" yayınlandı!"/>
+                    </TextBlock>
+                    <TextBlock Foreground="White">
+                        <Run Text="Mevcut sürümünüz: v"/>
+                        <Run x:Name="CurrentVersionText"/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- İstatistikler -->
+            <Border Background="#F3F3F3"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock Text="📦 Dosya Boyutu" FontSize="12" Foreground="#666666"/>
+                        <TextBlock x:Name="FileSizeText" FontWeight="SemiBold" FontSize="16"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="📅 Yayın Tarihi" FontSize="12" Foreground="#666666"/>
+                        <TextBlock x:Name="ReleaseDateText" FontWeight="SemiBold" FontSize="16"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Yenilikler -->
+            <Border Background="#F3F3F3"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="✨ Bu Sürümdeki Yenilikler"/>
+
+                    <TextBlock x:Name="ReleaseNotesText"
+                               TextWrapping="Wrap"
+                               Foreground="#333333"
+                               LineHeight="24"
+                               MaxHeight="150">
+                        <Run Text="• Yükleniyor..."/>
+                    </TextBlock>
+
+                    <HyperlinkButton x:Name="ReleaseNotesButton"
+                                   Content="📄 Tüm değişiklikleri görüntüle →"
+                                   Click="ReleaseNotesButton_Click"
+                                   Padding="0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Bilgilendirme -->
+            <Border Background="#E7F3FF"
+                    BorderBrush="#0078D4"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12">
+                <StackPanel Spacing="4">
+                    <TextBlock FontWeight="SemiBold" Text="ℹ️ Güncelleme Hakkında"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#333333" FontSize="12" Text="Güncelleme indirilip kurulurken QuadroAI Pilot kapatılacaktır. Açık işlerinizi kaydetmenizi öneririz."/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

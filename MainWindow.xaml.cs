@@ -15,9 +15,11 @@ using QuadroAIPilot.State;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WinRT.Interop;
+using System.Runtime.InteropServices;
 
 namespace QuadroAIPilot
 {
@@ -26,6 +28,28 @@ namespace QuadroAIPilot
     /// </summary>
     public sealed partial class MainWindow : Window, IDisposable
     {
+        #region P/Invoke Declarations
+        
+        [DllImport("user32.dll")]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+        
+        [DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        
+        private const int WM_HOTKEY = 0x0312;
+        private const int HOTKEY_ID = 9000;
+        
+        // Modifier keys
+        private const uint MOD_ALT = 0x0001;
+        private const uint MOD_CONTROL = 0x0002;
+        private const uint MOD_SHIFT = 0x0004;
+        private const uint MOD_WIN = 0x0008;
+        
+        // Virtual key codes
+        private const uint VK_Q = 0x51;
+        
+        #endregion
+        
         #region Specialized Managers
         
         private readonly UIManager _uiManager;
@@ -38,6 +62,7 @@ namespace QuadroAIPilot
         private readonly IWebViewManager _webViewManager;
         private readonly IDictationManager _dictationManager;
         private readonly WindowManager _windowManager;
+        private readonly ModeManager _modeManager;
         
         // Animation storyboards
         private Storyboard _voiceIndicatorAnimation;
@@ -48,7 +73,7 @@ namespace QuadroAIPilot
         #region State Variables
         
         private readonly IntPtr _hWnd;
-        private const int AppBarWidth = 300;
+        private const int DefaultWindowSize = 300; // Varsayılan pencere boyutu (kare)
         private bool _disposed = false;
 
         #endregion
@@ -66,18 +91,62 @@ namespace QuadroAIPilot
         
         public MainWindow()
         {
-            this.InitializeComponent();
-
-            // Get dependencies from ServiceContainer after XAML initialization
-            var modeManager = ServiceContainer.GetService<ModeManager>();
-            _dictationManager = new DictationManager(modeManager);
+            SimpleCrashLogger.Log("MainWindow constructor started");
             
-            // Create WebViewManager with the actual WebView2 control from XAML
-            if (webView == null)
+            try
             {
-                throw new InvalidOperationException("WebView2 control not found in XAML");
+                // WebView2 User Data Folder'ı ayarla - InitializeComponent'ten ÖNCE!
+                string userDataPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "QuadroAIPilot",
+                    "WebView2"
+                );
+                
+                // Dizin yoksa oluştur
+                Directory.CreateDirectory(userDataPath);
+                
+                // Environment variable'ı ayarla
+                Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataPath);
+                SimpleCrashLogger.Log($"WebView2 User Data Folder set to: {userDataPath}");
+                
+                this.InitializeComponent();
+                SimpleCrashLogger.Log("MainWindow.InitializeComponent completed");
             }
-            _webViewManager = new WebViewManager(webView, DispatcherQueue.GetForCurrentThread());
+            catch (Exception ex)
+            {
+                SimpleCrashLogger.LogException(ex, "MainWindow.InitializeComponent");
+                throw;
+            }
+
+            try
+            {
+                SimpleCrashLogger.Log("Getting services from container...");
+
+                // Get dependencies from ServiceContainer after XAML initialization
+                _modeManager = ServiceContainer.GetService<ModeManager>();
+                SimpleCrashLogger.Log("Got ModeManager");
+
+                _dictationManager = new DictationManager(_modeManager);
+                SimpleCrashLogger.Log("Created DictationManager");
+
+                // Set DictationManager in ModeManager
+                _modeManager.SetDictationManager(_dictationManager);
+                SimpleCrashLogger.Log("Set DictationManager in ModeManager");
+                
+                // Create WebViewManager with the actual WebView2 control from XAML
+                if (webView == null)
+                {
+                    SimpleCrashLogger.Log("ERROR: WebView2 control not found in XAML!");
+                    throw new InvalidOperationException("WebView2 control not found in XAML");
+                }
+                SimpleCrashLogger.Log("WebView2 control found in XAML");
+                
+                _webViewManager = new WebViewManager(webView, DispatcherQueue.GetForCurrentThread());
+                SimpleCrashLogger.Log("Created WebViewManager");
+                
+                // Register WebViewManager in ServiceLocator for global access
+                ServiceLocator.SetWebViewManager(_webViewManager);
+                SimpleCrashLogger.Log("WebViewManager registered in ServiceLocator");
             
             // Set WebViewManager in DictationManager
             _dictationManager.SetWebViewManager(_webViewManager);
@@ -85,12 +154,15 @@ namespace QuadroAIPilot
             // Set WebViewManager in CommandProcessor
             var commandProcessor = ServiceContainer.GetService<ICommandProcessor>();
             commandProcessor.SetWebViewManager(_webViewManager);
+
+            // Set ModeManager in CommandProcessor
+            commandProcessor.SetModeManager(_modeManager);
             
             // Create managers that need the window handle and WebView
             _hWnd = WindowNative.GetWindowHandle(this);
             
             // Create WindowManager with window handle
-            _windowManager = new WindowManager(_hWnd, AppBarWidth);
+            _windowManager = new WindowManager(_hWnd, DefaultWindowSize);
             
             // WebViewManager'a window referansını ver
             if (_webViewManager is WebViewManager webViewMgr)
@@ -100,6 +172,9 @@ namespace QuadroAIPilot
             
             // Create UIManager with WebViewManager and DispatcherQueue
             _uiManager = new UIManager(_webViewManager, DispatcherQueue.GetForCurrentThread());
+            
+            // Initialize settings manager early (before using it)
+            _settingsManager = SettingsManager.Instance;
             
             // Create WindowController with all required parameters
             _windowController = new WindowController(
@@ -119,8 +194,9 @@ namespace QuadroAIPilot
 
             // WindowManager AppBar operations
             _windowManager.SaveCurrentWorkArea();
-            // AppBar modu şeffaflığı engelliyor - geçici olarak devre dışı
-            // _windowManager.RegisterAppBar(_hWnd, AppBarWidth);
+
+            // Pencere pozisyonlama Window_Loaded event'inde yapılacak
+            // Bu, DisplayArea'nın doğru değerleri döndürmesini sağlar
             
             // Window'u görünür yap
             this.Activate();
@@ -143,14 +219,29 @@ namespace QuadroAIPilot
             // Window event handlers
             this.Closed += MainWindow_Closed;
 
+            // WinUI3'te Window'un Loaded event'i yok, Activated kullanılır
+            // Ancak pozisyonlama için bir kez çalışması gerekiyor
+            bool positionSet = false;
+            this.Activated += (sender, args) =>
+            {
+                if (!positionSet)
+                {
+                    positionSet = true;
+                    // Küçük bir gecikme ile pozisyonlamayı yap
+                    DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                    {
+                        Window_Loaded(sender, args);
+                    });
+                }
+            };
+
             // Setup coordinate tracking for WindowController
             SetupCoordinateTracking();
 
             // Event coordinator initialization
             _eventCoordinator.AttachEvents();
             
-            // Initialize theme and settings managers
-            _settingsManager = SettingsManager.Instance;
+            // Initialize theme manager
             _themeManager = ThemeManager.Instance;
             
             // Apply OS-appropriate backdrop
@@ -165,8 +256,8 @@ namespace QuadroAIPilot
             // Initialize animations
             InitializeAnimations();
 
-            // WebView initialization - on main thread
-            InitializeWebViewAsync();
+            // WebView initialization - on UI thread (must stay on UI thread!)
+            _ = InitializeWebViewAsyncSafe();
             
             // Multi-account email system initialization - handle async safely
             _ = Task.Run(async () =>
@@ -179,6 +270,14 @@ namespace QuadroAIPilot
             
             // Setup mode change event handler
             AppState.ModeChanged += OnModeChanged;
+            
+                SimpleCrashLogger.Log("MainWindow constructor completed successfully");
+            }
+            catch (Exception ex)
+            {
+                SimpleCrashLogger.LogException(ex, "MainWindow constructor");
+                throw;
+            }
         }
 
         #endregion
@@ -223,22 +322,40 @@ namespace QuadroAIPilot
                         await _webViewManager.ExecuteScriptAsync("toggleCommandPalette()");
                         e.Handled = true;
                         break;
-                        
+
                     case Windows.System.VirtualKey.D:
                         // Toggle dictation
                         await _webViewManager.ExecuteScriptAsync("toggleDikte()");
                         e.Handled = true;
                         break;
-                        
+
                     case Windows.System.VirtualKey.Enter:
                         // Execute command
                         await _webViewManager.ExecuteScriptAsync("executeCommand()");
                         e.Handled = true;
                         break;
-                        
+
                     case Windows.System.VirtualKey.L:
                         // Clear all
                         await _webViewManager.ExecuteScriptAsync("executeCommandAction('clearAll')");
+                        e.Handled = true;
+                        break;
+
+                    case Windows.System.VirtualKey.Number1:
+                        // Ctrl+1: Komut Modu
+                        _modeManager.Switch(AppState.UserMode.Command);
+                        e.Handled = true;
+                        break;
+
+                    case Windows.System.VirtualKey.Number2:
+                        // Ctrl+2: Yazı Modu
+                        _modeManager.Switch(AppState.UserMode.Writing);
+                        e.Handled = true;
+                        break;
+
+                    case Windows.System.VirtualKey.Number3:
+                        // Ctrl+3: AI Asistan Modu
+                        _modeManager.Switch(AppState.UserMode.AI);
                         e.Handled = true;
                         break;
                 }
@@ -349,10 +466,22 @@ namespace QuadroAIPilot
         {
             try
             {
+                LogService.LogDebug("[Settings] Dialog açılıyor...");
+                
+                // XamlRoot null kontrolü
+                if (this.Content?.XamlRoot == null)
+                {
+                    LogService.LogError("[Settings] XamlRoot null! Dialog açılamıyor.");
+                    return;
+                }
+                
                 var settingsDialog = new Dialogs.SettingsDialog();
                 settingsDialog.XamlRoot = this.Content.XamlRoot;
                 
+                LogService.LogDebug("[Settings] Dialog oluşturuldu, ShowAsync çağrılıyor...");
                 var result = await settingsDialog.ShowAsync();
+                
+                LogService.LogDebug($"[Settings] Dialog sonucu: {result}");
                 
                 if (result == ContentDialogResult.Primary)
                 {
@@ -361,6 +490,8 @@ namespace QuadroAIPilot
             }
             catch (Exception ex)
             {
+                LogService.LogError($"[Settings] Dialog hatası: {ex.Message}");
+                LogService.LogError($"[Settings] Stack Trace: {ex.StackTrace}");
                 Debug.WriteLine($"[MainWindow] Error showing settings dialog: {ex.Message}");
             }
         }
@@ -393,11 +524,46 @@ namespace QuadroAIPilot
         #endregion
 
         #region Window Event Handlers
-        
+
+        private void Window_Loaded(object sender, object e)
+        {
+            try
+            {
+                SimpleCrashLogger.Log("Window_Loaded event started");
+
+                // Pencere pozisyonunu ayarla (Window tam yüklendikten sonra)
+                SetupWindowPosition();
+
+                // UpdateService için XamlRoot'u ayarla (dialog'lar için gerekli)
+                try
+                {
+                    if (this.Content is FrameworkElement rootElement)
+                    {
+                        UpdateService.Instance.SetXamlRoot(rootElement.XamlRoot);
+                        Debug.WriteLine("[MainWindow] UpdateService XamlRoot ayarlandı");
+                    }
+                }
+                catch (Exception xamlRootEx)
+                {
+                    Debug.WriteLine($"[MainWindow] UpdateService XamlRoot ayarlanamadı: {xamlRootEx.Message}");
+                }
+
+                SimpleCrashLogger.Log("Window_Loaded event completed");
+            }
+            catch (Exception ex)
+            {
+                SimpleCrashLogger.LogException(ex, "Window_Loaded");
+                Debug.WriteLine($"[MainWindow] Window_Loaded error: {ex.Message}");
+            }
+        }
+
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
             try
             {
+                // Pencere konumunu ve boyutunu kaydet
+                SaveWindowBounds();
+                
                 Dispose();
                 Debug.WriteLine("[MainWindow] Window closed - Dispose called");
             }
@@ -405,6 +571,140 @@ namespace QuadroAIPilot
             {
                 Debug.WriteLine($"[MainWindow] Window close error: {ex.Message}");
             }
+        }
+        
+        /// <summary>
+        /// Saves current window position and size to settings
+        /// </summary>
+        private void SaveWindowBounds()
+        {
+            try
+            {
+                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(_hWnd);
+                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                
+                if (appWindow != null)
+                {
+                    var position = appWindow.Position;
+                    var size = appWindow.Size;
+                    
+                    _settingsManager.Settings.WindowBounds.X = position.X;
+                    _settingsManager.Settings.WindowBounds.Y = position.Y;
+                    _settingsManager.Settings.WindowBounds.Width = size.Width;
+                    _settingsManager.Settings.WindowBounds.Height = size.Height;
+                    
+                    // Ayarları kaydet
+                    _ = Task.Run(async () => await _settingsManager.SaveSettingsAsync());
+                    
+                    Debug.WriteLine($"[MainWindow] Window bounds saved: X={position.X}, Y={position.Y}, W={size.Width}, H={size.Height}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] Error saving window bounds: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Pencere pozisyonunu ayarlar ve ekranda görünür olmasını sağlar
+        /// </summary>
+        private void SetupWindowPosition()
+        {
+            try
+            {
+                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(_hWnd);
+                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+                if (appWindow == null)
+                {
+                    Debug.WriteLine("[MainWindow] AppWindow is null, skipping position setup");
+                    return;
+                }
+
+                // Kayıtlı pencere ayarlarını al
+                var bounds = _settingsManager.Settings.WindowBounds;
+
+                // Ekran boyutunu al
+                var displayArea = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(windowId, Microsoft.UI.Windowing.DisplayAreaFallback.Nearest);
+
+                if (displayArea == null || displayArea.WorkArea.Width <= 0 || displayArea.WorkArea.Height <= 0)
+                {
+                    Debug.WriteLine("[MainWindow] DisplayArea not ready, using default position");
+                    // DisplayArea hazır değilse, güvenli varsayılan değerler kullan
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32
+                    {
+                        X = 100,
+                        Y = 100,
+                        Width = bounds.Width,
+                        Height = bounds.Height
+                    });
+                }
+                else
+                {
+                    // Pencere pozisyonunu hesapla ve ekranda olmasını sağla
+                    var position = EnsureWindowIsOnScreen(bounds.X, bounds.Y, bounds.Width, bounds.Height, displayArea);
+
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32
+                    {
+                        X = position.X,
+                        Y = position.Y,
+                        Width = position.Width,
+                        Height = position.Height
+                    });
+
+                    Debug.WriteLine($"[MainWindow] Window positioned at: X={position.X}, Y={position.Y}, W={position.Width}, H={position.Height}");
+                }
+
+                // Pencereyi yeniden boyutlandırılabilir yap
+                var presenter = appWindow.Presenter as Microsoft.UI.Windowing.OverlappedPresenter;
+                if (presenter != null)
+                {
+                    presenter.IsResizable = true;
+                    presenter.IsMaximizable = true;
+                    presenter.IsMinimizable = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] Error setting up window position: {ex.Message}");
+                SimpleCrashLogger.LogException(ex, "SetupWindowPosition");
+            }
+        }
+
+        /// <summary>
+        /// Pencere pozisyonunun ekranda görünür olmasını sağlar
+        /// </summary>
+        private (int X, int Y, int Width, int Height) EnsureWindowIsOnScreen(int x, int y, int width, int height, Microsoft.UI.Windowing.DisplayArea displayArea)
+        {
+            var workAreaWidth = displayArea.WorkArea.Width;
+            var workAreaHeight = displayArea.WorkArea.Height;
+
+            // Minimum görünür alan (pencere en az %10'u görünür olmalı)
+            var minVisible = 100;
+
+            // Pencere boyutu ekrandan büyükse, ekrana sığdır
+            if (width > workAreaWidth)
+                width = workAreaWidth - 100;
+            if (height > workAreaHeight)
+                height = workAreaHeight - 100;
+
+            // Pencere sağ kenardan taşıyorsa
+            if (x + minVisible > workAreaWidth)
+                x = workAreaWidth - width - 50;
+
+            // Pencere alt kenardan taşıyorsa
+            if (y + minVisible > workAreaHeight)
+                y = workAreaHeight - height - 50;
+
+            // Pencere sol kenardan taşıyorsa
+            if (x + width < minVisible)
+                x = 50;
+
+            // Pencere üst kenardan taşıyorsa (negatif Y)
+            if (y < 0)
+                y = 50;
+
+            return (x, y, width, height);
         }
 
         #endregion
@@ -418,14 +718,14 @@ namespace QuadroAIPilot
         {
             await ErrorHandler.SafeExecuteAsync(async () =>
             {
-                Debug.WriteLine("[MainWindow] Multi-account email system starting...");
+                // Multi-account email system starting...
                 
                 // Simple email account manager initialization
                 var emailAccountManager = new Services.SimpleEmailAccountManager();
                 await emailAccountManager.InitializeAccountsAsync();
                 
                 var accounts = emailAccountManager.GetActiveAccounts();
-                Debug.WriteLine($"[MainWindow] {accounts.Count} email accounts loaded");
+                // {accounts.Count} email accounts loaded
                 
                 // Kişiselleştirilmiş selamlama göster
                 await ShowPersonalizedGreetingAsync();
@@ -623,6 +923,58 @@ namespace QuadroAIPilot
 
         #endregion
 
+        #region Window Subclassing for Hotkey
+        
+        private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+        private WndProcDelegate _wndProcDelegate;
+        private IntPtr _oldWndProc;
+        
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+        private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+        
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongW")]
+        private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
+        
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        
+        private const int GWL_WNDPROC = -4;
+        
+        private static IntPtr SetWindowLongPtrHelper(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
+        {
+            if (IntPtr.Size == 8)
+                return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
+            else
+                return new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
+        }
+        
+        private void SubclassWindow()
+        {
+            _wndProcDelegate = new WndProcDelegate(WndProc);
+            IntPtr wndProcPtr = Marshal.GetFunctionPointerForDelegate(_wndProcDelegate);
+            _oldWndProc = SetWindowLongPtrHelper(_hWnd, GWL_WNDPROC, wndProcPtr);
+        }
+        
+        private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+        {
+            if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
+            {
+                Debug.WriteLine("[MainWindow] Hotkey (Ctrl+Shift+Q) algılandı!");
+                
+                // UI thread'inde dikteyi başlat
+                DispatcherQueue.TryEnqueue(async () =>
+                {
+                    await _webViewManager?.ExecuteScript("toggleDikte()");
+                });
+                
+                return IntPtr.Zero;
+            }
+            
+            return CallWindowProc(_oldWndProc, hWnd, msg, wParam, lParam);
+        }
+        
+        #endregion
+
         #region IDisposable Implementation
 
         public void Dispose()
@@ -637,6 +989,10 @@ namespace QuadroAIPilot
             {
                 try
                 {
+                    // Unregister hotkey
+                    UnregisterHotKey(_hWnd, HOTKEY_ID);
+                    Debug.WriteLine("[MainWindow] Hotkey unregistered");
+                    
                     // Stop animations first
                     StopVoiceIndicatorAnimation();
                     
@@ -697,6 +1053,10 @@ namespace QuadroAIPilot
                     {
                         webView.NavigationCompleted -= WebView_NavigationCompleted;
                     }
+                    
+                    // Clear ServiceLocator
+                    ServiceLocator.Clear();
+                    Debug.WriteLine("[MainWindow] ServiceLocator cleared");
                     
                     _disposed = true;
                     Debug.WriteLine("[MainWindow] Dispose completed");
@@ -761,38 +1121,111 @@ namespace QuadroAIPilot
 
         private async void WebView_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
         {
-            Debug.WriteLine($"[MainWindow] WebView navigation completed");
-            
+            // WebView navigation completed
+
             // WebView navigation completion will be handled by WebViewManager
         }
 
-        private async void InitializeWebViewAsync()
+        /// <summary>
+        /// Safely initializes WebView2 on UI thread with error handling (async Task pattern)
+        /// CRITICAL: This method MUST run on UI thread - WebView2 is a COM object requiring STA thread
+        /// </summary>
+        private async Task InitializeWebViewAsyncSafe()
         {
             try
             {
-                Debug.WriteLine("[MainWindow] WebView initialization başlıyor...");
-                Debug.WriteLine($"[MainWindow] WebView instance: {webView != null}");
-                Debug.WriteLine($"[MainWindow] WebViewManager instance: {_webViewManager != null}");
+                // Call the internal initialization method
+                // This STAYS on UI thread (no Task.Run) - WebView2 requires UI thread
+                await InitializeWebViewAsyncInternal();
+            }
+            catch (Exception ex)
+            {
+                LogService.LogError($"[MainWindow] WebView initialization error: {ex.Message}", ex);
+                Debug.WriteLine($"[MainWindow] WebView initialization hatası: {ex.Message}");
+                Debug.WriteLine($"[MainWindow] Stack Trace: {ex.StackTrace}");
+
+                // Try fallback HTML on UI thread
+                try
+                {
+                    var basicHtml = @"
+                        <!DOCTYPE html>
+                        <html>
+                        <head><title>QuadroAI Pilot - Error Recovery</title></head>
+                        <body style='background:#1e1e1e;color:white;font-family:Segoe UI;padding:20px;'>
+                            <h1>🔄 QuadroAI Pilot - Recovery Mode</h1>
+                            <p style='color:#ff6b6b;'>WebView2 başlatılamadı. Lütfen aşağıdaki adımları deneyin:</p>
+                            <ul>
+                                <li>Microsoft Edge WebView2 Runtime kurulu olduğundan emin olun</li>
+                                <li>Uygulamayı yeniden başlatın</li>
+                                <li>Gerekirse bilgisayarınızı yeniden başlatın</li>
+                            </ul>
+                            <p style='color:#888; font-size:12px; margin-top:30px;'>Error: " + ex.Message + @"</p>
+                        </body>
+                        </html>";
+                    webView.NavigateToString(basicHtml);
+                    Debug.WriteLine("[MainWindow] Fallback HTML loaded successfully");
+                }
+                catch (Exception fallbackEx)
+                {
+                    LogService.LogError($"[MainWindow] Fallback HTML error: {fallbackEx.Message}", fallbackEx);
+                    Debug.WriteLine($"[MainWindow] Fallback HTML yükleme hatası: {fallbackEx.Message}");
+                }
+            }
+        }
+
+        private async Task InitializeWebViewAsyncInternal()
+        {
+            try
+            {
+                // WebView initialization başlıyor...
                 
-                // WebView2'yi özel ayarlarla başlat
+                // WebView2'yi başlat
+                // User data folder environment variable ile zaten ayarlandı
                 await webView.EnsureCoreWebView2Async();
-                
-                // Kullanılan Edge versiyonunu logla
-                Debug.WriteLine($"[MainWindow] WebView2 Version: {webView.CoreWebView2.Environment.BrowserVersionString}");
-                Debug.WriteLine($"[MainWindow] User Data Folder: {webView.CoreWebView2.Environment.UserDataFolder}");
                 
                 // CoreWebView2 başlatıldıktan sonra ayarları yapılandır
                 if (webView.CoreWebView2 != null)
                 {
+                    // WebView2 runtime versiyon kontrolü
+                    try
+                    {
+                        var webView2Version = CoreWebView2Environment.GetAvailableBrowserVersionString();
+                        LogService.LogDebug($"[MainWindow] WebView2 Runtime Version: {webView2Version}");
+                        
+                        // Minimum versiyon kontrolü (93.0.954.0)
+                        if (!string.IsNullOrEmpty(webView2Version))
+                        {
+                            // Version numarasını parse et
+                            var versionParts = webView2Version.Split(' ')[0].Split('.');
+                            if (versionParts.Length >= 3)
+                            {
+                                if (int.TryParse(versionParts[0], out int major))
+                                {
+                                    if (major < 93)
+                                    {
+                                        LogService.LogWarning($"[MainWindow] WebView2 Runtime version too old: {webView2Version}. Minimum required: 93.0.954.0");
+                                        // WebViewManager henüz hazır olmayabilir, bu yüzden doğrudan JavaScript çalıştır
+                                        await webView.CoreWebView2.ExecuteScriptAsync(
+                                            "appendFeedback('⚠️ WebView2 Runtime versiyonu eski. Web Speech API düzgün çalışmayabilir.')");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.LogDebug($"[MainWindow] WebView2 version check failed: {ex.Message}");
+                    }
+                    
                     // WebView2 ayarları
                     webView.CoreWebView2.Settings.AreDefaultScriptDialogsEnabled = true;
                     webView.CoreWebView2.Settings.IsScriptEnabled = true;
                     webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
                     webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
-                    
+
                     // WebView2 arka planını şeffaf yap
                     webView.DefaultBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
-                    
+
                     // WebView2 için özel arka plan stili
                     await webView.CoreWebView2.ExecuteScriptAsync(@"
                         document.body.style.backgroundColor = 'transparent';
@@ -857,6 +1290,20 @@ namespace QuadroAIPilot
                 var browserIntegrationService = ServiceContainer.GetService<IBrowserIntegrationService>();
                 await browserIntegrationService.StartAsync();
                 Debug.WriteLine("[MainWindow] Browser Integration Service başlatıldı");
+                
+                // Register global hotkey (Ctrl+Shift+Q)
+                bool hotkeyRegistered = RegisterHotKey(_hWnd, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT, VK_Q);
+                if (hotkeyRegistered)
+                {
+                    Debug.WriteLine("[MainWindow] Hotkey (Ctrl+Shift+Q) başarıyla kaydedildi");
+                    
+                    // Subclass window to handle WM_HOTKEY messages
+                    SubclassWindow();
+                }
+                else
+                {
+                    Debug.WriteLine("[MainWindow] Hotkey kaydedilemedi!");
+                }
             }
             catch (Exception ex)
             {
