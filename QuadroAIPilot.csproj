@@ -168,10 +168,15 @@
 		<None Update="App.config">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
-		
-		
 	</ItemGroup>
-  
+
+	<!-- Embedded Resource: Build version bilgisi -->
+	<ItemGroup>
+		<EmbeddedResource Include="Properties\BuildInfo.txt">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
+
 	<ItemGroup>
 		<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
 	</ItemGroup>

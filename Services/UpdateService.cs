@@ -693,43 +693,11 @@ namespace QuadroAIPilot.Services
         }
 
         /// <summary>
-        /// Mevcut uygulama versiyonunu al (Hibrit format: "1.2.1 (Build 19)")
+        /// Mevcut uygulama versiyonunu al (BuildInfoHelper'dan okur)
         /// </summary>
         public string GetCurrentVersion()
         {
-            try
-            {
-                // Assembly versiyonunu al (Major.Minor.Build format)
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
-                var displayVersion = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "1.2.1";
-
-                // Registry'den build numarasını oku (Inno Setup tarafından yazılmış)
-                try
-                {
-                    using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\QuadroAI\QuadroAIPilot"))
-                    {
-                        if (key != null)
-                        {
-                            var buildNumber = key.GetValue("BuildNumber") as string;
-                            if (!string.IsNullOrEmpty(buildNumber))
-                            {
-                                return $"{displayVersion} (Build {buildNumber})";
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    // Registry okunamazsa sadece versiyon döndür
-                }
-
-                return displayVersion;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "[UpdateService] Versiyon bilgisi alınamadı: {Message}", ex.Message);
-                return "1.2.1";
-            }
+            return Helpers.BuildInfoHelper.GetFullVersion();
         }
 
         /// <summary>
