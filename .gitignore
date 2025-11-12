@@ -376,3 +376,9 @@ build_output*.txt
 setup_build_output.txt
 Setup/build_output*.txt
 Setup/setup_build*.txt
+# Output dosyaları (setup exe'ler)
+Output/*.exe
+Output/*.msi
+
+# Build artifacts
+Setup/Prerequisites/*.exe
