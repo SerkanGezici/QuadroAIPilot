@@ -127,7 +127,6 @@ namespace QuadroAIPilot.Dialogs
             // Update system event handlers
             AutoUpdateToggle.Toggled += AutoUpdateToggle_Toggled;
             CheckUpdatesButton.Click += CheckUpdates_Click;
-            ReleaseNotesLink.Click += ReleaseNotes_Click;
 
             // Load update info
             LoadUpdateInfo();
@@ -1014,22 +1013,6 @@ namespace QuadroAIPilot.Dialogs
                     XamlRoot = this.XamlRoot
                 };
                 await errorDialog.ShowAsync();
-            }
-        }
-
-        /// <summary>
-        /// Release notes linkine tıklandığında
-        /// </summary>
-        private void ReleaseNotes_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var updateService = Services.UpdateService.Instance;
-                updateService.OpenReleasePage();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"ReleaseNotes_Click error: {ex.Message}");
             }
         }
 
