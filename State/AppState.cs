@@ -26,12 +26,24 @@ namespace QuadroAIPilot.State
             AI
         }
 
+        // AI Provider (ChatGPT, Claude, ilerde Gemini/Codex eklenebilir)
+        public enum AIProvider
+        {
+            ChatGPT,    // Python browser automation (default)
+            Claude,     // Claude CLI (fallback)
+            Gemini,     // İleride eklenebilir
+            Codex       // İleride eklenebilir
+        }
+
         private static ApplicationState _currentState = ApplicationState.Idle;
         private static UserMode _currentMode = UserMode.Command;
+        private static AIProvider _currentAIProvider = AIProvider.ChatGPT;  // Default: ChatGPT
+        private static AIProvider _defaultAIProvider = AIProvider.ChatGPT;  // Settings'den yüklenir
 
         // Olaylar
         public static event EventHandler<ApplicationState> StateChanged;
         public static event EventHandler<UserMode> ModeChanged;
+        public static event EventHandler<AIProvider> AIProviderChanged;
 
         public static ApplicationState CurrentState
         {
@@ -67,5 +79,47 @@ namespace QuadroAIPilot.State
 
         public static void SetError() => CurrentState = ApplicationState.Error;
         public static void Reset() => CurrentState = ApplicationState.Idle;
+
+        /// <summary>
+        /// Aktif AI Provider (sesli komutla geçici değiştirilebilir)
+        /// </summary>
+        public static AIProvider CurrentAIProvider
+        {
+            get => _currentAIProvider;
+            set
+            {
+                if (_currentAIProvider != value)
+                {
+                    _currentAIProvider = value;
+                    var handler = AIProviderChanged;
+                    handler?.Invoke(null, _currentAIProvider);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Varsayılan AI Provider (Settings'den yüklenir, uygulama başlangıcında set edilir)
+        /// </summary>
+        public static AIProvider DefaultAIProvider
+        {
+            get => _defaultAIProvider;
+            set
+            {
+                _defaultAIProvider = value;
+                // Default değişince current'i de güncelle (override yoksa)
+                if (_currentAIProvider == _defaultAIProvider)
+                {
+                    CurrentAIProvider = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// AI Provider'ı default'a sıfırla (mod değiştirmeden sonra)
+        /// </summary>
+        public static void ResetAIProviderToDefault()
+        {
+            CurrentAIProvider = _defaultAIProvider;
+        }
     }
 }

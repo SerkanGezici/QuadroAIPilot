@@ -24,6 +24,9 @@ namespace QuadroAIPilot.Managers
         private DispatcherQueue? _dispatcherQueue;
         private bool _disposed = false;
         private Microsoft.UI.Xaml.Window? _mainWindow;
+        // DÜZELTME: Initialization tamamlanma flag'i
+        private volatile bool _isInitialized = false;
+        private readonly object _initLock = new object();
 
         public event EventHandler<string>? MessageReceived;
         public event EventHandler<TextareaPositionEventArgs>? TextareaPositionChanged;
@@ -42,24 +45,39 @@ namespace QuadroAIPilot.Managers
 
         public async Task InitializeAsync()
         {
-            // LogService.LogDebug("[WebViewManager] InitializeAsync başladı");
-            
+            // DÜZELTME: Double initialization önleme
+            lock (_initLock)
+            {
+                if (_isInitialized)
+                {
+                    LogService.LogWarning("[WebViewManager] Already initialized, skipping");
+                    return;
+                }
+            }
+
             await ErrorHandler.SafeExecuteAsync(async () =>
             {
-                if (_disposed || _webView == null) 
+                if (_disposed || _webView == null)
                 {
-                    // LogService.LogDebug($" Disposed: {_disposed}, WebView null: {_webView == null}");
                     return;
                 }
 
                 // CoreWebView2 zaten MainWindow'da başlatıldı, kontrol et
                 if (_webView.CoreWebView2 == null)
                 {
-                    // LogService.LogDebug("[WebViewManager] CoreWebView2 henüz hazır değil, başlatılıyor...");
+                    LogService.LogDebug("[WebViewManager] CoreWebView2 henüz hazır değil, başlatılıyor...");
                     await _webView.EnsureCoreWebView2Async();
                 }
-                // LogService.LogDebug("[WebViewManager] CoreWebView2 hazır!");
-                
+
+                // DÜZELTME: CoreWebView2 null check
+                if (_webView.CoreWebView2 == null)
+                {
+                    LogService.LogError("[WebViewManager] CoreWebView2 initialization failed!");
+                    return;
+                }
+
+                LogService.LogDebug("[WebViewManager] CoreWebView2 hazır!");
+
                 // WebView2 güvenlik ve audio izinleri ayarla
                 ConfigureWebViewPermissions();
 
@@ -99,7 +117,17 @@ namespace QuadroAIPilot.Managers
                 }
 
                 _webView.NavigationCompleted += WebView_NavigationCompleted;
-                // LogService.LogDebug("[WebViewManager] NavigationCompleted event handler eklendi");
+
+                // DÜZELTME: Initialization tamamlandı flag'ini set et
+                lock (_initLock)
+                {
+                    _isInitialized = true;
+                }
+
+                LogService.LogDebug("[WebViewManager] Initialization completed successfully");
+
+                // DÜZELTME: Pending mesajları flush et
+                FlushPendingMessages();
             }, "WebViewManager.InitializeAsync");
         }
 
@@ -537,6 +565,20 @@ namespace QuadroAIPilot.Managers
                     LogService.LogInfo($"[WebViewManager] Sending modeChanged message: {json}");
                 }
 
+                // DÜZELTME: Initialization kontrolü
+                if (!_isInitialized)
+                {
+                    _pendingMessages.Enqueue(json);
+                    LogService.LogDebug($"[WebViewManager] Not initialized yet, message queued (Queue size: {_pendingMessages.Count})");
+
+                    // Timer'ı başlat (henüz başlatılmadıysa)
+                    if (_messageFlushTimer == null)
+                    {
+                        _messageFlushTimer = new System.Threading.Timer(_ => FlushPendingMessages(), null, 500, 500);
+                    }
+                    return;
+                }
+
                 // WebView null kontrolü - CoreWebView2'ye ERİŞME! (COM exception olur)
                 if (_webView == null)
                 {
@@ -598,6 +640,13 @@ namespace QuadroAIPilot.Managers
 
         private void FlushPendingMessages()
         {
+            // DÜZELTME: Initialization kontrolü
+            if (!_isInitialized)
+            {
+                LogService.LogDebug("[WebViewManager] Not initialized yet, flush postponed");
+                return;
+            }
+
             // Timer background thread'de çalışır, UI thread'e geçmemiz lazım
             if (_dispatcherQueue == null)
             {
@@ -609,8 +658,8 @@ namespace QuadroAIPilot.Managers
             {
                 try
                 {
-                    // WebView hazır mı kontrol et
-                    if (_webView?.CoreWebView2 == null || _pendingMessages.IsEmpty)
+                    // DÜZELTME: Double-check initialization ve WebView hazır mı kontrol et
+                    if (!_isInitialized || _webView?.CoreWebView2 == null || _pendingMessages.IsEmpty)
                     {
                         return;
                     }

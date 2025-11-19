@@ -8,7 +8,6 @@
 		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
 		<Platforms>x86;x64;ARM64</Platforms>
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
-		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
 		<UseWinUI>true</UseWinUI>
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<Nullable>annotations</Nullable>
@@ -105,6 +104,12 @@
 		<!-- Icon dosyalarını çıktıya kopyala -->
 		<None Update="Assets\icon.ico">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+
+		<!-- Python ChatGPT Bridge dosyalarını çıktıya kopyala -->
+		<None Update="PythonBridge\**\*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
 		</None>
 
 		<!-- BrowserExtensions - Sadece gerekli klasörler (Chrome, Edge) ve destek dosyaları -->

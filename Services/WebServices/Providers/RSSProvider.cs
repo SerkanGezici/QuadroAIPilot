@@ -31,10 +31,22 @@ namespace QuadroAIPilot.Services.WebServices.Providers
 
         public RSSProvider(HttpClient httpClient = null, IGoogleTranslateService translateService = null)
         {
-            _httpClient = httpClient ?? new HttpClient();
+            _httpClient = httpClient ?? new HttpClient(new SocketsHttpHandler
+            {
+                // DÜZELTME: Connection pooling ve socket lifecycle optimizasyonu
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5), // 5 dakikada bir connection yenilenir
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2), // 2 dakika idle sonrası kapat
+                MaxConnectionsPerServer = 10, // Sunucu başına max 10 connection
+                EnableMultipleHttp2Connections = true, // HTTP/2 için çoklu bağlantı
+                KeepAlivePingDelay = TimeSpan.FromSeconds(30), // 30 saniyede bir keepalive ping
+                KeepAlivePingTimeout = TimeSpan.FromSeconds(10), // Ping timeout 10 saniye
+                ConnectTimeout = TimeSpan.FromSeconds(10) // Bağlantı timeout 10 saniye
+            });
+
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("QuadroAIPilot/1.0");
-            _httpClient.Timeout = TimeSpan.FromSeconds(30); // Timeout'u artır
-            
+            _httpClient.DefaultRequestHeaders.Connection.ParseAdd("keep-alive"); // Keep-alive header ekle
+            _httpClient.Timeout = TimeSpan.FromSeconds(30); // Global timeout 30 saniye
+
             _feedSources = InitializeFeedSources();
             _sourceHealth = new Dictionary<string, SourceHealthInfo>();
             _translateService = translateService;
@@ -662,11 +674,25 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                 catch (Exception ex)
                 {
                     currentRetry++;
-                    
+
+                    // DÜZELTME: Exception türüne göre farklı işlemler
+                    var errorType = ex switch
+                    {
+                        XmlException => "XML Parse Error",
+                        HttpRequestException => "HTTP Request Error",
+                        TaskCanceledException => "Timeout",
+                        OperationCanceledException => "Cancelled",
+                        System.Net.Sockets.SocketException => "Socket Error",
+                        System.IO.IOException => "IO Error",
+                        _ => "Unknown Error"
+                    };
+
+                    LogService.LogDebug($"[RSSProvider] {errorType} in {source.Name}: {ex.Message}");
+
                     // XML parse hatası ise alternatif yöntem dene
                     if (ex is XmlException xmlEx)
                     {
-                        LogService.LogDebug($"[RSSProvider] XML parse hatası, basit parser deneniyor: {xmlEx.Message}");
+                        LogService.LogDebug($"[RSSProvider] XML parse hatası, basit parser deneniyor");
                         var simpleFeed = await TrySimpleXmlParsingAsync(source.FeedUrl, source);
                         if (simpleFeed != null)
                         {
@@ -674,7 +700,27 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                             return simpleFeed;
                         }
                     }
-                    
+
+                    // Socket/IO exception ise direkt retry yapma, kaynak sağlığını işaretle
+                    if (ex is System.Net.Sockets.SocketException or System.IO.IOException)
+                    {
+                        LogService.LogWarning($"[RSSProvider] Socket/IO error in {source.Name}, marking unhealthy");
+                        RecordSourceFailure(source.FeedUrl, $"{errorType}: {ex.Message}");
+                        return null; // Retry yapma
+                    }
+
+                    // Timeout exception ise kısa retry yap
+                    if (ex is TaskCanceledException or OperationCanceledException)
+                    {
+                        if (currentRetry < maxRetries)
+                        {
+                            var delayMs = 500; // Timeout için kısa gecikme
+                            LogService.LogDebug($"[RSSProvider] Timeout retry {currentRetry}/{maxRetries} - {delayMs}ms bekle");
+                            await Task.Delay(delayMs);
+                            continue;
+                        }
+                    }
+
                     // Son deneme değilse, exponential backoff ile bekle
                     if (currentRetry < maxRetries)
                     {
@@ -683,17 +729,17 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                         await Task.Delay(delayMs);
                         continue;
                     }
-                    
+
                     // RSS hatalarını sessizce logla - kullanıcıyı rahatsız etme
                     if (!ex.Message.Contains("404") && !ex.Message.Contains("DTD"))
                     {
-                        LogService.LogDebug($"[RSSProvider] RSS feed hatası ({source.Name}): {ex.Message}");
+                        LogService.LogDebug($"[RSSProvider] RSS feed hatası ({source.Name}): {errorType}");
                     }
                     source.FailureCount++;
-                    
+
                     // Başarısız kaynak kaydı
-                    RecordSourceFailure(source.FeedUrl, ex.Message);
-                    
+                    RecordSourceFailure(source.FeedUrl, $"{errorType}: {ex.Message}");
+
                     return null;
                 }
             }

@@ -108,6 +108,19 @@ namespace QuadroAIPilot.Dialogs
                     _tempSettings.TTSVoice = item.Tag.ToString();
                 }
             };
+
+            // AI Provider selection
+            AIProviderComboBox.SelectionChanged += (s, e) =>
+            {
+                if (AIProviderComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
+                {
+                    var providerStr = item.Tag.ToString();
+                    if (Enum.TryParse<QuadroAIPilot.State.AppState.AIProvider>(providerStr, out var provider))
+                    {
+                        _tempSettings.DefaultAIProvider = provider;
+                    }
+                }
+            };
             
             // Dialog buttons
             this.PrimaryButtonClick += async (s, e) => 
@@ -157,6 +170,16 @@ namespace QuadroAIPilot.Dialogs
                 if (item.Tag?.ToString() == settings.TTSVoice)
                 {
                     VoiceComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+
+            // AI Provider selection
+            foreach (ComboBoxItem item in AIProviderComboBox.Items)
+            {
+                if (item.Tag?.ToString() == settings.DefaultAIProvider.ToString())
+                {
+                    AIProviderComboBox.SelectedItem = item;
                     break;
                 }
             }

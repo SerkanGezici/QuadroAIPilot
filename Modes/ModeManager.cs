@@ -175,6 +175,35 @@ namespace QuadroAIPilot
                 return true;
             }
 
+            // AI Provider değiştirme komutları (sadece AI modundayken)
+            if (AppState.CurrentMode == AppState.UserMode.AI)
+            {
+                if (lowerText.Contains("chatgpt") && (lowerText.Contains("geç") || lowerText.Contains("kullan")))
+                {
+                    LogService.LogInfo("[ModeManager] Switching to ChatGPT");
+                    AppState.CurrentAIProvider = AppState.AIProvider.ChatGPT;
+
+                    _ = Task.Run(async () =>
+                    {
+                        await TextToSpeechService.SpeakTextAsync("ChatGPT moduna geçildi.");
+                    });
+
+                    return true;
+                }
+                else if (lowerText.Contains("claude") && (lowerText.Contains("geç") || lowerText.Contains("kullan")))
+                {
+                    LogService.LogInfo("[ModeManager] Switching to Claude");
+                    AppState.CurrentAIProvider = AppState.AIProvider.Claude;
+
+                    _ = Task.Run(async () =>
+                    {
+                        await TextToSpeechService.SpeakTextAsync("Claude moduna geçildi.");
+                    });
+
+                    return true;
+                }
+            }
+
             // Mod geçiş komutu değilse aktif moda gönder
             return _active.HandleSpeech(text);
         }

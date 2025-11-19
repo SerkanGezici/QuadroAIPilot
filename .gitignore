@@ -382,3 +382,4 @@ Output/*.msi
 
 # Build artifacts
 Setup/Prerequisites/*.exe
+PythonBridge/chrome-profile/

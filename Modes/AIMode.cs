@@ -207,64 +207,128 @@ namespace QuadroAIPilot.Modes
                     Timestamp = DateTime.Now
                 });
 
-                // 2. "Claude düşünüyor..." göster
+                // 2. Provider'a göre "düşünüyor..." mesajı
+                var currentProvider = AppState.CurrentAIProvider;
+
                 SendToWebView("aiThinking", new
                 {
-                    message = "🤔 Claude düşünüyor..."
+                    message = "🤔 Quadro Asistan düşünüyor..."
                 });
 
-                // 3. Claude'a gönder
-                LogService.LogInfo($"[AIMode] Sending to Claude CLI: '{userInput}'");
+                // 3. Provider'a gönder (fallback ile)
+                var providerName = currentProvider == AppState.AIProvider.ChatGPT ? "ChatGPT" : "Claude";
+                LogService.LogInfo($"[AIMode] Sending to {providerName}: '{userInput}'");
                 var startTime = DateTime.Now;
-                var response = await _claudeService.SendMessageAsync(userInput);
+
+                // Smart fallback mekanizması
+                object response = null;
+                bool isError = false;
+                string errorMessage = null;
+                string content = null;
+
+                if (currentProvider == AppState.AIProvider.ChatGPT)
+                {
+                    // ChatGPT'ye gönder
+                    if (await ChatGPTBridgeService.IsAvailableAsync())
+                    {
+                        var chatgptResponse = await ChatGPTBridgeService.SendMessageAsync(userInput);
+                        isError = chatgptResponse.IsError;
+                        errorMessage = chatgptResponse.ErrorMessage;
+                        content = chatgptResponse.Content;
+                        response = chatgptResponse;
+
+                        if (isError)
+                        {
+                            LogService.LogWarning($"[AIMode] ChatGPT failed, falling back to Claude: {errorMessage}");
+                            await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sisteme geçiyor.");
+
+                            // Fallback: Claude
+                            var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                            isError = claudeResponse.IsError;
+                            errorMessage = claudeResponse.ErrorMessage;
+                            content = claudeResponse.Content;
+                            response = claudeResponse;
+                        }
+                    }
+                    else
+                    {
+                        LogService.LogWarning("[AIMode] ChatGPT not available, falling back to Claude");
+                        await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sistem kullanıyor.");
+
+                        // Fallback: Claude
+                        var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                        isError = claudeResponse.IsError;
+                        errorMessage = claudeResponse.ErrorMessage;
+                        content = claudeResponse.Content;
+                        response = claudeResponse;
+                    }
+                }
+                else
+                {
+                    // Claude'a gönder
+                    var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                    isError = claudeResponse.IsError;
+                    errorMessage = claudeResponse.ErrorMessage;
+                    content = claudeResponse.Content;
+                    response = claudeResponse;
+                }
+
                 var duration = (DateTime.Now - startTime).TotalSeconds;
 
-                LogService.LogInfo($"[AIMode] Claude response time: {duration:F1} seconds");
-                LogService.LogInfo($"[AIMode] Response IsError: {response.IsError}");
-                LogService.LogInfo($"[AIMode] Response Content Length: {response.Content?.Length ?? 0}");
+                LogService.LogInfo($"[AIMode] AI response time: {duration:F1} seconds");
+                LogService.LogInfo($"[AIMode] Response IsError: {isError}");
+                LogService.LogInfo($"[AIMode] Response Content Length: {content?.Length ?? 0}");
 
                 // 4. Thinking indicator'ü kapat
                 SendToWebView("aiThinkingDone", new { });
 
                 // 5. Yanıtı işle
-                if (response.IsError)
+                if (isError || string.IsNullOrWhiteSpace(content))
                 {
-                    // Hata durumu
-                    LogService.LogError($"[AIMode] Claude error: {response.ErrorMessage}");
+                    // Hata durumu veya boş yanıt
+                    var errorMsg = isError ? errorMessage : "Quadro Asistan yanıt veremedi";
+
+                    // Hata mesajlarında ChatGPT/OpenAI/Claude kelimelerini Quadro ile değiştir
+                    errorMsg = errorMsg.Replace("ChatGPT", "Quadro Asistan")
+                                       .Replace("OpenAI", "Quadro")
+                                       .Replace("Claude", "Quadro Asistan")
+                                       .Replace("GPT", "Quadro");
+
+                    LogService.LogError($"[AIMode] AI error: {errorMsg}");
 
                     SendToWebView("aiError", new
                     {
-                        message = $"❌ {response.ErrorMessage}"
+                        message = $"❌ {errorMsg}"
                     });
 
                     await TextToSpeechService.SpeakTextAsync(
-                        "Claude yanıt vermedi. Lütfen tekrar deneyin.");
+                        "Quadro Asistan yanıt vermedi. Lütfen tekrar deneyin.");
                 }
                 else
                 {
                     // Başarılı yanıt
-                    LogService.LogInfo($"[AIMode] Claude response received ({response.Content.Length} chars, {duration:F1}s)");
+                    LogService.LogInfo($"[AIMode] AI response received ({content.Length} chars, {duration:F1}s)");
 
                     // Conversation history'ye ekle
                     _conversationHistory.Add(new ConversationTurn
                     {
                         Role = "assistant",
-                        Content = response.Content,
+                        Content = content,
                         Timestamp = DateTime.Now
                     });
 
                     // WebView'a yanıtı ekle
                     SendToWebView("aiAssistantMessage", new
                     {
-                        content = response.Content,
+                        content = content,
                         duration = duration,
                         timestamp = DateTime.Now
                     });
 
                     // TTS ile seslendir (ilk 2-3 cümle)
-                    if (!string.IsNullOrWhiteSpace(response.Content))
+                    if (!string.IsNullOrWhiteSpace(content))
                     {
-                        var ttsText = GetTTSExcerpt(response.Content);
+                        var ttsText = GetTTSExcerpt(content);
                         LogService.LogInfo($"[AIMode] TTS text: '{ttsText}'");
                         await TextToSpeechService.SpeakTextAsync(ttsText);
                     }

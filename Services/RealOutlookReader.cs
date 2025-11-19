@@ -1462,22 +1462,35 @@ namespace QuadroAIPilot.Services
 
                     LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict() sonucu: {(todayItems == null ? "NULL" : "SUCCESS")}");
 
+                    // DÜZELTME: Restrict() sonucunu kontrol et
+                    bool restrictFailed = false;
+                    int restrictCount = 0;
+
                     if (todayItems != null)
                     {
                         try
                         {
-                            int restrictCount = todayItems.Count;
+                            restrictCount = todayItems.Count;
                             LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict().Count = {restrictCount}");
+
+                            // DÜZELTME: Int32.MaxValue kontrolü (Outlook bug'ı)
+                            if (restrictCount == int.MaxValue || restrictCount < 0 || restrictCount > 10000)
+                            {
+                                LogService.LogWarning($"[RealOutlookReader] Restrict() invalid count: {restrictCount} - Manuel sayıma geçiliyor");
+                                restrictFailed = true;
+                            }
                         }
                         catch (Exception countEx)
                         {
                             LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Count property hatası: {countEx.Message}");
+                            restrictFailed = true;
                         }
                     }
 
-                    if (todayItems == null)
+                    // Restrict NULL veya hatalı sonuç döndüyse manuel sayım
+                    if (todayItems == null || restrictFailed)
                     {
-                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict NULL döndü, MANUEL SAYIM başlatılıyor...");
+                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - MANUEL SAYIM başlatılıyor...");
 
                         // FALLBACK: Manuel sayım
                         int manualCount = 0;
@@ -1519,22 +1532,32 @@ namespace QuadroAIPilot.Services
                         }
 
                         LogService.LogInfo($"[RealOutlookReader] Manuel sayım tamamlandı: {manualCount} toplantı bulundu");
+
+                        // Cleanup
+                        if (todayItems != null) Marshal.ReleaseComObject(todayItems);
                         Marshal.ReleaseComObject(items);
                         Marshal.ReleaseComObject(calendar);
 
                         return manualCount;
                     }
 
-                    // Count property güvenilir değil (Int32.MaxValue dönebilir), iteration yap
+                    // DÜZELTME: Restrict başarılı ama yine de manuel doğrulama yap
                     int count = 0;
                     try
                     {
-                        LogService.LogInfo("[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Manuel iteration başlıyor...");
+                        LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Restrict başarılı ({restrictCount} sonuç), manuel doğrulama yapılıyor...");
 
-                        foreach (dynamic appt in todayItems)
+                        // DÜZELTME: For loop kullan (foreach yerine, daha güvenli)
+                        int maxIterations = Math.Min(restrictCount, 100); // Max 100 item kontrol et
+
+                        for (int i = 1; i <= maxIterations; i++)
                         {
+                            dynamic appt = null;
                             try
                             {
+                                appt = todayItems[i];
+                                if (appt == null) continue;
+
                                 DateTime start = appt.Start;
 
                                 // MANUEL DOĞRULAMA: Sadece bugüne ait olanları say
@@ -1549,23 +1572,26 @@ namespace QuadroAIPilot.Services
                                     string subject = appt.Subject ?? "Başlık yok";
                                     LogService.LogInfo($"[RealOutlookReader] ✗ ATLA: '{subject}' - {start:yyyy-MM-dd} (bugün değil)");
                                 }
-
-                                try { Marshal.ReleaseComObject(appt); } catch { }
                             }
                             catch (Exception itemEx)
                             {
-                                LogService.LogInfo($"[RealOutlookReader] Item kontrol hatası: {itemEx.Message}");
+                                LogService.LogInfo($"[RealOutlookReader] Item {i} kontrol hatası: {itemEx.Message}");
                             }
-
-                            // Güvenlik limiti
-                            if (count > 100) break;
+                            finally
+                            {
+                                if (appt != null)
+                                {
+                                    try { Marshal.ReleaseComObject(appt); }
+                                    catch { }
+                                }
+                            }
                         }
 
-                        LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Manuel iteration tamamlandı: {count} toplantı");
+                        LogService.LogInfo($"[RealOutlookReader] GetTodayMeetingCountOnlyAsync - Manuel doğrulama tamamlandı: {count} toplantı");
                     }
                     catch (Exception iterEx)
                     {
-                        LogService.LogInfo($"[RealOutlookReader] Iteration hatası: {iterEx.Message}");
+                        LogService.LogWarning($"[RealOutlookReader] Iteration hatası: {iterEx.Message}");
                         count = 0;
                     }
                     

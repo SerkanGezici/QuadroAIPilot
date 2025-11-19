@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
+using QuadroAIPilot.State; // AIProvider enum için
 
 namespace QuadroAIPilot.Managers
 {
@@ -48,6 +49,9 @@ namespace QuadroAIPilot.Managers
         public bool AutoUpdateEnabled { get; set; } = true; // Otomatik güncelleme aktif mi?
         public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue; // Son güncelleme kontrol zamanı
         public string SkippedVersion { get; set; } = string.Empty; // Atlanacak versiyon
+
+        // AI Provider ayarları
+        public AppState.AIProvider DefaultAIProvider { get; set; } = AppState.AIProvider.ChatGPT; // Varsayılan AI Provider
         
         public AppSettings Clone()
         {
@@ -70,7 +74,8 @@ namespace QuadroAIPilot.Managers
                 },
                 AutoUpdateEnabled = this.AutoUpdateEnabled,
                 LastUpdateCheck = this.LastUpdateCheck,
-                SkippedVersion = this.SkippedVersion
+                SkippedVersion = this.SkippedVersion,
+                DefaultAIProvider = this.DefaultAIProvider
             };
         }
     }

@@ -169,6 +169,7 @@ namespace QuadroAIPilot.Services
         /// </summary>
         private async Task<(bool success, string output, string error)> ExecuteClaudeCLIAsync(string flag, string tempFile)
         {
+            Process process = null;
             try
             {
                 LogService.LogInfo($"[ClaudeCLI] Starting process with flag '{flag}'");
@@ -191,35 +192,65 @@ namespace QuadroAIPilot.Services
 
                 LogService.LogInfo($"[ClaudeCLI] Executing: {psi.FileName} {psi.Arguments}");
 
-                using var process = Process.Start(psi);
+                process = Process.Start(psi);
                 if (process == null)
                 {
                     LogService.LogError("[ClaudeCLI] Failed to start process");
                     return (false, null, "Process başlatılamadı");
                 }
 
-                // Output ve error'u async olarak oku
+                // DÜZELTME: CancellationToken ile timeout kontrolü
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(180));
+
+                // Output ve error'u async olarak oku (timeout ile)
                 var outputTask = process.StandardOutput.ReadToEndAsync();
                 var errorTask = process.StandardError.ReadToEndAsync();
 
-                // Process'in bitmesini bekle (timeout ile)
-                var completed = await Task.Run(() => process.WaitForExit(180000));
-
-                if (!completed)
+                // Process'in bitmesini bekle (CancellationToken ile)
+                try
                 {
+                    await process.WaitForExitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Timeout oluştu
                     try
                     {
-                        process.Kill();
+                        if (!process.HasExited)
+                        {
+                            process.Kill(entireProcessTree: true); // Tüm child process'leri de öldür
+                        }
                     }
-                    catch { /* Ignore */ }
+                    catch (Exception killEx)
+                    {
+                        LogService.LogError($"[ClaudeCLI] Process kill error: {killEx.Message}");
+                    }
 
                     LogService.LogError("[ClaudeCLI] Timeout (3 dakika)");
                     return (false, null, "Claude CLI timeout (3 dakika)");
                 }
 
-                // Output ve error'u al
-                var output = await outputTask;
-                var error = await errorTask;
+                // Output ve error'u al (stream'ler kapanmış olabilir, try-catch ile)
+                string output = "";
+                string error = "";
+
+                try
+                {
+                    output = await outputTask;
+                }
+                catch (Exception ex)
+                {
+                    LogService.LogWarning($"[ClaudeCLI] Output read error: {ex.Message}");
+                }
+
+                try
+                {
+                    error = await errorTask;
+                }
+                catch (Exception ex)
+                {
+                    LogService.LogWarning($"[ClaudeCLI] Error read error: {ex.Message}");
+                }
 
                 LogService.LogInfo($"[ClaudeCLI] Process completed with exit code: {process.ExitCode}");
                 LogService.LogInfo($"[ClaudeCLI] Output length: {output?.Length ?? 0} chars");
@@ -249,6 +280,27 @@ namespace QuadroAIPilot.Services
             {
                 LogService.LogError($"[ClaudeCLI] Execution error: {ex.Message}");
                 return (false, null, ex.Message);
+            }
+            finally
+            {
+                // DÜZELTME: Process'i her durumda temizle
+                if (process != null && !process.HasExited)
+                {
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                        process.Dispose();
+                    }
+                    catch { /* Ignore cleanup errors */ }
+                }
+                else if (process != null)
+                {
+                    try
+                    {
+                        process.Dispose();
+                    }
+                    catch { /* Ignore cleanup errors */ }
+                }
             }
         }
 

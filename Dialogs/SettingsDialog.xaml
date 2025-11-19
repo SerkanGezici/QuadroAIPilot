@@ -43,19 +43,37 @@
             
             <!-- Ses Seçimi -->
             <StackPanel>
-                <TextBlock Text="TTS Ses Seçimi" 
+                <TextBlock Text="TTS Ses Seçimi"
                            Style="{ThemeResource SubtitleTextBlockStyle}"
                            Margin="0,0,0,8"/>
-                <ComboBox x:Name="VoiceComboBox" 
+                <ComboBox x:Name="VoiceComboBox"
                           Width="300"
                           HorizontalAlignment="Left">
                     <ComboBoxItem Content="🔄 Otomatik" Tag="automatic" IsSelected="True"/>
                     <ComboBoxItem Content="👩 Kadın" Tag="edge-emel"/>
                     <ComboBoxItem Content="👨 Erkek" Tag="edge-ahmet"/>
                 </ComboBox>
-                <TextBlock Text="Metin seslendirme için kullanılacak ses" 
+                <TextBlock Text="Metin seslendirme için kullanılacak ses"
                            Style="{ThemeResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- AI Provider Seçimi -->
+            <StackPanel>
+                <TextBlock Text="Varsayılan Yapay Zeka"
+                           Style="{ThemeResource SubtitleTextBlockStyle}"
+                           Margin="0,0,0,8"/>
+                <ComboBox x:Name="AIProviderComboBox"
+                          Width="300"
+                          HorizontalAlignment="Left">
+                    <ComboBoxItem Content="🤖 ChatGPT (Önerilen)" Tag="ChatGPT" IsSelected="True"/>
+                    <ComboBoxItem Content="🧠 Claude" Tag="Claude"/>
+                </ComboBox>
+                <TextBlock Text="AI modunda kullanılacak varsayılan yapay zeka. ChatGPT çalışmazsa otomatik Claude'a geçilir."
+                           Style="{ThemeResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           TextWrapping="Wrap"
                            Margin="0,4,0,0"/>
             </StackPanel>
             

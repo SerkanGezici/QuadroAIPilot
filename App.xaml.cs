@@ -60,6 +60,26 @@ namespace QuadroAIPilot
                 ServiceContainer.ConfigureServices();
                 SimpleCrashLogger.Log("Services configured");
 
+                // Load default AI Provider from settings
+                var settingsManager = Managers.SettingsManager.Instance;
+                State.AppState.DefaultAIProvider = settingsManager.Settings.DefaultAIProvider;
+                SimpleCrashLogger.Log($"Default AI Provider: {settingsManager.Settings.DefaultAIProvider}");
+
+                // ChatGPT Python Bridge'i başlat (arka planda, headless mode)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(3000); // 3 saniye bekle (UI yüklensin)
+                        SimpleCrashLogger.Log("ChatGPT Python Bridge başlatılıyor (headless)...");
+                        await Services.ChatGPTPythonBridge.Instance.StartBridgeAsync();
+                    }
+                    catch (Exception bridgeEx)
+                    {
+                        SimpleCrashLogger.LogException(bridgeEx, "ChatGPTBridge");
+                    }
+                });
+
                 // Auto-update sistemini başlat (arka planda)
                 _ = Task.Run(async () =>
                 {
@@ -110,14 +130,28 @@ namespace QuadroAIPilot
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             SimpleCrashLogger.Log("OnLaunched started");
-            
+
             try
             {
                 // Create MainWindow manually since it contains XAML controls
                 SimpleCrashLogger.Log("Creating MainWindow...");
                 m_window = new MainWindow();
                 SimpleCrashLogger.Log("MainWindow created");
-                
+
+                // Window kapatma event'i - ChatGPT bridge'i temizle
+                m_window.Closed += (s, e) =>
+                {
+                    try
+                    {
+                        SimpleCrashLogger.Log("Window closed - stopping ChatGPT bridge...");
+                        Services.ChatGPTPythonBridge.Instance.Dispose();
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        SimpleCrashLogger.LogException(cleanupEx, "ChatGPTBridge.Cleanup");
+                    }
+                };
+
                 SimpleCrashLogger.Log("Activating window...");
                 m_window.Activate();
                 SimpleCrashLogger.Log("Window activated");

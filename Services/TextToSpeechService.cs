@@ -119,9 +119,19 @@ namespace QuadroAIPilot.Services
                 LogService.LogDebug("[TextToSpeechService] Boş metin, seslendirme yapılmadı");
                 return;
             }
-            
+
             try
             {
+                // Emoji ve özel karakterleri temizle (Edge TTS uyumluluğu için)
+                text = System.Text.RegularExpressions.Regex.Replace(text, @"[\p{Cs}\p{So}]", "");
+                text = text.Trim();
+
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    LogService.LogDebug("[TextToSpeechService] Temizleme sonrası boş metin");
+                    return;
+                }
+
                 LogService.LogDebug($"[TextToSpeechService] Seslendirme başlatılıyor - Uzunluk: {text.Length}");
                 
                 // Eğer konuşma devam ediyorsa iptal et
