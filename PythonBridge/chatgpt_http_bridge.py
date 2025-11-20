@@ -52,16 +52,25 @@ class ChatGPTBridge:
             self.playwright = await async_playwright().start()
 
             # Chrome profili ile kalıcı oturum (GÖRÜNÜR MOD - ChatGPT login için)
+            # DÜZELTME: Stable chrome args + devtools + timeout artırıldı
             self.browser = await self.playwright.chromium.launch_persistent_context(
                 user_data_dir='./chrome-profile',
                 headless=False,  # ✅ GÖRÜNÜR: ChatGPT'ye giriş yapabilmek için pencere açık
                 viewport={'width': 840, 'height': 480},  # Kompakt boyut
                 args=[
                     '--disable-blink-features=AutomationControlled',
+                    '--disable-dev-shm-usage',  # ✅ EKLENDI: Shared memory crash fix
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-accelerated-2d-canvas',
                     '--disable-gpu',
-                    '--no-sandbox'
+                    '--window-size=840,480',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding'
                 ],
-                timeout=60000
+                timeout=120000,  # ✅ 60s → 120s (browser startup zaman aşımı)
+                devtools=False  # ✅ Devtools'u kapat (performans)
             )
 
             logger.info("📁 Chrome profili: ./chrome-profile")
@@ -75,23 +84,39 @@ class ChatGPTBridge:
                 self.page = await self.browser.new_page()
                 logger.info("📄 Yeni sekme oluşturuldu")
 
+            # DÜZELTME: Page close event listener ekle (browser crash detection)
+            self.page.on('close', lambda: logger.warning("⚠️ Page closed unexpectedly!"))
+
             # ChatGPT'ye git
             logger.info("🌐 ChatGPT'ye bağlanılıyor...")
-            await self.page.goto('https://chat.openai.com/', wait_until='domcontentloaded', timeout=60000)
+            await self.page.goto('https://chat.openai.com/', wait_until='domcontentloaded', timeout=90000)
 
-            # Network idle beklemek yerine load event bekle (daha güvenilir)
+            # Network idle bekle (timeout artırıldı)
             try:
-                await self.page.wait_for_load_state('networkidle', timeout=15000)
+                await self.page.wait_for_load_state('networkidle', timeout=30000)  # ✅ 15s → 30s
             except:
                 logger.warning("⚠️ Network idle timeout (normal, devam ediliyor)")
                 pass
 
-            await self.page.wait_for_timeout(2000)
+            await self.page.wait_for_timeout(3000)  # ✅ 2s → 3s (page stabilize)
 
-            # TÜM modal'ları başta kapat (bir kere) - MODAL KAPATMA SONRASI YENİ CHAT BAŞLATMASIN DİYE
+            # TÜM modal'ları başta kapat (bir kere)
             logger.info("🧹 Tüm modal'lar başta kapatılıyor...")
             await self.dismiss_all_modals()
             logger.info("✅ Modal temizliği tamamlandı!")
+
+            # Modal temizliğinden sonra page'in hala açık olduğunu doğrula
+            if self.page.is_closed():
+                logger.error("❌ Page modal temizliği sırasında kapandı!")
+                return False
+
+            # Page health check: Temel elementleri kontrol et
+            try:
+                # ChatGPT textarea veya contenteditable div var mı?
+                await self.page.wait_for_selector('textarea, div[contenteditable="true"]', timeout=5000)
+                logger.info("✅ ChatGPT input elementi bulundu, page sağlıklı")
+            except:
+                logger.warning("⚠️ ChatGPT input elementi bulunamadı, ama devam ediliyor...")
 
             self.is_ready = True
             logger.info("✅ ChatGPT browser hazır!")
@@ -102,28 +127,22 @@ class ChatGPTBridge:
             return False
 
     async def dismiss_all_modals(self):
-        """TÜM modal'ları agresif şekilde kapat (rate limit, signup, chromium recovery)"""
+        """TÜM modal'ları JavaScript ile DOM'dan sil (rate limit, signup)"""
         try:
             modals_closed = False
 
-            # 1. Chromium "Sayfalar geri yüklensin mi?" modal'ını kapat
-            try:
-                chromium_modal = await self.page.query_selector('button:has-text("Geri yükle"), button:has-text("Restore")')
-                if chromium_modal:
-                    logger.info("⚠️ Chromium recovery modal bulundu, kapatılıyor...")
-                    await self.page.keyboard.press('Escape')
-                    await self.page.wait_for_timeout(500)
-                    modals_closed = True
-            except:
-                pass
+            logger.info("🧹 Modal kapatma deneniyor...")
 
-            # 2. ChatGPT rate limit modal'ını JavaScript ile ZORLA kapat
+            # STEP 1: Rate limit modal'ını JavaScript ile DOM'dan SİL
             try:
-                modal = await self.page.query_selector('[data-testid="modal-no-auth-rate-limit"]')
-                if modal:
-                    logger.info("⚠️ ChatGPT rate limit modal bulundu, JavaScript ile ZORLA kapatılıyor...")
+                rate_limit_exists = await self.page.evaluate('''() => {
+                    const modal = document.querySelector('[data-testid="modal-no-auth-rate-limit"]');
+                    return modal !== null;
+                }''')
 
-                    # JavaScript ile modal ve overlay'i DOM'dan SİL
+                if rate_limit_exists:
+                    logger.info("⚠️ Rate limit modal bulundu, DOM'dan siliniyor...")
+
                     await self.page.evaluate('''() => {
                         // Rate limit modal'ını bul ve sil
                         const modal = document.querySelector('[data-testid="modal-no-auth-rate-limit"]');
@@ -131,48 +150,38 @@ class ChatGPTBridge:
                             modal.remove();
                         }
 
-                        // Tüm overlay'leri bul ve sil (pointer-events engelleyenler)
-                        const overlays = document.querySelectorAll('[class*="absolute"][class*="inset"]');
-                        overlays.forEach(overlay => {
-                            if (overlay.getAttribute('data-testid')?.includes('modal')) {
-                                overlay.remove();
-                            }
-                        });
+                        // Parent overlay'i de sil
+                        const overlays = document.querySelectorAll('[data-ignore-for-page-load="true"]');
+                        overlays.forEach(overlay => overlay.remove());
 
-                        // body overflow'u geri aç (modal kapatınca açılır)
+                        // Body overflow'u geri aç
                         document.body.style.overflow = 'auto';
                     }''')
 
                     await self.page.wait_for_timeout(1000)
-                    logger.info("✅ ChatGPT modal DOM'dan silindi!")
+                    logger.info("✅ Rate limit modal DOM'dan silindi!")
                     modals_closed = True
             except Exception as e:
-                logger.warning(f"⚠️ ChatGPT modal silme hatası: {e}")
+                logger.warning(f"⚠️ Rate limit modal silme hatası: {e}")
 
-            # 3. Signup/Login modal'ını kapat
-            try:
-                signup_modal = await self.page.query_selector('button:has-text("Oturum aç"), button:has-text("Sign"), button:has-text("Ücretsiz kaydol")')
-                if signup_modal:
-                    logger.info("⚠️ Signup modal bulundu, kapatılıyor...")
+            # STEP 2: ESC tuşlarına bas (diğer modal'lar için)
+            for i in range(3):
+                try:
                     await self.page.keyboard.press('Escape')
-                    await self.page.wait_for_timeout(500)
-                    modals_closed = True
+                    await self.page.wait_for_timeout(300)
+                except:
+                    pass
+
+            # STEP 3: Body overflow fix
+            try:
+                await self.page.evaluate('document.body.style.overflow = "auto"')
             except:
                 pass
 
-            # 4. Son çare: Tüm modal overlay'leri JavaScript ile temizle
             if modals_closed:
-                try:
-                    await self.page.evaluate('''() => {
-                        // Tüm "absolute inset-0" overlay'leri bul ve sil
-                        document.querySelectorAll('[class*="absolute inset-0"]').forEach(el => {
-                            if (el.getAttribute('data-ignore-for-page-load') === 'true') {
-                                el.remove();
-                            }
-                        });
-                    }''')
-                except:
-                    pass
+                logger.info("✅ Modal temizleme tamamlandı")
+            else:
+                logger.info("ℹ️ Modal bulunamadı")
 
             return modals_closed
 
@@ -192,6 +201,15 @@ class ChatGPTBridge:
                     "IsError": True,
                     "Content": None,
                     "ErrorMessage": "ChatGPT browser hazır değil"
+                }
+
+            # Page health check: Page kapanmış mı?
+            if self.page.is_closed():
+                logger.error("❌ Page kapalı, mesaj gönderilemez!")
+                return {
+                    "IsError": True,
+                    "Content": None,
+                    "ErrorMessage": "Page has been closed"
                 }
 
             logger.info(f"📤 Mesaj gönderiliyor: {message[:50]}...")
@@ -225,12 +243,14 @@ class ChatGPTBridge:
             logger.info("✅ Yanıt elementi bulundu, streaming bekleniyor...")
 
             # Streaming bitene kadar bekle (içerik uzunluğu sabitlenene kadar)
+            # OPTİMİZASYON: Polling interval 500ms'e düşürüldü (eskiden 1000ms)
             prev_length = 0
             stable_count = 0
-            max_wait = 60  # Maksimum 60 saniye bekle
+            max_wait = 30  # Maksimum 30 saniye (eskiden 60)
+            polling_interval = 500  # 500ms polling (eskiden 1000ms)
 
-            for i in range(max_wait):
-                await self.page.wait_for_timeout(1000)  # 1 saniye bekle
+            for i in range(max_wait * 2):  # 500ms * 60 = 30 saniye
+                await self.page.wait_for_timeout(polling_interval)
 
                 elements = await self.page.query_selector_all(response_selector)
                 if elements:
@@ -239,14 +259,24 @@ class ChatGPTBridge:
 
                     if current_length == prev_length and current_length > 0:
                         stable_count += 1
-                        if stable_count >= 2:  # 2 saniye sabit kalırsa streaming bitti
+
+                        # OPTİMİZASYON: Kısa yanıtlar için early exit
+                        if current_length < 100 and stable_count >= 1:
+                            logger.info(f"✅ Kısa yanıt tamamlandı ({current_length} karakter)")
+                            break
+
+                        # Normal yanıtlar: 2 * 500ms = 1 saniye (eskiden 2 saniye)
+                        if stable_count >= 2:
                             logger.info(f"✅ Streaming tamamlandı ({current_length} karakter)")
                             break
                     else:
                         stable_count = 0
 
                     prev_length = current_length
-                    logger.info(f"📊 Streaming: {current_length} karakter (deneme {i+1}/{max_wait})")
+
+                    # Log her 2 saniyede bir (her 4 iteration)
+                    if i % 4 == 0:
+                        logger.info(f"📊 Streaming: {current_length} karakter (deneme {i+1}/{max_wait*2})")
 
             # Son yanıtı al
             elements = await self.page.query_selector_all(response_selector)
@@ -363,6 +393,40 @@ class ChatGPTHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({"status": "ok"}).encode())
+
+        elif self.path == '/shutdown':
+            # Graceful shutdown endpoint
+            logger.info("🛑 Shutdown isteği alındı, kapatılıyor...")
+
+            # Önce response gönder (C# tarafında başarı alsın)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "shutting down"}).encode())
+
+            # Response gönderildikten SONRA kapat (async)
+            import threading
+            def shutdown_server():
+                import time
+                time.sleep(0.5)  # Response'un gitmesini bekle
+
+                logger.info("🛑 Browser kapatılıyor...")
+                # Browser'ı kapat (sync)
+                try:
+                    if bridge.loop and bridge.loop.is_running():
+                        future = asyncio.run_coroutine_threadsafe(bridge.close(), bridge.loop)
+                        future.result(timeout=5)  # 5 saniye bekle
+                        logger.info("✅ Browser kapatıldı")
+                except Exception as e:
+                    logger.warning(f"⚠️ Browser kapatma hatası (ignored): {e}")
+
+                # Process'i sonlandır
+                logger.info("🛑 Process sonlandırılıyor...")
+                import os
+                os._exit(0)  # Hard exit (clean)
+
+            # Daemon thread (ana thread ölünce otomatik ölür)
+            threading.Thread(target=shutdown_server, daemon=True).start()
 
         else:
             self.send_response(404)

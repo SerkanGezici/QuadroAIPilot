@@ -1054,7 +1054,9 @@ namespace QuadroAIPilot.Managers
                 // SECURITY FIX: Script validation
                 if (!SecurityValidator.IsScriptSafe(script))
                 {
-                    LogService.LogWarning("[SECURITY] Unsafe script blocked in ExecuteScriptAsync");
+                    // DÜZELTME: Script içeriğini logla (ilk 200 karakter)
+                    var scriptPreview = script.Length > 200 ? script.Substring(0, 200) + "..." : script;
+                    LogService.LogWarning($"[SECURITY] Unsafe script blocked in ExecuteScriptAsync: {scriptPreview}");
                     return string.Empty;
                 }
 

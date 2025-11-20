@@ -523,16 +523,19 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                 // XML temizleme ve düzeltme
                 content = CleanAndFixXml(content);
 
-                // XML parsing için güvenli okuyucu ayarları
+                // XML parsing için güvenli okuyucu ayarları (TOLERANT MODE)
                 var xmlReaderSettings = new XmlReaderSettings
                 {
-                    DtdProcessing = DtdProcessing.Ignore,
+                    DtdProcessing = DtdProcessing.Ignore, // DTD ignore et
                     IgnoreComments = true,
                     IgnoreProcessingInstructions = true,
                     IgnoreWhitespace = true,
-                    ConformanceLevel = ConformanceLevel.Fragment,
-                    CheckCharacters = false,
-                    MaxCharactersFromEntities = 1024
+                    ConformanceLevel = ConformanceLevel.Auto, // Auto: Fragment ve Document'i destekler
+                    CheckCharacters = false, // Invalid XML karakterlerini ignore et
+                    MaxCharactersFromEntities = 10240, // Daha yüksek limit (10KB)
+                    XmlResolver = null, // Dış kaynak çağrılarını engelle (güvenlik)
+                    ValidationFlags = System.Xml.Schema.XmlSchemaValidationFlags.None, // Validation yapma
+                    ValidationType = ValidationType.None // Schema validation kapalı
                 };
 
                 try
@@ -1700,20 +1703,18 @@ namespace QuadroAIPilot.Services.WebServices.Providers
             // Geçersiz karakterleri temizle
             xml = System.Text.RegularExpressions.Regex.Replace(xml, @"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "");
             
-            // CDATA bölümlerindeki sorunları düzelt
-            xml = System.Text.RegularExpressions.Regex.Replace(xml, @"<!\[CDATA\[(.+?)\]\]>", m =>
+            // CDATA bölümlerindeki sorunları düzelt - WRAPPER'I KORU!
+            xml = System.Text.RegularExpressions.Regex.Replace(xml, @"<!\[CDATA\[(.*?)\]\]>", m =>
             {
                 var content = m.Groups[1].Value;
-                // CDATA içindeki özel karakterleri encode et
-                content = content.Replace("&", "&amp;")
-                                 .Replace("<", "&lt;")
-                                 .Replace(">", "&gt;");
-                return content;
+                // Nested CDATA'yı düzelt (eğer varsa)
+                content = content.Replace("]]>", "]]&gt;");
+                // CDATA wrapper'ı koru - XML parser'ın doğru parse etmesi için gerekli
+                return $"<![CDATA[{content}]]>";
             }, System.Text.RegularExpressions.RegexOptions.Singleline);
-            
-            // Kapanmamış tag'leri düzelt (basit düzeltme)
-            xml = System.Text.RegularExpressions.Regex.Replace(xml, @"<([^/>]+)(?<!/)>", "<$1/>");
-            
+
+            // NOT: Kapanmamış tag düzeltmesi KALDIRILDI - container tag'leri (<item>, <channel>) bozuyordu
+
             // Çift encoded entity'leri düzelt
             xml = xml.Replace("&amp;amp;", "&amp;")
                     .Replace("&amp;lt;", "&lt;")
@@ -1744,9 +1745,9 @@ namespace QuadroAIPilot.Services.WebServices.Providers
                     Category = source.Category
                 };
                 
-                // Basit regex ile item'ları bul
-                var itemMatches = System.Text.RegularExpressions.Regex.Matches(response, 
-                    @"<item[^>]*>(.+?)</item>", 
+                // Basit regex ile item'ları bul - İYİLEŞTİRİLDİ: [\s\S] ile newline yakalama
+                var itemMatches = System.Text.RegularExpressions.Regex.Matches(response,
+                    @"<item[^>]*>([\s\S]*?)</item>",
                     System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                 
                 foreach (System.Text.RegularExpressions.Match itemMatch in itemMatches.Take(20))

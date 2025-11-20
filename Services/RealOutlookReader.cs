@@ -1448,10 +1448,10 @@ namespace QuadroAIPilot.Services
                     DateTime today = DateTime.Today;
                     DateTime tomorrow = today.AddDays(1);
 
-                    // Outlook DASL formatı
-                    // Format: d/M/yyyy h:mm tt (Türkiye formatı: Gün/Ay/Yıl)
-                    string startStr = today.ToString("d/M/yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
-                    string endStr = tomorrow.ToString("d/M/yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+                    // DÜZELTME: Outlook filter formatı (M/d/yyyy format kullan - US format daha güvenilir)
+                    // NOT: Outlook COM API, InvariantCulture'da M/d/yyyy bekliyor
+                    string startStr = today.ToString("M/d/yyyy 12:00 AM", System.Globalization.CultureInfo.InvariantCulture);
+                    string endStr = tomorrow.ToString("M/d/yyyy 12:00 AM", System.Globalization.CultureInfo.InvariantCulture);
 
                     string filter = $"[Start] >= '{startStr}' AND [Start] < '{endStr}'";
 

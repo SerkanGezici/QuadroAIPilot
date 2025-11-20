@@ -431,6 +431,28 @@ namespace QuadroAIPilot.Services
                     "window.speechSynthesis",                                    // TTS API
                     "const gl = canvas.getContext('webgl",                       // GPU check
 
+                    // Web Audio API & Media Capture (Microphone Support)
+                    "navigator.mediaDevices.getUserMedia",                       // Mikrofon erişimi
+                    "navigator.mediaDevices.enumerateDevices",                   // Cihaz listesi
+                    "new MediaRecorder(",                                        // Ses kaydı
+                    "audioContext.createMediaStreamSource",                      // Stream işleme
+                    "audioContext.createAnalyser",                               // Audio analysis
+                    "audioContext.createScriptProcessor",                        // Custom processing
+                    "audioContext.destination",                                  // Output routing
+                    "audioContext.resume()",                                     // Context resume
+                    "audioContext.suspend()",                                    // Context pause
+                    "mediaRecorder.start()",                                     // Kayıt başlat
+                    "mediaRecorder.stop()",                                      // Kayıt durdur
+                    "mediaRecorder.ondataavailable",                             // Data handler
+                    "new Blob(",                                                 // Audio blob
+                    "URL.createObjectURL(",                                      // Blob URL
+                    "new Audio(",                                                // Audio playback
+                    "audio.play()",                                              // Play control
+                    "audio.pause()",                                             // Pause control
+                    "navigator.permissions.query",                               // Permission check
+                    "{ name: 'microphone' }",                                    // Permission name
+                    "async function(",                                           // Async function declaration
+
                     // Performance & Debugging
                     "window.performance && window.performance.navigation",       // Performance check
                     "console.log(",                                              // Debug logging
@@ -449,12 +471,22 @@ namespace QuadroAIPilot.Services
                 }
 
                 // BLACKLIST: Tehlikeli JavaScript fonksiyonları (only for non-whitelisted scripts)
+
+                // setTimeout/setInterval - Sadece audio context ile birlikte safe
+                bool hasAudioContext = scriptLower.Contains("audiocontext") ||
+                                       scriptLower.Contains("mediarecorder") ||
+                                       scriptLower.Contains("getusermedia");
+
+                if ((scriptLower.Contains("settimeout(") || scriptLower.Contains("setinterval(")) && !hasAudioContext)
+                {
+                    LoggingService.LogWarning($"[SECURITY] Dangerous timer function detected without audio context");
+                    return false;
+                }
+
                 var dangerousFunctions = new[]
                 {
                     "eval(",
                     "Function(",
-                    "setTimeout(",
-                    "setInterval(",
                     "document.write(",
                     "document.writeln(",
                     "location.href",

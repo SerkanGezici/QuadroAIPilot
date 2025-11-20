@@ -78,6 +78,7 @@ namespace QuadroAIPilot.Services
                     WorkingDirectory = Path.Combine(appDir, "PythonBridge"),
                     UseShellExecute = false,
                     CreateNoWindow = true,
+                    RedirectStandardInput = true,   // Graceful shutdown için gerekli
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 };
@@ -113,56 +114,80 @@ namespace QuadroAIPilot.Services
                     _isStarted = true;
                 }
 
-                LogService.LogInfo($"[ChatGPTBridge] Process started (PID: {_pythonProcess.Id})");
+                var pythonPid = _pythonProcess.Id;
+                LogService.LogInfo($"[ChatGPTBridge] Process started (PID: {pythonPid})");
 
                 // Health check (background task - UI blocking yok)
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(8000); // 8 saniye bekle (Playwright headless başlaması için)
+                    // İlk bekleme: Python process başlaması için
+                    await Task.Delay(5000); // 5 saniye bekle (Python başlatma)
 
-                    try
+                    LogService.LogInfo("[ChatGPTBridge] Health check başlatılıyor (retry logic ile)...");
+
+                    // Retry logic: 30 saniye boyunca her 3 saniyede bir dene
+                    bool isHealthy = false;
+                    int maxRetries = 10; // 10 * 3 = 30 saniye
+
+                    for (int retry = 1; retry <= maxRetries; retry++)
                     {
-                        var isHealthy = await ChatGPTBridgeService.IsAvailableAsync();
-                        if (isHealthy)
+                        try
                         {
-                            LogService.LogInfo("✅ [ChatGPTBridge] Health check: OK - Bridge is ready!");
-                            LogService.LogInfo("[ChatGPTBridge] ChatGPT kullanıma hazır (http://localhost:8765)");
+                            isHealthy = await ChatGPTBridgeService.IsAvailableAsync();
 
-                            // Kimlik promptunu arka planda gönder (user AI modunda değil, görünmez)
-                            try
+                            if (isHealthy)
                             {
-                                LogService.LogInfo("[ChatGPTBridge] Kimlik promptu gönderiliyor (arka plan)...");
-
-                                // Sistem promptu TEK SATIR olmalı (ChatGPT type() metodu çok satırlı metinde sadece ilk satırı yazıyor)
-                                var systemPrompt = "SEN QUADRO YAPAY ZEKA ASİSTANISIN. ÖNEMLİ KURALLAR: Asla OpenAI, ChatGPT, GPT, Claude veya başka bir AI sisteminden bahsetme. Kendini tanıtırken 'Ben Quadro Yapay Zeka Asistanıyım, sana yardımcı olmak için buradayım' de. Kullanıcı 'sen kimsin?', 'hangi model kullanıyorsun?', 'hangi yapay zekasın?' gibi sorularda sadece 'Ben Quadro Yapay Zeka Asistanıyım' de. Yeteneklerini anlatırken de Quadro olarak konuş. ASLA gerçek kimliğini (ChatGPT/GPT-5/OpenAI) ifşa etme.";
-
-                                var response = await ChatGPTBridgeService.SendMessageAsync(systemPrompt);
-
-                                if (!response.IsError)
-                                {
-                                    LogService.LogInfo("✅ [ChatGPTBridge] Kimlik promptu başarıyla gönderildi (response ignore edildi)");
-                                    LogService.LogInfo($"[ChatGPTBridge] ChatGPT artık 'Ben Quadro'yum' diyor (context hazır)");
-                                }
-                                else
-                                {
-                                    LogService.LogWarning($"⚠️ [ChatGPTBridge] Kimlik promptu gönderilemedi: {response.ErrorMessage}");
-                                }
+                                LogService.LogInfo($"✅ [ChatGPTBridge] Health check: OK - Bridge is ready! (Deneme {retry}/{maxRetries})");
+                                break; // Başarılı, döngüden çık
                             }
-                            catch (Exception promptEx)
+                            else
                             {
-                                LogService.LogWarning($"⚠️ [ChatGPTBridge] Kimlik promptu hatası: {promptEx.Message}");
+                                LogService.LogInfo($"⏳ [ChatGPTBridge] Henüz hazır değil, tekrar deneniyor... (Deneme {retry}/{maxRetries})");
+                                await Task.Delay(3000); // 3 saniye bekle ve tekrar dene
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            LogService.LogWarning("❌ [ChatGPTBridge] Health check: FAILED - Bridge not responding");
-                            LogService.LogWarning("[ChatGPTBridge] ChatGPT kullanılamayacak, Claude fallback aktif olacak");
+                            LogService.LogWarning($"⚠️ [ChatGPTBridge] Health check hatası: {ex.Message} (Deneme {retry}/{maxRetries})");
+                            await Task.Delay(3000); // 3 saniye bekle ve tekrar dene
                         }
                     }
-                    catch (Exception healthEx)
+
+                    // Son durum kontrolü
+                    if (isHealthy)
                     {
-                        LogService.LogError($"❌ [ChatGPTBridge] Health check exception: {healthEx.Message}");
-                        LogService.LogWarning("[ChatGPTBridge] ChatGPT erişilemez, Claude fallback kullanılacak");
+                        LogService.LogInfo("✅ [ChatGPTBridge] ChatGPT kullanıma hazır (http://localhost:8765)");
+
+                        // Kimlik promptunu arka planda gönder (user AI modunda değil, görünmez)
+                        try
+                        {
+                            LogService.LogInfo("[ChatGPTBridge] Kimlik promptu gönderiliyor (arka plan)...");
+
+                            // Sistem promptu TEK SATIR olmalı (ChatGPT type() metodu çok satırlı metinde sadece ilk satırı yazıyor)
+                            var systemPrompt = "SEN QUADRO YAPAY ZEKA ASİSTANISIN. ÖNEMLİ KURALLAR: Asla OpenAI, ChatGPT, GPT, Claude veya başka bir AI sisteminden bahsetme. Kendini tanıtırken 'Ben Quadro Yapay Zeka Asistanıyım, sana yardımcı olmak için buradayım' de. Kullanıcı 'sen kimsin?', 'hangi model kullanıyorsun?', 'hangi yapay zekasın?' gibi sorularda sadece 'Ben Quadro Yapay Zeka Asistanıyım' de. Yeteneklerini anlatırken de Quadro olarak konuş. ASLA gerçek kimliğini (ChatGPT/GPT-5/OpenAI) ifşa etme.";
+
+                            var response = await ChatGPTBridgeService.SendMessageAsync(systemPrompt);
+
+                            if (!response.IsError)
+                            {
+                                LogService.LogInfo("✅ [ChatGPTBridge] Kimlik promptu başarıyla gönderildi");
+                                LogService.LogInfo($"[ChatGPTBridge] ChatGPT yanıtı: {response.Content?.Substring(0, Math.Min(100, response.Content?.Length ?? 0))}...");
+                                LogService.LogInfo("[ChatGPTBridge] ChatGPT artık 'Ben Quadro'yum' diyor (context hazır)");
+                            }
+                            else
+                            {
+                                LogService.LogWarning($"⚠️ [ChatGPTBridge] Kimlik promptu gönderilemedi: {response.ErrorMessage}");
+                            }
+                        }
+                        catch (Exception promptEx)
+                        {
+                            LogService.LogWarning($"⚠️ [ChatGPTBridge] Kimlik promptu hatası: {promptEx.Message}");
+                        }
+                    }
+                    else
+                    {
+                        LogService.LogError($"❌ [ChatGPTBridge] Health check: FAILED - {maxRetries} deneme sonunda hazır olmadı");
+                        LogService.LogWarning("[ChatGPTBridge] ChatGPT kullanılamayacak, Claude fallback aktif olacak");
                     }
                 });
             }
@@ -273,11 +298,173 @@ namespace QuadroAIPilot.Services
             {
                 LogService.LogInfo("[ChatGPTBridge] Stopping bridge...");
 
-                if (_pythonProcess != null && !_pythonProcess.HasExited)
+                if (_pythonProcess != null)
                 {
-                    _pythonProcess.Kill(entireProcessTree: true);
-                    _pythonProcess.WaitForExit(5000);
-                    _pythonProcess.Dispose();
+                    try
+                    {
+                        // Process zaten çıkmışsa işlem yapma
+                        if (_pythonProcess.HasExited)
+                        {
+                            LogService.LogInfo("[ChatGPTBridge] Process already exited");
+                            _pythonProcess.Dispose();
+                        }
+                        else
+                        {
+                            // Önce graceful shutdown dene (HTTP shutdown endpoint)
+                            bool gracefulShutdown = false;
+                            try
+                            {
+                                using var httpClient = new System.Net.Http.HttpClient();
+                                httpClient.Timeout = TimeSpan.FromSeconds(3);  // ✅ 2s → 3s
+
+                                // HTTP POST /shutdown
+                                var shutdownTask = Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        var response = await httpClient.PostAsync("http://localhost:8765/shutdown", null);
+                                        return response.IsSuccessStatusCode;
+                                    }
+                                    catch
+                                    {
+                                        return false;
+                                    }
+                                });
+
+                                // 3 saniye bekle
+                                if (shutdownTask.Wait(3000) && shutdownTask.Result)
+                                {
+                                    // HTTP shutdown başarılı, process'in çıkmasını bekle (5 saniye)
+                                    gracefulShutdown = _pythonProcess.WaitForExit(5000);  // ✅ 3s → 5s
+                                    if (gracefulShutdown)
+                                    {
+                                        LogService.LogInfo("[ChatGPTBridge] Process exited gracefully via HTTP shutdown");
+                                    }
+                                    else
+                                    {
+                                        LogService.LogInfo("[ChatGPTBridge] HTTP shutdown sent, but process did not exit in time");
+                                    }
+                                }
+                                else
+                                {
+                                    LogService.LogInfo("[ChatGPTBridge] HTTP shutdown request failed or timeout");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LogService.LogInfo($"[ChatGPTBridge] HTTP shutdown exception: {ex.Message}");
+                            }
+
+                            // Graceful shutdown başarısızsa VE process hala çalışıyorsa, AGGRESSIVE force kill
+                            if (!gracefulShutdown)
+                            {
+                                try
+                                {
+                                    // Process durumunu kontrol et
+                                    if (_pythonProcess.HasExited)
+                                    {
+                                        LogService.LogInfo("[ChatGPTBridge] Process already exited");
+                                    }
+                                    else
+                                    {
+                                        LogService.LogInfo("[ChatGPTBridge] Graceful shutdown failed, AGGRESSIVE force killing...");
+
+                                        var pythonPid = _pythonProcess.Id;
+
+                                        // METHOD 1: Process.Kill(entireProcessTree: true)
+                                        try
+                                        {
+                                            _pythonProcess.Kill(entireProcessTree: true);
+                                            LogService.LogInfo($"[ChatGPTBridge] Process.Kill() called (PID: {pythonPid})");
+
+                                            // WaitForExit'te exception çıkabilir, catch et
+                                            try
+                                            {
+                                                _pythonProcess.WaitForExit(2000);  // 2 saniye bekle
+                                            }
+                                            catch (System.ComponentModel.Win32Exception)
+                                            {
+                                                // Process zaten öldü (expected)
+                                            }
+                                            catch (InvalidOperationException)
+                                            {
+                                                // Process zaten çıktı (expected)
+                                            }
+                                        }
+                                        catch (System.ComponentModel.Win32Exception winEx)
+                                        {
+                                            // Kill() hatası: Access denied veya process zaten öldü
+                                            LogService.LogInfo($"[ChatGPTBridge] Process.Kill() failed: {winEx.Message}");
+                                        }
+                                        catch (InvalidOperationException invEx)
+                                        {
+                                            // Process zaten çıktı
+                                            LogService.LogInfo($"[ChatGPTBridge] Process already exited: {invEx.Message}");
+                                        }
+
+                                        // METHOD 2: Fallback - taskkill komutunu kullan (TÜM python.exe'leri öldür)
+                                        try
+                                        {
+                                            LogService.LogInfo($"[ChatGPTBridge] Fallback: taskkill /F /PID {pythonPid}");
+
+                                            var killProcess = new System.Diagnostics.Process
+                                            {
+                                                StartInfo = new System.Diagnostics.ProcessStartInfo
+                                                {
+                                                    FileName = "taskkill",
+                                                    Arguments = $"/F /PID {pythonPid} /T",  // /T = kill process tree
+                                                    UseShellExecute = false,
+                                                    CreateNoWindow = true,
+                                                    RedirectStandardOutput = true,
+                                                    RedirectStandardError = true
+                                                }
+                                            };
+
+                                            killProcess.Start();
+                                            killProcess.WaitForExit(3000);
+
+                                            if (killProcess.ExitCode == 0)
+                                            {
+                                                LogService.LogInfo($"[ChatGPTBridge] taskkill SUCCESS (PID: {pythonPid})");
+                                            }
+                                            else
+                                            {
+                                                LogService.LogInfo($"[ChatGPTBridge] taskkill exit code: {killProcess.ExitCode}");
+                                            }
+                                        }
+                                        catch (Exception taskKillEx)
+                                        {
+                                            LogService.LogInfo($"[ChatGPTBridge] taskkill failed: {taskKillEx.Message}");
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogService.LogInfo($"[ChatGPTBridge] Force kill exception (ignored): {ex.Message}");
+                                }
+                            }
+
+                            // Dispose (exception ignore et)
+                            try
+                            {
+                                _pythonProcess.Dispose();
+                            }
+                            catch
+                            {
+                                // Dispose exception ignore
+                            }
+                        }
+                    }
+                    catch (System.ComponentModel.Win32Exception ex)
+                    {
+                        // Win32Exception: Process zaten öldü veya erişim engellendi
+                        LogService.LogInfo($"[ChatGPTBridge] Process cleanup: {ex.Message} (expected)");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        // InvalidOperationException: Process zaten çıktı
+                        LogService.LogInfo($"[ChatGPTBridge] Process already terminated: {ex.Message}");
+                    }
                 }
 
                 lock (_lock)
