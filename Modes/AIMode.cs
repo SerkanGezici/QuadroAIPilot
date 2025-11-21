@@ -216,7 +216,9 @@ namespace QuadroAIPilot.Modes
                 });
 
                 // 3. Provider'a gönder (fallback ile)
-                var providerName = currentProvider == AppState.AIProvider.ChatGPT ? "ChatGPT" : "Claude";
+                var providerName = currentProvider == AppState.AIProvider.ChatGPT ? "ChatGPT"
+                                 : currentProvider == AppState.AIProvider.Gemini ? "Gemini"
+                                 : "Claude";
                 LogService.LogInfo($"[AIMode] Sending to {providerName}: '{userInput}'");
                 var startTime = DateTime.Now;
 
@@ -253,6 +255,43 @@ namespace QuadroAIPilot.Modes
                     else
                     {
                         LogService.LogWarning("[AIMode] ChatGPT not available, falling back to Claude");
+                        await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sistem kullanıyor.");
+
+                        // Fallback: Claude
+                        var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                        isError = claudeResponse.IsError;
+                        errorMessage = claudeResponse.ErrorMessage;
+                        content = claudeResponse.Content;
+                        response = claudeResponse;
+                    }
+                }
+                else if (currentProvider == AppState.AIProvider.Gemini)
+                {
+                    // Gemini'ye gönder
+                    if (await GeminiBridgeService.IsAvailableAsync())
+                    {
+                        var geminiResponse = await GeminiBridgeService.SendMessageAsync(userInput);
+                        isError = geminiResponse.IsError;
+                        errorMessage = geminiResponse.ErrorMessage;
+                        content = geminiResponse.Content;
+                        response = geminiResponse;
+
+                        if (isError)
+                        {
+                            LogService.LogWarning($"[AIMode] Gemini failed, falling back to Claude: {errorMessage}");
+                            await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sisteme geçiyor.");
+
+                            // Fallback: Claude
+                            var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                            isError = claudeResponse.IsError;
+                            errorMessage = claudeResponse.ErrorMessage;
+                            content = claudeResponse.Content;
+                            response = claudeResponse;
+                        }
+                    }
+                    else
+                    {
+                        LogService.LogWarning("[AIMode] Gemini not available, falling back to Claude");
                         await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sistem kullanıyor.");
 
                         // Fallback: Claude

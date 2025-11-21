@@ -60,6 +60,31 @@ namespace QuadroAIPilot.Dialogs
             LoadSettingsToUI(_tempSettings);
         }
 
+        private void LoadSettingsToUI(AppSettings settings)
+        {
+            // Tema ayarını yükle
+            foreach (ComboBoxItem item in ThemeComboBox.Items)
+            {
+                if (item.Tag?.ToString() == settings.Theme.ToString())
+                {
+                    ThemeComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+
+            // AI Provider ayarını yükle
+            foreach (ComboBoxItem item in AIProviderComboBox.Items)
+            {
+                if (item.Tag?.ToString() == settings.DefaultAIProvider.ToString())
+                {
+                    AIProviderComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+
+            // Diğer ayarlar zaten UI'dan dinamik yükleniyor
+        }
+
         private void SetupEventHandlers()
         {
             // ComboBox selection changed
@@ -70,9 +95,20 @@ namespace QuadroAIPilot.Dialogs
                     _tempSettings.Theme = Enum.Parse<AppTheme>(item.Tag.ToString());
                 }
             };
-            
+
+            // AI Provider ComboBox handler
+            AIProviderComboBox.SelectionChanged += (s, e) =>
+            {
+                if (AIProviderComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
+                {
+                    var providerStr = item.Tag.ToString();
+                    _tempSettings.DefaultAIProvider = Enum.Parse<QuadroAIPilot.State.AppState.AIProvider>(providerStr);
+                    LogService.LogInfo($"[SettingsDialog] AI Provider değiştirildi: {providerStr}");
+                }
+            };
+
             // Performance profili kaldırıldı - her zaman otomatik
-            
+
             // Voice ComboBox handler
             VoiceComboBox.SelectionChanged += (s, e) =>
             {
@@ -84,97 +120,9 @@ namespace QuadroAIPilot.Dialogs
             };
 
             // BlurIntensitySlider kaldırıldı
-            
+
             // Görsel efekt toggle'ları kaldırıldı
-            
-            // Voice selection
-            VoiceComboBox.SelectionChanged += (s, e) =>
-            {
-                if (VoiceComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
-                {
-                    _tempSettings.TTSVoice = item.Tag.ToString();
-                }
-            };
-
-            // AI Provider selection
-            AIProviderComboBox.SelectionChanged += (s, e) =>
-            {
-                if (AIProviderComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
-                {
-                    var providerStr = item.Tag.ToString();
-                    if (Enum.TryParse<QuadroAIPilot.State.AppState.AIProvider>(providerStr, out var provider))
-                    {
-                        _tempSettings.DefaultAIProvider = provider;
-                    }
-                }
-            };
-            
-            // Dialog buttons
-            this.PrimaryButtonClick += async (s, e) => 
-            {
-                System.Diagnostics.Debug.WriteLine("[SettingsDialog] PrimaryButtonClick - Kaydet butonu tıklandı");
-                await SaveSettingsAsync();
-            };
-            this.SecondaryButtonClick += (s, e) => { /* Cancel - do nothing */ };
-            
-            // Profile photo buttons
-            SelectPhotoButton.Click += SelectPhoto_Click;
-            RemovePhotoButton.Click += RemovePhoto_Click;
-            
-            // Profile delete button
-            DeleteProfileButton.Click += DeleteProfile_Click;
-
-            // Update system event handlers
-            AutoUpdateToggle.Toggled += AutoUpdateToggle_Toggled;
-            CheckUpdatesButton.Click += CheckUpdates_Click;
-
-            // Load update info
-            LoadUpdateInfo();
         }
-
-        private void LoadSettingsToUI(AppSettings settings)
-        {
-            // Theme
-            foreach (ComboBoxItem item in ThemeComboBox.Items)
-            {
-                if (item.Tag?.ToString() == settings.Theme.ToString())
-                {
-                    ThemeComboBox.SelectedItem = item;
-                    break;
-                }
-            }
-            
-            // Performance profili kaldırıldı
-
-            // Görsel efekt ayarları kaldırıldı
-            
-            // Voice selection
-            foreach (ComboBoxItem item in VoiceComboBox.Items)
-            {
-                if (item.Tag?.ToString() == settings.TTSVoice)
-                {
-                    VoiceComboBox.SelectedItem = item;
-                    break;
-                }
-            }
-
-            // AI Provider selection
-            foreach (ComboBoxItem item in AIProviderComboBox.Items)
-            {
-                if (item.Tag?.ToString() == settings.DefaultAIProvider.ToString())
-                {
-                    AIProviderComboBox.SelectedItem = item;
-                    break;
-                }
-            }
-            
-            // Haber tercihleri
-            LoadNewsPreferences();
-            
-            // Haber kaynakları listesini yükle
-            LoadNewsSourcesList();
-        }
-
 
         private async void LoadSystemInfo()
         {

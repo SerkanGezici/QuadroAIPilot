@@ -60,21 +60,17 @@
             </StackPanel>
 
             <!-- AI Provider Seçimi -->
-            <StackPanel>
-                <TextBlock Text="Varsayılan Yapay Zeka"
+            <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="Varsayılan AI Provider"
                            Style="{ThemeResource SubtitleTextBlockStyle}"
                            Margin="0,0,0,8"/>
                 <ComboBox x:Name="AIProviderComboBox"
                           Width="300"
                           HorizontalAlignment="Left">
-                    <ComboBoxItem Content="🤖 ChatGPT (Önerilen)" Tag="ChatGPT" IsSelected="True"/>
-                    <ComboBoxItem Content="🧠 Claude" Tag="Claude"/>
+                    <ComboBoxItem Content="ChatGPT" Tag="ChatGPT"/>
+                    <ComboBoxItem Content="Claude" Tag="Claude"/>
+                    <ComboBoxItem Content="Gemini" Tag="Gemini"/>
                 </ComboBox>
-                <TextBlock Text="AI modunda kullanılacak varsayılan yapay zeka. ChatGPT çalışmazsa otomatik Claude'a geçilir."
-                           Style="{ThemeResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                           TextWrapping="Wrap"
-                           Margin="0,4,0,0"/>
             </StackPanel>
 
             <!-- Haber Tercihleri -->

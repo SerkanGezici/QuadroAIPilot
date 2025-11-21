@@ -80,6 +80,21 @@ namespace QuadroAIPilot
                     }
                 });
 
+                // Gemini Python Bridge'i başlat (arka planda, 5 saniye sonra - resource conflict önleme)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(8000); // 8 saniye bekle (ChatGPT'den sonra)
+                        SimpleCrashLogger.Log("Gemini Python Bridge başlatılıyor...");
+                        await Services.GeminiPythonBridge.Instance.StartBridgeAsync();
+                    }
+                    catch (Exception bridgeEx)
+                    {
+                        SimpleCrashLogger.LogException(bridgeEx, "GeminiBridge");
+                    }
+                });
+
                 // Auto-update sistemini başlat (arka planda)
                 _ = Task.Run(async () =>
                 {
@@ -138,17 +153,18 @@ namespace QuadroAIPilot
                 m_window = new MainWindow();
                 SimpleCrashLogger.Log("MainWindow created");
 
-                // Window kapatma event'i - ChatGPT bridge'i temizle
+                // Window kapatma event'i - Python bridge'leri temizle
                 m_window.Closed += (s, e) =>
                 {
                     try
                     {
-                        SimpleCrashLogger.Log("Window closed - stopping ChatGPT bridge...");
+                        SimpleCrashLogger.Log("Window closed - stopping Python bridges...");
                         Services.ChatGPTPythonBridge.Instance.Dispose();
+                        Services.GeminiPythonBridge.Instance.Dispose();
                     }
                     catch (Exception cleanupEx)
                     {
-                        SimpleCrashLogger.LogException(cleanupEx, "ChatGPTBridge.Cleanup");
+                        SimpleCrashLogger.LogException(cleanupEx, "PythonBridge.Cleanup");
                     }
                 };
 

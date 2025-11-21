@@ -31,7 +31,7 @@ namespace QuadroAIPilot.State
         {
             ChatGPT,    // Python browser automation (default)
             Claude,     // Claude CLI (fallback)
-            Gemini,     // İleride eklenebilir
+            Gemini,     // Google Gemini API
             Codex       // İleride eklenebilir
         }
 

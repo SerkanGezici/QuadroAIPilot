@@ -7,32 +7,32 @@ using QuadroAIPilot.Infrastructure;
 namespace QuadroAIPilot.Services
 {
     /// <summary>
-    /// ChatGPT Python HTTP Bridge lifecycle yöneticisi
-    /// EdgeTTSPythonBridge pattern'ine benzer - process management
+    /// Gemini Python HTTP Bridge lifecycle yöneticisi
+    /// ChatGPTPythonBridge pattern'inden uyarlanmıştır
     /// </summary>
-    public class ChatGPTPythonBridge : IDisposable
+    public class GeminiPythonBridge : IDisposable
     {
-        private static ChatGPTPythonBridge _instance;
+        private static GeminiPythonBridge _instance;
         private Process _pythonProcess;
         private readonly object _lock = new object();
         private bool _isStarted;
 
-        public static ChatGPTPythonBridge Instance
+        public static GeminiPythonBridge Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = new ChatGPTPythonBridge();
+                    _instance = new GeminiPythonBridge();
                 }
                 return _instance;
             }
         }
 
-        private ChatGPTPythonBridge() { }
+        private GeminiPythonBridge() { }
 
         /// <summary>
-        /// ChatGPT bridge'i başlat (async, UI blocking yok)
+        /// Gemini bridge'i başlat
         /// </summary>
         public async Task StartBridgeAsync()
         {
@@ -40,37 +40,34 @@ namespace QuadroAIPilot.Services
             {
                 if (_isStarted)
                 {
-                    LogService.LogWarning("[ChatGPTBridge] Already started");
+                    LogService.LogWarning("[GeminiBridge] Already started");
                     return;
                 }
             }
 
             try
             {
-                LogService.LogInfo("[ChatGPTBridge] Starting HTTP bridge...");
+                LogService.LogInfo("[GeminiBridge] Starting HTTP bridge...");
 
-                // Python script yolu
                 var appDir = AppDomain.CurrentDomain.BaseDirectory;
-                var scriptPath = Path.Combine(appDir, "PythonBridge", "chatgpt_http_bridge.py");
+                var scriptPath = Path.Combine(appDir, "PythonBridge", "gemini_http_bridge.py");
 
                 if (!File.Exists(scriptPath))
                 {
-                    LogService.LogError($"[ChatGPTBridge] Script not found: {scriptPath}");
+                    LogService.LogError($"[GeminiBridge] Script not found: {scriptPath}");
                     return;
                 }
 
-                // Python path bul
                 var pythonPath = await FindPythonAsync();
                 if (string.IsNullOrEmpty(pythonPath))
                 {
-                    LogService.LogError("[ChatGPTBridge] Python not found in PATH");
+                    LogService.LogError("[GeminiBridge] Python not found");
                     return;
                 }
 
-                LogService.LogInfo($"[ChatGPTBridge] Using Python: {pythonPath}");
-                LogService.LogInfo($"[ChatGPTBridge] Script: {scriptPath}");
+                LogService.LogInfo($"[GeminiBridge] Using Python: {pythonPath}");
+                LogService.LogInfo($"[GeminiBridge] Script: {scriptPath}");
 
-                // Process başlat
                 var psi = new ProcessStartInfo
                 {
                     FileName = pythonPath,
@@ -78,33 +75,25 @@ namespace QuadroAIPilot.Services
                     WorkingDirectory = Path.Combine(appDir, "PythonBridge"),
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    RedirectStandardInput = true,   // Graceful shutdown için gerekli
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 };
 
                 _pythonProcess = new Process { StartInfo = psi };
 
-                // Output logging - TÜM Python logları INFO seviyesinde (debugging için)
                 _pythonProcess.OutputDataReceived += (s, e) =>
                 {
                     if (!string.IsNullOrWhiteSpace(e.Data))
-                    {
-                        // TÜM logları INFO olarak göster (Visual Studio Output'ta görünsün)
-                        LogService.LogInfo($"[PY-OUT] {e.Data}");
-                    }
+                        LogService.LogInfo($"[GEMINI-OUT] {e.Data}");
                 };
 
                 _pythonProcess.ErrorDataReceived += (s, e) =>
                 {
                     if (!string.IsNullOrWhiteSpace(e.Data))
-                    {
-                        // Tüm error output ERROR olarak logla (Visual Studio'da kırmızı görünsün)
-                        LogService.LogError($"[PY-ERR] {e.Data}");
-                    }
+                        LogService.LogError($"[GEMINI-ERR] {e.Data}");
                 };
 
-                // Process başlat
                 _pythonProcess.Start();
                 _pythonProcess.BeginOutputReadLine();
                 _pythonProcess.BeginErrorReadLine();
@@ -114,154 +103,93 @@ namespace QuadroAIPilot.Services
                     _isStarted = true;
                 }
 
-                var pythonPid = _pythonProcess.Id;
-                LogService.LogInfo($"[ChatGPTBridge] Process started (PID: {pythonPid})");
+                LogService.LogInfo($"[GeminiBridge] Process started (PID: {_pythonProcess.Id})");
 
-                // Health check (background task - UI blocking yok)
+                // Health check (background)
                 _ = Task.Run(async () =>
                 {
-                    // İlk bekleme: Python process başlaması için
-                    await Task.Delay(5000); // 5 saniye bekle (Python başlatma)
+                    await Task.Delay(5000);
+                    LogService.LogInfo("[GeminiBridge] Health check başlatılıyor...");
 
-                    LogService.LogInfo("[ChatGPTBridge] Health check başlatılıyor (retry logic ile)...");
-
-                    // Retry logic: 30 saniye boyunca her 3 saniyede bir dene
                     bool isHealthy = false;
-                    int maxRetries = 10; // 10 * 3 = 30 saniye
-
-                    for (int retry = 1; retry <= maxRetries; retry++)
+                    for (int retry = 1; retry <= 20; retry++)  // Gemini 57 saniye sürüyor, 20x3=60 saniye bekle
                     {
                         try
                         {
-                            isHealthy = await ChatGPTBridgeService.IsAvailableAsync();
-
+                            isHealthy = await GeminiBridgeService.IsAvailableAsync();
                             if (isHealthy)
                             {
-                                LogService.LogInfo($"✅ [ChatGPTBridge] Health check: OK - Bridge is ready! (Deneme {retry}/{maxRetries})");
-                                break; // Başarılı, döngüden çık
+                                LogService.LogInfo($"✅ [GeminiBridge] Ready! (Deneme {retry}/20)");
+                                break;
                             }
                             else
                             {
-                                LogService.LogInfo($"⏳ [ChatGPTBridge] Henüz hazır değil, tekrar deneniyor... (Deneme {retry}/{maxRetries})");
-                                await Task.Delay(3000); // 3 saniye bekle ve tekrar dene
+                                LogService.LogInfo($"⏳ [GeminiBridge] Henüz hazır değil... (Deneme {retry}/20)");
+                                await Task.Delay(3000);
                             }
                         }
                         catch (Exception ex)
                         {
-                            LogService.LogWarning($"⚠️ [ChatGPTBridge] Health check hatası: {ex.Message} (Deneme {retry}/{maxRetries})");
-                            await Task.Delay(3000); // 3 saniye bekle ve tekrar dene
+                            LogService.LogWarning($"⏳ [GeminiBridge] Health check hatası (deneme {retry}/20): {ex.Message}");
+                            await Task.Delay(3000);
                         }
                     }
 
-                    // Son durum kontrolü
                     if (isHealthy)
                     {
-                        LogService.LogInfo("✅ [ChatGPTBridge] ChatGPT kullanıma hazır (http://localhost:8765)");
+                        LogService.LogInfo("✅ [GeminiBridge] Gemini kullanıma hazır (http://localhost:8766)");
 
-                        // Kimlik promptu GÖNDERİLMİYOR - ChatGPT'nin güvenlik filtrelerini tetikliyor
-                        // Kullanıcı "sen kimsin?" diye sorduğunda AIMode'da custom response vereceğiz
-                        LogService.LogInfo("[ChatGPTBridge] ChatGPT hazır, kimlik filtreleme AIMode'da yapılacak");
+                        // Sistem promptu YOK - Kullanıcı mesajları direkt Gemini'ye gidiyor
+                        LogService.LogInfo("[GeminiBridge] Gemini hazır, sistem promptu devre dışı");
                     }
                     else
                     {
-                        LogService.LogError($"❌ [ChatGPTBridge] Health check: FAILED - {maxRetries} deneme sonunda hazır olmadı");
-                        LogService.LogWarning("[ChatGPTBridge] ChatGPT kullanılamayacak, Claude fallback aktif olacak");
+                        LogService.LogWarning("⚠️ [GeminiBridge] Health check başarısız, Gemini kullanılamayabilir");
                     }
                 });
             }
             catch (Exception ex)
             {
-                LogService.LogError($"[ChatGPTBridge] Start failed: {ex.Message}");
-                lock (_lock)
-                {
-                    _isStarted = false;
-                }
+                LogService.LogError($"[GeminiBridge] Start failed: {ex.Message}");
+                _isStarted = false;
             }
         }
 
-        /// <summary>
-        /// Python yolu bul (python3 veya python)
-        /// </summary>
+
         private async Task<string> FindPythonAsync()
-        {
-            try
-            {
-                // Önce python3 dene
-                var result = await RunCommandAsync("python3", "--version");
-                if (result.success)
-                {
-                    LogService.LogInfo($"[ChatGPTBridge] Found python3: {result.output.Trim()}");
-                    return "python3";
-                }
-
-                // Sonra python dene
-                result = await RunCommandAsync("python", "--version");
-                if (result.success)
-                {
-                    LogService.LogInfo($"[ChatGPTBridge] Found python: {result.output.Trim()}");
-                    return "python";
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogService.LogError($"[ChatGPTBridge] Python search failed: {ex.Message}");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Komut çalıştır (async)
-        /// </summary>
-        private async Task<(bool success, string output)> RunCommandAsync(string command, string args)
         {
             try
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = command,
-                    Arguments = args,
+                    FileName = "python",
+                    Arguments = "--version",
                     UseShellExecute = false,
-                    CreateNoWindow = true,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = true
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
                 };
 
-                using var process = Process.Start(psi);
-                if (process == null)
+                using (var process = new Process { StartInfo = psi })
                 {
-                    return (false, null);
-                }
+                    process.Start();
+                    var output = await process.StandardOutput.ReadToEndAsync();
+                    var error = await process.StandardError.ReadToEndAsync();
+                    await process.WaitForExitAsync();
 
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var completed = await Task.Run(() => process.WaitForExit(2000));
-
-                return (completed && process.ExitCode == 0, output);
-            }
-            catch
-            {
-                return (false, null);
-            }
-        }
-
-        /// <summary>
-        /// Bridge çalışıyor mu?
-        /// </summary>
-        public bool IsRunning
-        {
-            get
-            {
-                lock (_lock)
-                {
-                    return _isStarted && _pythonProcess != null && !_pythonProcess.HasExited;
+                    if (process.ExitCode == 0)
+                    {
+                        var version = string.IsNullOrEmpty(output) ? error : output;
+                        LogService.LogInfo($"[GeminiBridge] Found python: {version.Trim()}");
+                        return "python";
+                    }
                 }
             }
+            catch { }
+
+            return null;
         }
 
-        /// <summary>
-        /// Bridge'i durdur ve temizle
-        /// </summary>
         public void Dispose()
         {
             lock (_lock)
@@ -274,7 +202,7 @@ namespace QuadroAIPilot.Services
 
             try
             {
-                LogService.LogInfo("[ChatGPTBridge] Stopping bridge...");
+                LogService.LogInfo("[GeminiBridge] Stopping bridge...");
 
                 if (_pythonProcess != null)
                 {
@@ -283,7 +211,7 @@ namespace QuadroAIPilot.Services
                         // Process zaten çıkmışsa işlem yapma
                         if (_pythonProcess.HasExited)
                         {
-                            LogService.LogInfo("[ChatGPTBridge] Process already exited");
+                            LogService.LogInfo("[GeminiBridge] Process already exited");
                             _pythonProcess.Dispose();
                         }
                         else
@@ -293,14 +221,14 @@ namespace QuadroAIPilot.Services
                             try
                             {
                                 using var httpClient = new System.Net.Http.HttpClient();
-                                httpClient.Timeout = TimeSpan.FromSeconds(3);  // ✅ 2s → 3s
+                                httpClient.Timeout = TimeSpan.FromSeconds(3);
 
                                 // HTTP POST /shutdown
                                 var shutdownTask = Task.Run(async () =>
                                 {
                                     try
                                     {
-                                        var response = await httpClient.PostAsync("http://localhost:8765/shutdown", null);
+                                        var response = await httpClient.PostAsync("http://localhost:8766/shutdown", null);
                                         return response.IsSuccessStatusCode;
                                     }
                                     catch
@@ -313,24 +241,24 @@ namespace QuadroAIPilot.Services
                                 if (shutdownTask.Wait(3000) && shutdownTask.Result)
                                 {
                                     // HTTP shutdown başarılı, process'in çıkmasını bekle (5 saniye)
-                                    gracefulShutdown = _pythonProcess.WaitForExit(5000);  // ✅ 3s → 5s
+                                    gracefulShutdown = _pythonProcess.WaitForExit(5000);
                                     if (gracefulShutdown)
                                     {
-                                        LogService.LogInfo("[ChatGPTBridge] Process exited gracefully via HTTP shutdown");
+                                        LogService.LogInfo("[GeminiBridge] Process exited gracefully via HTTP shutdown");
                                     }
                                     else
                                     {
-                                        LogService.LogInfo("[ChatGPTBridge] HTTP shutdown sent, but process did not exit in time");
+                                        LogService.LogInfo("[GeminiBridge] HTTP shutdown sent, but process did not exit in time");
                                     }
                                 }
                                 else
                                 {
-                                    LogService.LogInfo("[ChatGPTBridge] HTTP shutdown request failed or timeout");
+                                    LogService.LogInfo("[GeminiBridge] HTTP shutdown request failed or timeout");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                LogService.LogInfo($"[ChatGPTBridge] HTTP shutdown exception: {ex.Message}");
+                                LogService.LogInfo($"[GeminiBridge] HTTP shutdown exception: {ex.Message}");
                             }
 
                             // Graceful shutdown başarısızsa VE process hala çalışıyorsa, AGGRESSIVE force kill
@@ -341,11 +269,11 @@ namespace QuadroAIPilot.Services
                                     // Process durumunu kontrol et
                                     if (_pythonProcess.HasExited)
                                     {
-                                        LogService.LogInfo("[ChatGPTBridge] Process already exited");
+                                        LogService.LogInfo("[GeminiBridge] Process already exited");
                                     }
                                     else
                                     {
-                                        LogService.LogInfo("[ChatGPTBridge] Graceful shutdown failed, AGGRESSIVE force killing...");
+                                        LogService.LogInfo("[GeminiBridge] Graceful shutdown failed, AGGRESSIVE force killing...");
 
                                         var pythonPid = _pythonProcess.Id;
 
@@ -353,7 +281,7 @@ namespace QuadroAIPilot.Services
                                         try
                                         {
                                             _pythonProcess.Kill(entireProcessTree: true);
-                                            LogService.LogInfo($"[ChatGPTBridge] Process.Kill() called (PID: {pythonPid})");
+                                            LogService.LogInfo($"[GeminiBridge] Process.Kill() called (PID: {pythonPid})");
 
                                             // WaitForExit'te exception çıkabilir, catch et
                                             try
@@ -372,18 +300,18 @@ namespace QuadroAIPilot.Services
                                         catch (System.ComponentModel.Win32Exception winEx)
                                         {
                                             // Kill() hatası: Access denied veya process zaten öldü
-                                            LogService.LogInfo($"[ChatGPTBridge] Process.Kill() failed: {winEx.Message}");
+                                            LogService.LogInfo($"[GeminiBridge] Process.Kill() failed: {winEx.Message}");
                                         }
                                         catch (InvalidOperationException invEx)
                                         {
                                             // Process zaten çıktı
-                                            LogService.LogInfo($"[ChatGPTBridge] Process already exited: {invEx.Message}");
+                                            LogService.LogInfo($"[GeminiBridge] Process already exited: {invEx.Message}");
                                         }
 
-                                        // METHOD 2: Fallback - taskkill komutunu kullan (TÜM python.exe'leri öldür)
+                                        // METHOD 2: Fallback - taskkill komutunu kullan
                                         try
                                         {
-                                            LogService.LogInfo($"[ChatGPTBridge] Fallback: taskkill /F /PID {pythonPid}");
+                                            LogService.LogInfo($"[GeminiBridge] Fallback: taskkill /F /PID {pythonPid}");
 
                                             var killProcess = new System.Diagnostics.Process
                                             {
@@ -399,34 +327,27 @@ namespace QuadroAIPilot.Services
                                             };
 
                                             killProcess.Start();
-                                            killProcess.WaitForExit(3000);
+                                            killProcess.WaitForExit(2000);  // 2 saniye bekle
 
-                                            if (killProcess.ExitCode == 0)
-                                            {
-                                                LogService.LogInfo($"[ChatGPTBridge] taskkill SUCCESS (PID: {pythonPid})");
-                                            }
-                                            else
-                                            {
-                                                LogService.LogInfo($"[ChatGPTBridge] taskkill exit code: {killProcess.ExitCode}");
-                                            }
+                                            LogService.LogInfo($"[GeminiBridge] taskkill exit code: {killProcess.ExitCode}");
                                         }
-                                        catch (Exception taskKillEx)
+                                        catch (Exception taskkillEx)
                                         {
-                                            LogService.LogInfo($"[ChatGPTBridge] taskkill failed: {taskKillEx.Message}");
+                                            LogService.LogInfo($"[GeminiBridge] taskkill failed: {taskkillEx.Message}");
                                         }
 
-                                        // METHOD 3: Sadece chrome-profile kullanan Chrome'u bul ve öldür
+                                        // METHOD 3: Sadece gemini-profile'ı kullanan Chrome'u bul ve öldür
                                         try
                                         {
-                                            LogService.LogInfo("[ChatGPTBridge] Finding and killing chrome-profile Chrome processes...");
+                                            LogService.LogInfo("[GeminiBridge] Finding and killing gemini-profile Chrome processes...");
 
-                                            // PowerShell ile chrome-profile kullanan Chrome process'lerini bul
+                                            // PowerShell ile gemini-profile kullanan Chrome process'lerini bul (WMI kullanarak)
                                             var findChromePs = new System.Diagnostics.Process
                                             {
                                                 StartInfo = new System.Diagnostics.ProcessStartInfo
                                                 {
                                                     FileName = "powershell.exe",
-                                                    Arguments = "-Command \"Get-WmiObject Win32_Process -Filter \\\"name = 'chrome.exe'\\\" | Where-Object { $_.CommandLine -like '*chrome-profile*' } | Select-Object -ExpandProperty ProcessId\"",
+                                                    Arguments = "-Command \"Get-WmiObject Win32_Process -Filter \\\"name = 'chrome.exe'\\\" | Where-Object { $_.CommandLine -like '*gemini-profile*' } | Select-Object -ExpandProperty ProcessId\"",
                                                     UseShellExecute = false,
                                                     CreateNoWindow = true,
                                                     RedirectStandardOutput = true,
@@ -447,7 +368,7 @@ namespace QuadroAIPilot.Services
                                                     {
                                                         try
                                                         {
-                                                            LogService.LogInfo($"[ChatGPTBridge] Killing chrome-profile Chrome PID: {chromePid}");
+                                                            LogService.LogInfo($"[GeminiBridge] Killing gemini-profile Chrome PID: {chromePid}");
                                                             var killChrome = new System.Diagnostics.Process
                                                             {
                                                                 StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -462,66 +383,66 @@ namespace QuadroAIPilot.Services
                                                             };
                                                             killChrome.Start();
                                                             killChrome.WaitForExit(2000);
-                                                            LogService.LogInfo($"[ChatGPTBridge] Chrome PID {chromePid} killed (exit code: {killChrome.ExitCode})");
+                                                            LogService.LogInfo($"[GeminiBridge] Chrome PID {chromePid} killed (exit code: {killChrome.ExitCode})");
                                                         }
                                                         catch (Exception killEx)
                                                         {
-                                                            LogService.LogInfo($"[ChatGPTBridge] Failed to kill Chrome PID {chromePid}: {killEx.Message}");
+                                                            LogService.LogInfo($"[GeminiBridge] Failed to kill Chrome PID {chromePid}: {killEx.Message}");
                                                         }
                                                     }
                                                 }
                                             }
                                             else
                                             {
-                                                LogService.LogInfo("[ChatGPTBridge] No chrome-profile Chrome processes found");
+                                                LogService.LogInfo("[GeminiBridge] No gemini-profile Chrome processes found");
                                             }
                                         }
                                         catch (Exception chromeEx)
                                         {
-                                            LogService.LogInfo($"[ChatGPTBridge] Chrome cleanup failed: {chromeEx.Message}");
+                                            LogService.LogInfo($"[GeminiBridge] Chrome cleanup failed: {chromeEx.Message}");
                                         }
                                     }
                                 }
-                                catch (Exception ex)
+                                catch (Exception killEx)
                                 {
-                                    LogService.LogInfo($"[ChatGPTBridge] Force kill exception (ignored): {ex.Message}");
+                                    LogService.LogWarning($"[GeminiBridge] Force kill error: {killEx.Message}");
                                 }
                             }
 
-                            // Dispose (exception ignore et)
+                            // Process nesnesini dispose et
                             try
                             {
                                 _pythonProcess.Dispose();
+                                LogService.LogInfo("[GeminiBridge] Process object disposed");
                             }
-                            catch
+                            catch (Exception disposeEx)
                             {
-                                // Dispose exception ignore
+                                LogService.LogWarning($"[GeminiBridge] Process dispose error: {disposeEx.Message}");
                             }
                         }
                     }
-                    catch (System.ComponentModel.Win32Exception ex)
+                    catch (Exception processEx)
                     {
-                        // Win32Exception: Process zaten öldü veya erişim engellendi
-                        LogService.LogInfo($"[ChatGPTBridge] Process cleanup: {ex.Message} (expected)");
+                        LogService.LogWarning($"[GeminiBridge] Process cleanup error: {processEx.Message}");
                     }
-                    catch (InvalidOperationException ex)
+                    finally
                     {
-                        // InvalidOperationException: Process zaten çıktı
-                        LogService.LogInfo($"[ChatGPTBridge] Process already terminated: {ex.Message}");
+                        _pythonProcess = null;
                     }
                 }
 
-                lock (_lock)
-                {
-                    _isStarted = false;
-                    _pythonProcess = null;
-                }
-
-                LogService.LogInfo("[ChatGPTBridge] Bridge stopped");
+                LogService.LogInfo("[GeminiBridge] Bridge stopped successfully");
             }
             catch (Exception ex)
             {
-                LogService.LogError($"[ChatGPTBridge] Stop failed: {ex.Message}");
+                LogService.LogError($"[GeminiBridge] Fatal dispose error: {ex.Message}");
+            }
+            finally
+            {
+                lock (_lock)
+                {
+                    _isStarted = false;
+                }
             }
         }
     }

@@ -482,10 +482,15 @@ namespace QuadroAIPilot
                 var result = await settingsDialog.ShowAsync();
                 
                 LogService.LogDebug($"[Settings] Dialog sonucu: {result}");
-                
+
                 if (result == ContentDialogResult.Primary)
                 {
                     Debug.WriteLine("[MainWindow] Settings saved successfully");
+
+                    // Settings kaydedilince AppState'i güncelle
+                    var settingsManager = Managers.SettingsManager.Instance;
+                    State.AppState.DefaultAIProvider = settingsManager.Settings.DefaultAIProvider;
+                    LogService.LogInfo($"[MainWindow] AI Provider güncellendi: {settingsManager.Settings.DefaultAIProvider}");
                 }
             }
             catch (Exception ex)

@@ -43,39 +43,10 @@ namespace QuadroAIPilot.Managers
         public double BlurIntensity { get; set; } = 20.0; // 0-30 arası
         public string TTSVoice { get; set; } = "automatic"; // TTS ses seçimi
         public WindowBounds WindowBounds { get; set; } = new WindowBounds(); // Pencere konum ve boyutu
-
-        // Auto-update ayarları
-        public bool AutoUpdateEnabled { get; set; } = true; // Otomatik güncelleme aktif mi?
-        public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue; // Son güncelleme kontrol zamanı
-        public string SkippedVersion { get; set; } = string.Empty; // Atlanacak versiyon
-
-        // AI Provider ayarları
-        public AppState.AIProvider DefaultAIProvider { get; set; } = AppState.AIProvider.ChatGPT; // Varsayılan AI Provider
-        
-        public AppSettings Clone()
-        {
-            return new AppSettings
-            {
-                Theme = this.Theme,
-                Performance = this.Performance,
-                EnableAnimations = this.EnableAnimations,
-                EnableParallaxEffects = this.EnableParallaxEffects,
-                EnableGlowEffects = this.EnableGlowEffects,
-                BlurIntensity = this.BlurIntensity,
-                TTSVoice = this.TTSVoice,
-                WindowBounds = new WindowBounds
-                {
-                    X = this.WindowBounds.X,
-                    Y = this.WindowBounds.Y,
-                    Width = this.WindowBounds.Width,
-                    Height = this.WindowBounds.Height
-                },
-                AutoUpdateEnabled = this.AutoUpdateEnabled,
-                LastUpdateCheck = this.LastUpdateCheck,
-                SkippedVersion = this.SkippedVersion,
-                DefaultAIProvider = this.DefaultAIProvider
-            };
-        }
+        public QuadroAIPilot.State.AppState.AIProvider DefaultAIProvider { get; set; } = QuadroAIPilot.State.AppState.AIProvider.Claude; // Varsayılan AI provider
+        public string GeminiApiKey { get; set; } = ""; // Gemini API anahtarı (isteğe bağlı)
+        public bool AutoUpdateEnabled { get; set; } = true; // Otomatik güncelleme
+        public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue; // Son güncelleme kontrolü
     }
 
     public class SettingsManager
