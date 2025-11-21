@@ -15,7 +15,7 @@ namespace QuadroAIPilot.Services
     {
         // Static HttpClient (timeout değiştirme sorunu için ayrı instance'lar)
         private static readonly HttpClient _chatClient = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };  // 5 dakika (ChatGPT uzun yanıtlar için)
-        private static readonly HttpClient _healthClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };  // Health check 10 saniye
+        private static readonly HttpClient _healthClient = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };  // Health check 45 saniye (ChatGPT streaming için)
         private static readonly HttpClient _resetClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };  // Reset 30 saniye
 
         private const string BRIDGE_URL = "http://localhost:8765/chat";

@@ -239,7 +239,6 @@ namespace QuadroAIPilot.Managers
                     // Efekt ayarları
                     root.style.setProperty('--glow-intensity', '{colors.GlowIntensity}');
                     root.style.setProperty('--accent-glow', '0 0 {20 * colors.GlowIntensity}px {colors.PrimaryColor}');
-                    root.style.setProperty('--animation-speed', '{settings.AnimationSpeed}');
                     root.style.setProperty('--enable-animations', '{(settings.EnableAnimations ? "1" : "0")}');
                     
                     // Tema sınıfı güncelleme

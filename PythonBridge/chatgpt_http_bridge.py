@@ -55,9 +55,11 @@ class ChatGPTBridge:
             # DÜZELTME: Stable chrome args + devtools + timeout artırıldı
             self.browser = await self.playwright.chromium.launch_persistent_context(
                 user_data_dir='./chrome-profile',
-                headless=False,  # ✅ GÖRÜNÜR: ChatGPT'ye giriş yapabilmek için pencere açık
+                headless=False,  # ✅ GÖRÜNÜR: ChatGPT'ye giriş yapabilmek için pencere açık (bot detection bypass)
                 viewport={'width': 840, 'height': 480},  # Kompakt boyut
                 args=[
+                    '--window-position=-10000,-10000',  # 🆕 EKLENDI: Ekran dışına taşı (kullanıcı görmez)
+                    '--start-minimized',  # 🆕 EKLENDI: Başlangıçta minimize
                     '--disable-blink-features=AutomationControlled',
                     '--disable-dev-shm-usage',  # ✅ EKLENDI: Shared memory crash fix
                     '--no-sandbox',

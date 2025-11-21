@@ -106,11 +106,9 @@ namespace QuadroAIPilot.State
             set
             {
                 _defaultAIProvider = value;
-                // Default değişince current'i de güncelle (override yoksa)
-                if (_currentAIProvider == _defaultAIProvider)
-                {
-                    CurrentAIProvider = value;
-                }
+                // Default değişince current'i de HER ZAMAN güncelle
+                // (Kullanıcı Settings'ten seçtiyse hemen uygulanmalı)
+                CurrentAIProvider = value;
             }
         }
 

@@ -58,9 +58,6 @@ namespace QuadroAIPilot.Dialogs
         {
             // Load current settings to UI
             LoadSettingsToUI(_tempSettings);
-            
-            // Update animation speed text
-            UpdateAnimationSpeedText();
         }
 
         private void SetupEventHandlers()
@@ -85,17 +82,7 @@ namespace QuadroAIPilot.Dialogs
                     // Şimdilik sadece local olarak saklayalım
                 }
             };
-            
-            // Sliders
-            AnimationSpeedSlider.ValueChanged += (s, e) =>
-            {
-                if (s is Slider slider)
-                {
-                    _tempSettings.AnimationSpeed = slider.Value;
-                    UpdateAnimationSpeedText();
-                }
-            };
-            
+
             // BlurIntensitySlider kaldırıldı
             
             // Görsel efekt toggle'ları kaldırıldı
@@ -158,9 +145,6 @@ namespace QuadroAIPilot.Dialogs
             }
             
             // Performance profili kaldırıldı
-            
-            // Sliders
-            AnimationSpeedSlider.Value = settings.AnimationSpeed;
 
             // Görsel efekt ayarları kaldırıldı
             
@@ -191,10 +175,6 @@ namespace QuadroAIPilot.Dialogs
             LoadNewsSourcesList();
         }
 
-        private void UpdateAnimationSpeedText()
-        {
-            AnimationSpeedText.Text = $"{AnimationSpeedSlider.Value:F1}x";
-        }
 
         private async void LoadSystemInfo()
         {
@@ -217,30 +197,35 @@ namespace QuadroAIPilot.Dialogs
         private async Task SaveSettingsAsync()
         {
             System.Diagnostics.Debug.WriteLine("[SettingsDialog] SaveSettingsAsync başladı");
-            
-            // Profil verilerini doğrula ve kaydet
-            System.Diagnostics.Debug.WriteLine("[SettingsDialog] ValidateAndSaveProfileAsync çağrılıyor...");
-            var profileSaved = await ValidateAndSaveProfileAsync();
-            System.Diagnostics.Debug.WriteLine($"[SettingsDialog] ValidateAndSaveProfileAsync sonucu: {profileSaved}");
-            
-            if (!profileSaved)
-            {
-                // Profil doğrulama başarısız, dialog açık kalsın
-                System.Diagnostics.Debug.WriteLine("[SettingsDialog] Profil doğrulama başarısız, SaveSettingsAsync'den çıkılıyor");
-                return;
-            }
-            
-            // Apply all settings
-            System.Diagnostics.Debug.WriteLine("[SettingsDialog] Diğer ayarlar kaydediliyor...");
+
+            // ✅ 1. ADIM: GENEL AYARLARI HER ZAMAN KAYDET (Profil validation olmadan)
+            System.Diagnostics.Debug.WriteLine("[SettingsDialog] Genel ayarlar kaydediliyor...");
             await _settingsManager.UpdateSettingsAsync(_tempSettings);
-            
-            // Haber tercihlerini kaydet
+
+            // ✅ 2. ADIM: AI Provider'ı AppState'e uygula
+            QuadroAIPilot.State.AppState.DefaultAIProvider = _tempSettings.DefaultAIProvider;
+            System.Diagnostics.Debug.WriteLine($"[SettingsDialog] AppState.DefaultAIProvider güncellendi: {_tempSettings.DefaultAIProvider}");
+
+            // ✅ 3. ADIM: Haber tercihlerini kaydet
             await SaveNewsPreferences();
-            
-            // Theme'i yeniden uygula ki şeffaflık değişiklikleri hemen etkin olsun
+
+            // ✅ 4. ADIM: Theme'i yeniden uygula
             var themeManager = ThemeManager.Instance;
             await themeManager.ApplyThemeAsync(_tempSettings.Theme);
-            
+
+            // ✅ 5. ADIM: PROFIL KAYDETMEYE ÇALIŞ (başarısız olsa bile diğer ayarlar kaydedildi)
+            System.Diagnostics.Debug.WriteLine("[SettingsDialog] Profil doğrulama ve kaydetme başlatılıyor...");
+            var profileSaved = await ValidateAndSaveProfileAsync();
+
+            if (profileSaved)
+            {
+                System.Diagnostics.Debug.WriteLine("[SettingsDialog] Profil başarıyla kaydedildi");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[SettingsDialog] Profil kaydedilemedi (ama diğer ayarlar kaydedildi)");
+            }
+
             System.Diagnostics.Debug.WriteLine("[SettingsDialog] SaveSettingsAsync tamamlandı");
         }
         
@@ -1053,7 +1038,6 @@ namespace QuadroAIPilot.Dialogs
             {
                 Theme = original.Theme,
                 Performance = original.Performance,
-                AnimationSpeed = original.AnimationSpeed,
                 EnableAnimations = original.EnableAnimations,
                 EnableGlowEffects = original.EnableGlowEffects,
                 EnableParallaxEffects = original.EnableParallaxEffects,

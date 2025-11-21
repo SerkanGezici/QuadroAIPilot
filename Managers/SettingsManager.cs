@@ -38,7 +38,6 @@ namespace QuadroAIPilot.Managers
         public AppTheme Theme { get; set; } = AppTheme.NordicAurora; // Default tema değiştirildi
         public PerformanceProfile Performance { get; set; } = PerformanceProfile.Auto;
         public bool EnableAnimations { get; set; } = true;
-        public double AnimationSpeed { get; set; } = 1.0; // 0.5-2.0 arası
         public bool EnableParallaxEffects { get; set; } = true;
         public bool EnableGlowEffects { get; set; } = true;
         public double BlurIntensity { get; set; } = 20.0; // 0-30 arası
@@ -60,7 +59,6 @@ namespace QuadroAIPilot.Managers
                 Theme = this.Theme,
                 Performance = this.Performance,
                 EnableAnimations = this.EnableAnimations,
-                AnimationSpeed = this.AnimationSpeed,
                 EnableParallaxEffects = this.EnableParallaxEffects,
                 EnableGlowEffects = this.EnableGlowEffects,
                 BlurIntensity = this.BlurIntensity,
@@ -202,22 +200,19 @@ namespace QuadroAIPilot.Managers
                         _settings.EnableAnimations = true;
                         _settings.EnableParallaxEffects = true;
                         _settings.EnableGlowEffects = true;
-                        _settings.AnimationSpeed = 1.0;
                         break;
-                        
+
                     case PerformanceProfile.Low:
                     case PerformanceProfile.PowerSaver:
                         _settings.EnableAnimations = false;
                         _settings.EnableParallaxEffects = false;
                         _settings.EnableGlowEffects = false;
-                        _settings.AnimationSpeed = 0.5;
                         break;
-                        
+
                     case PerformanceProfile.Medium:
                         _settings.EnableAnimations = true;
                         _settings.EnableParallaxEffects = false;
                         _settings.EnableGlowEffects = true;
-                        _settings.AnimationSpeed = 0.8;
                         break;
                 }
             }
