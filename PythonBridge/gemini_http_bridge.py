@@ -52,22 +52,20 @@ class GeminiBridge:
             logger.info("🚀 Playwright başlatılıyor...")
             self.playwright = await async_playwright().start()
 
-            # Chrome profili ile kalıcı oturum (GÖRÜNÜR MOD - Gemini için)
+            # Chrome profili ile kalıcı oturum (GİZLİ MOD - Arka planda çalışır)
             self.browser = await self.playwright.chromium.launch_persistent_context(
                 user_data_dir='./gemini-profile',
-                headless=False,  # ✅ GÖRÜNÜR: Google bot detection bypass
-                viewport={'width': 840, 'height': 480},  # Kompakt boyut
+                headless=False,  # False ama minimized/gizli
+                viewport={'width': 840, 'height': 480},
                 args=[
-                    # DEBUG MODE: Chrome görünür (textarea debug için)
-                    '--window-position=100,100',  # Ekranda görünür pozisyon
-                    # '--start-minimized',  # Yorum satırı (debug için)
+                    '--window-position=-2400,-2400',  # Ekran dışı pozisyon
                     '--disable-blink-features=AutomationControlled',
                     '--disable-dev-shm-usage',
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-accelerated-2d-canvas',
                     '--disable-gpu',
-                    '--window-size=840,480',
+                    '--window-size=1,1',  # Minimum boyut (görünmez)
                     '--disable-background-timer-throttling',
                     '--disable-backgrounding-occluded-windows',
                     '--disable-renderer-backgrounding'
