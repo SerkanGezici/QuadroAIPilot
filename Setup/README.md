@@ -43,13 +43,18 @@ cd ..
 dotnet build QuadroAIPilot.csproj -c Release -p:Platform=x64
 ```
 
-### 2. Bağımlılıkları İndirin (Offline Installer için - Opsiyonel)
+### 2. Bağımlılıkları İndirin (ZORUNLU - AI Provider Desteği için)
 
 Prerequisites klasörüne şu dosyaları indirin:
-- `dotnet-runtime-8.0.0-win-x64.exe` - https://dotnet.microsoft.com/download/dotnet/8.0
+
+**Zorunlu (AI Provider'lar için):**
+- `node-v20.11.1-x64.msi` - https://nodejs.org/dist/v20.11.1/node-v20.11.1-x64.msi (Claude CLI için)
+
+**Opsiyonel (Gerekirse):**
 - `MicrosoftEdgeWebView2Setup.exe` - https://go.microsoft.com/fwlink/p/?LinkId=2124703
 - `VC_redist.x64.exe` - https://aka.ms/vs/17/release/vc_redist.x64.exe
-- `WindowsAppRuntimeInstall.exe` - https://aka.ms/windowsappruntimeinstall-x64
+
+**Not:** dotnet-runtime ve WindowsAppSDK artık gerekmiyor (self-contained deployment)
 
 ### 3. Inno Setup ile Derleyin
 
@@ -61,12 +66,20 @@ Prerequisites klasörüne şu dosyaları indirin:
 ## Installer Özellikleri
 
 ### Otomatik Yüklenenler:
-- .NET 8.0 Runtime
-- WebView2 Runtime
-- Visual C++ Redistributables
-- Windows App SDK Runtime
-- Türkçe dil paketi
-- Windows ses tanıma özellikleri
+- **Python 3.11.7 embedded** (TTS ve AI Bridges için)
+- **edge-tts** (Türkçe ses sentezleme)
+- **playwright 1.40.0** (ChatGPT/Gemini browser automation)
+- **websockets 12.0** (AI Bridge HTTP servisleri)
+- **Playwright Chromium** (Headless browser)
+- **Node.js 20.11.1 LTS** (Claude CLI için)
+- **Claude CLI** (@anthropics/claude)
+- **WebView2 Runtime** (UI için)
+- **Visual C++ Redistributables** (Sistem bağımlılıkları)
+
+### AI Provider Desteği:
+- ✅ **ChatGPT** (Python Playwright bridge - localhost:8765)
+- ✅ **Gemini** (Python Playwright bridge - localhost:8766)
+- ✅ **Claude** (Node.js CLI - @anthropics/claude)
 
 ### Yapılandırmalar:
 - Windows Defender istisnası
@@ -76,9 +89,9 @@ Prerequisites klasörüne şu dosyaları indirin:
 - MAPI e-posta sistemi
 
 ### Opsiyonel Bileşenler:
-- Tarayıcı eklentileri (Chrome, Edge, Firefox)
 - Başlangıçta çalıştırma
 - Masaüstü kısayolu
+- Sağ tık menü entegrasyonu
 
 ## Test Etme
 
@@ -89,7 +102,32 @@ Prerequisites klasörüne şu dosyaları indirin:
 
 ## Notlar
 
-- Installer yaklaşık 20MB (online) veya 400MB (offline)
-- İlk çalıştırmada mikrofon testi yapılır
-- E-posta özellikleri için Outlook önerilir ama zorunlu değil
+- **Installer boyutu:** ~400-500MB (Tüm AI provider'lar dahil)
+- **Kurulum süresi:** ~7-10 dakika (İnternet gerekli)
+- **Kurulum sonrası:** Tüm AI provider'lar kullanıma hazır
+- **İlk çalıştırma:** ChatGPT ve Gemini bridge'leri otomatik başlar
+- **Claude kullanımı:** API key gerekli (https://console.anthropic.com/)
+- **E-posta özellikleri:** Outlook önerilir ama zorunlu değil
+
+### Kurulum İçeriği:
+1. Python 3.11.7 + pip → %LOCALAPPDATA%\QuadroAIPilot\Python
+2. Playwright Chromium → ~200MB (Browser automation)
+3. Node.js 20.11.1 → Program Files\nodejs
+4. Claude CLI → npm global packages
+5. WebView2 + VC++ Redist → Sistem geneli
+
+### Yeni PC'de İlk Kurulum Kontrolü:
+```powershell
+# Python kontrolü
+%LOCALAPPDATA%\QuadroAIPilot\Python\python.exe --version
+
+# Playwright kontrolü
+%LOCALAPPDATA%\QuadroAIPilot\Python\python.exe -c "import playwright; print('OK')"
+
+# Node.js kontrolü
+node --version
+
+# Claude CLI kontrolü
+claude --version
+```
 - Tarayıcı eklentileri manuel yükleme gerektirir

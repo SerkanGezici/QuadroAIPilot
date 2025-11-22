@@ -121,8 +121,28 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM 6. edge-tts-nossl.py dosyasini kopyala (ONCE)
-echo [6/7] SSL bypass scripti kopyalaniyor...
+REM 6. Playwright ve websockets kur (ChatGPT/Gemini AI Bridges icin)
+echo [6/9] AI Bridge paketleri kuruluyor (ChatGPT/Gemini)...
+echo.
+echo playwright ve websockets kuruluyor... >> "%LOGFILE%"
+"%PYTHON_DIR%\python.exe" -m pip install --no-warn-script-location playwright==1.40.0 websockets==12.0 2>>"%LOGFILE%"
+if %errorlevel% neq 0 (
+    echo [UYARI] Playwright kurulum hatasi (ChatGPT/Gemini etkilenebilir) >> "%LOGFILE%"
+)
+
+REM 7. Playwright Chromium browser kur
+echo [7/9] Chromium browser kuruluyor... (2-3 dakika surebilir)
+echo.
+echo Playwright Chromium kuruluyor... >> "%LOGFILE%"
+"%PYTHON_DIR%\python.exe" -m playwright install chromium 2>>"%LOGFILE%"
+if %errorlevel% neq 0 (
+    echo [UYARI] Chromium kurulum hatasi (ChatGPT/Gemini etkilenebilir) >> "%LOGFILE%"
+) else (
+    echo [BASARILI] Playwright Chromium kuruldu >> "%LOGFILE%"
+)
+
+REM 8. edge-tts-nossl.py dosyasini kopyala
+echo [8/9] SSL bypass scripti kopyalaniyor...
 echo edge-tts-nossl.py kopyalanıyor... >> "%LOGFILE%"
 if exist "%~dp0edge-tts-nossl.py" (
     copy /y "%~dp0edge-tts-nossl.py" "%PYTHON_DIR%\Scripts\edge-tts-nossl.py" >nul 2>&1
@@ -135,8 +155,8 @@ if exist "%~dp0edge-tts-nossl.py" (
     echo [UYARI] edge-tts-nossl.py kaynak dosyada bulunamadi: %~dp0edge-tts-nossl.py >> "%LOGFILE%"
 )
 
-REM 7. TTS modulu ve Turkce sesler kontrolu (SSL bypass ile)
-echo [7/7] TTS sistemi kontrol ediliyor...
+REM 9. TTS modulu ve Turkce sesler kontrolu (SSL bypass ile)
+echo [9/9] TTS sistemi kontrol ediliyor...
 echo.
 echo TTS modulu kontrol ediliyor... >> "%LOGFILE%"
 

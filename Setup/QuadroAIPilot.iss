@@ -109,6 +109,10 @@ Source: "Scripts\InstallPythonOptimized.bat"; DestDir: "{app}\Scripts"; Flags: i
 Source: "Scripts\InstallTurkishVoices.ps1"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 Source: "Scripts\edge-tts-nossl.py"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 
+; Node.js ve Claude CLI kurulum scriptleri (AI provider'lar icin)
+Source: "Scripts\InstallNodeJS.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
+Source: "Scripts\InstallClaudeCLI.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
+
 ; WebDriver dosyaları
 Source: "Prerequisites\chromedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignoreversion; Components: main
 Source: "Prerequisites\msedgedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignoreversion; Components: main
@@ -116,6 +120,8 @@ Source: "Prerequisites\msedgedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignor
 ; Bağımlılık yükleyiciler - Sadece gerçekten gerekli olanlar
 Source: "Prerequisites\MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Components: runtime\webview2
 Source: "Prerequisites\VC_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Components: runtime\vcredist
+; Node.js MSI (Claude CLI icin)
+Source: "Prerequisites\node-v20.11.1-x64.msi"; DestDir: "{app}\Prerequisites"; Flags: ignoreversion; Components: main
 ; .NET 8 Runtime - KALDIRILDI (Self-contained)
 ; Windows App SDK - KALDIRILDI (Self-contained)
 
@@ -160,14 +166,23 @@ Filename: "{tmp}\VC_redist.x64.exe"; Parameters: "/quiet /norestart"; StatusMsg:
 ; WebView2 Runtime - Kontrol et, yoksa kur
 Filename: "{tmp}\MicrosoftEdgeWebView2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Microsoft Edge WebView2 kuruluyor..."; Flags: waituntilterminated runhidden; Check: not IsWebView2Installed
 
-; Python ve TTS kurulumu (EN ÖNCE) - optimize edilmis
-Filename: "{app}\Scripts\InstallPythonOptimized.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Python ve TTS kuruluyor... (Bu islem 2-5 dakika surebilir)"; Flags: waituntilterminated runhidden; BeforeInstall: LogInstallStart('Python'); AfterInstall: CheckPythonInstallation; Components: main
+; Python ve TTS kurulumu (EN ÖNCE) - optimize edilmis (ARTIK Playwright dahil)
+Filename: "{app}\Scripts\InstallPythonOptimized.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Python, TTS ve AI Bridges kuruluyor... (Bu islem 3-7 dakika surebilir)"; Flags: waituntilterminated runhidden; BeforeInstall: LogInstallStart('Python'); AfterInstall: CheckPythonInstallation; Components: main
 
 ; Python kurulumunu test et ve cache olustur
 Filename: "{cmd}"; Parameters: "/c ""%LOCALAPPDATA%\QuadroAIPilot\Python\python.exe"" -c ""import edge_tts; print('TTS hazir')"""; StatusMsg: "TTS sistemi hazirlaniyor..."; Flags: waituntilterminated runhidden; Components: main
 
+; Playwright kurulumunu test et (ChatGPT/Gemini icin)
+Filename: "{cmd}"; Parameters: "/c ""%LOCALAPPDATA%\QuadroAIPilot\Python\python.exe"" -c ""import playwright; print('Playwright hazir')"""; StatusMsg: "AI Bridges hazirlaniyor..."; Flags: waituntilterminated runhidden; Components: main
+
 ; Türkçe ses paketleri kurulumu
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\InstallTurkishVoices.ps1"""; WorkingDir: "{app}\Scripts"; StatusMsg: "Turkce ses paketleri kuruluyor..."; Flags: waituntilterminated runhidden; Components: main
+
+; Node.js kurulumu (Claude AI icin)
+Filename: "{app}\Scripts\InstallNodeJS.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Node.js kuruluyor (Claude AI icin)..."; Flags: waituntilterminated runhidden; Components: main
+
+; Claude CLI kurulumu
+Filename: "{app}\Scripts\InstallClaudeCLI.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Claude CLI kuruluyor..."; Flags: waituntilterminated runhidden; Components: main
 
 ; Windows özellikleri
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\EnableWindowsFeatures.ps1"""; StatusMsg: "Windows ozellikleri etkinlestiriliyor..."; Flags: waituntilterminated runhidden; Components: main
