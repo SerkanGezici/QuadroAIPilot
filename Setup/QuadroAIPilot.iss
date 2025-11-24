@@ -224,24 +224,6 @@ begin
   RegQueryStringValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', S);
 end;
 
-// Kurulum sonunda PATH broadcast
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then
-  begin
-    RefreshEnvironment;
-  end;
-end;
-
-// Restart gereksinimi kontrol - Node.js kurulduysa restart öner
-function NeedRestart(): Boolean;
-var
-  ResultCode: Integer;
-begin
-  // Node.js kurulu olup olmadığını kontrol et
-  Result := not Exec('cmd.exe', '/c where node', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0);
-end;
-
 // Sistem kontrol fonksiyonları - Windows 11 için sadeleştirilmiş
 
 // Python kontrolü
@@ -617,9 +599,12 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
+    // PATH'i yenile (Node.js ve Claude CLI için)
+    RefreshEnvironment;
+
     // İlk çalıştırma işaretçisi
     SaveStringToFile(ExpandConstant('{app}\FirstRun.flag'), 'true', False);
-    
+
     // Test batch dosyası oluştur
     CreatePostInstallTestBatch;
     
