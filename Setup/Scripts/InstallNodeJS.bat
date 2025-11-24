@@ -32,17 +32,30 @@ if %errorlevel% equ 0 (
 REM Node.js MSI dosyasini bul
 set "NODE_MSI=%~dp0..\Prerequisites\node-v20.11.1-x64.msi"
 
+echo Aranan MSI konumu: %NODE_MSI% >> "%LOGFILE%"
+echo Script konumu: %~dp0 >> "%LOGFILE%"
+echo Calisan dizin: %CD% >> "%LOGFILE%"
+
 if not exist "%NODE_MSI%" (
     echo [HATA] Node.js MSI bulunamadi: %NODE_MSI% >> "%LOGFILE%"
     echo.
-    echo HATA: Node.js kurulum dosyasi bulunamadi!
-    echo Beklenen konum: %NODE_MSI%
+    echo ============================================
+    echo    KRITIK HATA: Node.js Kurulum Dosyasi Bulunamadi!
+    echo ============================================
     echo.
-    timeout /t 5 /nobreak > nul
+    echo Beklenen konum: %NODE_MSI%
+    echo Script konumu: %~dp0
+    echo.
+    echo Bu hata, setup paketinin eksik oldugunu gosterir.
+    echo Lutfen setup dosyasini yeniden indirin.
+    echo.
+    echo Log dosyasi: %LOGFILE%
+    echo.
+    pause
     exit /b 1
 )
 
-echo Node.js MSI bulundu: %NODE_MSI% >> "%LOGFILE%"
+echo [BASARILI] Node.js MSI bulundu: %NODE_MSI% >> "%LOGFILE%"
 
 REM Node.js MSI kurulumu (sessiz mod)
 echo Node.js kuruluyor... (1-2 dakika)
@@ -54,11 +67,25 @@ if %errorlevel% neq 0 (
     echo [HATA] Node.js kurulum hatasi (exit code: %errorlevel%) >> "%LOGFILE%"
     echo MSI log: %LOGFILE%_msi.txt >> "%LOGFILE%"
     echo.
-    echo HATA: Node.js kurulamadi!
-    echo Detaylar: %LOGFILE%
-    echo MSI Log: %LOGFILE%_msi.txt
+    echo ============================================
+    echo    KRITIK HATA: Node.js Kurulamadi!
+    echo ============================================
     echo.
-    timeout /t 10 /nobreak > nul
+    echo Exit Code: %errorlevel%
+    echo.
+    echo Olasi sebepler:
+    echo - Yonetici yetkileri gerekli olabilir
+    echo - Onceki Node.js kurulumu cakisiyor olabilir
+    echo - Disk alani yetersiz
+    echo - Windows Installer servisi calismiyordur
+    echo.
+    echo Log dosyalari:
+    echo   Setup log: %LOGFILE%
+    echo   MSI log  : %LOGFILE%_msi.txt
+    echo.
+    echo ONEMLI: Claude AI ozelligi bu hatayla calismaz!
+    echo.
+    pause
     exit /b 1
 )
 
@@ -72,12 +99,23 @@ timeout /t 2 /nobreak > nul
 
 where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [UYARI] Node.js PATH'te bulunamadi, manuel dogrulama gerekebilir >> "%LOGFILE%"
+    echo [UYARI] Node.js PATH'te bulunamadi, yeniden baslatma gerekli >> "%LOGFILE%"
     echo.
-    echo UYARI: Node.js kuruldu ama PATH'te bulunamadi.
-    echo Lutfen bilgisayari yeniden baslatin.
+    echo ============================================
+    echo    UYARI: Bilgisayar Yeniden Baslatilmali!
+    echo ============================================
     echo.
-    timeout /t 5 /nobreak > nul
+    echo Node.js basariyla kuruldu ancak komut satirindan
+    echo erisilebilmesi icin bilgisayarin yeniden baslatilmasi
+    echo gerekmektedir.
+    echo.
+    echo Kurulumdan sonra bilgisayari yeniden baslatin,
+    echo aksi takdirde Claude AI ozelligi calismaz!
+    echo.
+    echo Log dosyasi: %LOGFILE%
+    echo.
+    timeout /t 8 /nobreak > nul
+    REM Basarili kabul et, restart gerekli
     exit /b 0
 )
 

@@ -59,6 +59,8 @@ AlwaysRestart=no
 CloseApplications=yes
 RestartApplications=yes
 DirExistsWarning=no
+; Restart önerisi - Node.js PATH güncellemesi için
+RestartIfNeededByRun=yes
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"; LicenseFile: "..\LICENSE_TR.txt"
@@ -178,11 +180,11 @@ Filename: "{cmd}"; Parameters: "/c ""%LOCALAPPDATA%\QuadroAIPilot\Python\python.
 ; Türkçe ses paketleri kurulumu
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\InstallTurkishVoices.ps1"""; WorkingDir: "{app}\Scripts"; StatusMsg: "Turkce ses paketleri kuruluyor..."; Flags: waituntilterminated runhidden; Components: main
 
-; Node.js kurulumu (Claude AI icin)
-Filename: "{app}\Scripts\InstallNodeJS.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Node.js kuruluyor (Claude AI icin)..."; Flags: waituntilterminated runhidden; Components: main
+; Node.js kurulumu (Claude AI icin) - HATA MESAJLARI GORUNUR
+Filename: "{app}\Scripts\InstallNodeJS.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Node.js kuruluyor (Claude AI icin)... (1-2 dakika)"; Flags: waituntilterminated; Components: main
 
-; Claude CLI kurulumu
-Filename: "{app}\Scripts\InstallClaudeCLI.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Claude CLI kuruluyor..."; Flags: waituntilterminated runhidden; Components: main
+; Claude CLI kurulumu - HATA MESAJLARI GORUNUR
+Filename: "{app}\Scripts\InstallClaudeCLI.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Claude CLI kuruluyor... (1-2 dakika)"; Flags: waituntilterminated; Components: main
 
 ; Windows özellikleri
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\EnableWindowsFeatures.ps1"""; StatusMsg: "Windows ozellikleri etkinlestiriliyor..."; Flags: waituntilterminated runhidden; Components: main
@@ -211,6 +213,34 @@ Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -Command Add-Mp
 
 [Code]
 // var bölümü kaldırıldı - download page kullanmıyoruz
+
+// PATH broadcast fonksiyonu - Node.js ve Claude CLI için
+procedure RefreshEnvironment;
+var
+  S: string;
+begin
+  S := 'Environment';
+  RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', S);
+  RegQueryStringValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', S);
+end;
+
+// Kurulum sonunda PATH broadcast
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    RefreshEnvironment;
+  end;
+end;
+
+// Restart gereksinimi kontrol - Node.js kurulduysa restart öner
+function NeedRestart(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  // Node.js kurulu olup olmadığını kontrol et
+  Result := not Exec('cmd.exe', '/c where node', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0);
+end;
 
 // Sistem kontrol fonksiyonları - Windows 11 için sadeleştirilmiş
 

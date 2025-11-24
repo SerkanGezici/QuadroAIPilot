@@ -18,14 +18,33 @@ echo.
 
 REM Node.js kurulu mu kontrol et
 echo Node.js kontrol ediliyor... >> "%LOGFILE%"
+echo PATH degiskeni: >> "%LOGFILE%"
+echo %PATH% >> "%LOGFILE%"
+echo. >> "%LOGFILE%"
+
 where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo [HATA] Node.js bulunamadi! >> "%LOGFILE%"
     echo.
-    echo HATA: Node.js kurulu degil!
-    echo Claude CLI icin Once Node.js kurulmali.
+    echo ============================================
+    echo    KRITIK HATA: Node.js Bulunamadi!
+    echo ============================================
     echo.
-    timeout /t 5 /nobreak > nul
+    echo Claude CLI kurulumu icin Node.js gereklidir.
+    echo.
+    echo Olasi sebepler:
+    echo - Node.js kurulum scripti hata verdi
+    echo - PATH guncellemesi icin bilgisayar yeniden baslatilmali
+    echo - Node.js kurulumu atlanmis olabilir
+    echo.
+    echo Cozum:
+    echo 1. Bilgisayari yeniden baslatin
+    echo 2. Hala calismiyorsa Node.js manuel kurun:
+    echo    https://nodejs.org/dist/v20.11.1/
+    echo.
+    echo Log dosyasi: %LOGFILE%
+    echo.
+    pause
     exit /b 1
 )
 
@@ -71,15 +90,29 @@ call npm install -g @anthropics/claude >> "%LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [HATA] Claude CLI kurulum hatasi (exit code: %errorlevel%) >> "%LOGFILE%"
     echo.
-    echo HATA: Claude CLI kurulamadi!
-    echo Detaylar: %LOGFILE%
+    echo ============================================
+    echo    KRITIK HATA: Claude CLI Kurulamadi!
+    echo ============================================
+    echo.
+    echo Exit Code: %errorlevel%
     echo.
     echo Olasi sebepler:
-    echo - Internet baglantisi sorunu
-    echo - npm yetkisi sorunu
+    echo - Internet baglantisi kesildi veya yavas
+    echo - npm kayit sunucusuna erisilemedi (npmjs.com)
+    echo - Guvenlik duvari npm'i engelliyor
+    echo - npm cache bozuk
     echo - @anthropics/claude paketi bulunamadi
     echo.
-    timeout /t 10 /nobreak > nul
+    echo Cozum:
+    echo 1. Internet baglantinizi kontrol edin
+    echo 2. Kurulum tamamlandiktan sonra manuel calistirin:
+    echo    npm install -g @anthropics/claude
+    echo.
+    echo Log dosyasi: %LOGFILE%
+    echo.
+    echo ONEMLI: Claude AI ozelligi bu hatayla calismaz!
+    echo.
+    pause
     exit /b 1
 )
 

@@ -108,6 +108,8 @@ Prerequisites klasörüne şu dosyaları indirin:
 - **İlk çalıştırma:** ChatGPT ve Gemini bridge'leri otomatik başlar
 - **Claude kullanımı:** API key gerekli (https://console.anthropic.com/)
 - **E-posta özellikleri:** Outlook önerilir ama zorunlu değil
+- **⚠️ ÖNEMLİ:** Node.js kurulumundan sonra **bilgisayarın yeniden başlatılması gerekebilir**
+- **Hata mesajları:** Node.js ve Claude CLI kurulum adımlarında hata oluşursa detaylı mesajlar gösterilir
 
 ### Kurulum İçeriği:
 1. Python 3.11.7 + pip → %LOCALAPPDATA%\QuadroAIPilot\Python
