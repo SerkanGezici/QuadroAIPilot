@@ -29,11 +29,15 @@ if %errorlevel% equ 0 (
     exit /b 0
 )
 
-REM Node.js MSI dosyasini bul
-set "NODE_MSI=%~dp0..\Prerequisites\node-v20.11.1-x64.msi"
+REM Node.js MSI dosyasini bul - MUTLAK YOL (MSI installer .. karakterini kabul etmiyor)
+set "SCRIPT_DIR=%~dp0"
+set "NODE_MSI=%SCRIPT_DIR%..\Prerequisites\node-v20.11.1-x64.msi"
+
+REM .. karakterini kaldir - mutlak yol olustur
+for %%I in ("%NODE_MSI%") do set "NODE_MSI=%%~fI"
 
 echo Aranan MSI konumu: %NODE_MSI% >> "%LOGFILE%"
-echo Script konumu: %~dp0 >> "%LOGFILE%"
+echo Script konumu: %SCRIPT_DIR% >> "%LOGFILE%"
 echo Calisan dizin: %CD% >> "%LOGFILE%"
 
 if not exist "%NODE_MSI%" (

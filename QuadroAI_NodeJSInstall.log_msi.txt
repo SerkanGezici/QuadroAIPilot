@@ -1,0 +1,37 @@
+﻿=== Verbose logging started: 24.11.2025  11:18:12  Build type: SHIP UNICODE 5.00.10011.00  Calling process: C:\WINDOWS\system32\msiexec.exe ===
+MSI (c) (74:80) [11:18:12:679]: Resetting cached policy values
+MSI (c) (74:80) [11:18:12:679]: Machine policy value 'Debug' is 0
+MSI (c) (74:80) [11:18:12:679]: ******* RunEngine:
+           ******* Product: C:\Program Files\QuadroAIPilot\Scripts\..\Prerequisites\node-v20.11.1-x64.msi
+           ******* Action: 
+           ******* CommandLine: **********
+MSI (c) (74:80) [11:18:12:679]: Client-side and UI is none or basic: Running entire install on the server.
+MSI (c) (74:80) [11:18:12:679]: Grabbed execution mutex.
+MSI (c) (74:80) [11:18:12:718]: Cloaking enabled.
+MSI (c) (74:80) [11:18:12:718]: Attempting to enable all disabled privileges before calling Install on Server
+MSI (c) (74:80) [11:18:12:718]: Incrementing counter to disable shutdown. Counter after increment: 0
+MSI (s) (70:C0) [11:18:12:726]: Running installation inside multi-package transaction C:\Program Files\QuadroAIPilot\Scripts\..\Prerequisites\node-v20.11.1-x64.msi
+MSI (s) (70:C0) [11:18:12:726]: Grabbed execution mutex.
+MSI (s) (70:6C) [11:18:12:733]: Resetting cached policy values
+MSI (s) (70:6C) [11:18:12:733]: Machine policy value 'Debug' is 0
+MSI (s) (70:6C) [11:18:12:733]: ******* RunEngine:
+           ******* Product: C:\Program Files\QuadroAIPilot\Scripts\..\Prerequisites\node-v20.11.1-x64.msi
+           ******* Action: 
+           ******* CommandLine: **********
+MSI (s) (70:6C) [11:18:12:737]: Machine policy value 'DisableUserInstalls' is 0
+MSI (s) (70:6C) [11:18:12:738]: Note: 1: 2203 2: C:\WINDOWS\Installer\inprogressinstallinfo.ipi 3: -2147287038 
+MSI (s) (70:6C) [11:18:12:743]: SRSetRestorePoint skipped for this transaction.
+MSI (s) (70:6C) [11:18:12:743]: Note: 1: 1402 2: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer 3: 2 
+MSI (s) (70:6C) [11:18:12:743]: Note: 1: 1324 2: .. 3: 1 
+MSI (s) (70:6C) [11:18:12:743]: MainEngineThread is returning 2
+MSI (s) (70:C0) [11:18:12:743]: No System Restore sequence number for this installation.
+MSI (s) (70:C0) [11:18:12:745]: User policy value 'DisableRollback' is 0
+MSI (s) (70:C0) [11:18:12:745]: Machine policy value 'DisableRollback' is 0
+MSI (s) (70:C0) [11:18:12:745]: Incrementing counter to disable shutdown. Counter after increment: 0
+MSI (s) (70:C0) [11:18:12:745]: Note: 1: 1402 2: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Installer\Rollback\Scripts 3: 2 
+MSI (s) (70:C0) [11:18:12:745]: Note: 1: 1402 2: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Installer\Rollback\Scripts 3: 2 
+MSI (s) (70:C0) [11:18:12:745]: Decrementing counter to disable shutdown. If counter >= 0, shutdown will be denied.  Counter after decrement: -1
+MSI (c) (74:80) [11:18:12:745]: Decrementing counter to disable shutdown. If counter >= 0, shutdown will be denied.  Counter after decrement: -1
+MSI (c) (74:80) [11:18:12:745]: MainEngineThread is returning 2
+=== Verbose logging stopped: 24.11.2025  11:18:12 ===
+
