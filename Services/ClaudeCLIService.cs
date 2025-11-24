@@ -32,7 +32,7 @@ namespace QuadroAIPilot.Services
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    WorkingDirectory = @"C:\Users\serkan\"
+                    WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
                 };
 
                 LogService.LogInfo("[ClaudeCLI] Checking Claude CLI availability...");
@@ -172,9 +172,11 @@ namespace QuadroAIPilot.Services
             Process process = null;
             try
             {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
                 LogService.LogInfo($"[ClaudeCLI] Starting process with flag '{flag}'");
                 LogService.LogInfo($"[ClaudeCLI] Temp file: {tempFile}");
-                LogService.LogInfo($"[ClaudeCLI] Working dir: C:\\Users\\serkan\\");
+                LogService.LogInfo($"[ClaudeCLI] Working dir: {userProfile}");
 
                 // Claude Code html projesindeki gibi cmd.exe ile redirect
                 var psi = new ProcessStartInfo
@@ -185,7 +187,7 @@ namespace QuadroAIPilot.Services
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    WorkingDirectory = @"C:\Users\serkan\",  // Kullanıcı ana dizini
+                    WorkingDirectory = userProfile,  // Kullanıcı ana dizini (dinamik)
                     StandardOutputEncoding = Encoding.UTF8,
                     StandardErrorEncoding = Encoding.UTF8
                 };
