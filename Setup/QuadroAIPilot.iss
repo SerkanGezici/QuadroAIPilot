@@ -180,11 +180,11 @@ Filename: "{cmd}"; Parameters: "/c ""%LOCALAPPDATA%\QuadroAIPilot\Python\python.
 ; Türkçe ses paketleri kurulumu
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\InstallTurkishVoices.ps1"""; WorkingDir: "{app}\Scripts"; StatusMsg: "Turkce ses paketleri kuruluyor..."; Flags: waituntilterminated runhidden; Components: main
 
-; Node.js kurulumu (Claude AI icin) - HATA MESAJLARI GORUNUR
-Filename: "{app}\Scripts\InstallNodeJS.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Node.js kuruluyor (Claude AI icin)... (1-2 dakika)"; Flags: waituntilterminated; Components: main
+; Node.js kurulumu (Claude AI icin) - Console window acik (hata mesajlari gorunur)
+Filename: "{cmd}"; Parameters: "/c ""{app}\Scripts\InstallNodeJS.bat"" & pause"; WorkingDir: "{app}\Scripts"; StatusMsg: "Node.js kuruluyor (Claude AI icin)... (1-2 dakika)"; Flags: waituntilterminated; Components: main
 
-; Claude CLI kurulumu - HATA MESAJLARI GORUNUR
-Filename: "{app}\Scripts\InstallClaudeCLI.bat"; WorkingDir: "{app}\Scripts"; StatusMsg: "Claude CLI kuruluyor... (1-2 dakika)"; Flags: waituntilterminated; Components: main
+; Claude CLI kurulumu - Console window acik (hata mesajlari gorunur)
+Filename: "{cmd}"; Parameters: "/c ""{app}\Scripts\InstallClaudeCLI.bat"" & pause"; WorkingDir: "{app}\Scripts"; StatusMsg: "Claude CLI kuruluyor... (1-2 dakika)"; Flags: waituntilterminated; Components: main
 
 ; Windows özellikleri
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\EnableWindowsFeatures.ps1"""; StatusMsg: "Windows ozellikleri etkinlestiriliyor..."; Flags: waituntilterminated runhidden; Components: main

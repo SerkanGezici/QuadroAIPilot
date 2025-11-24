@@ -66,8 +66,13 @@ echo Node.js kuruluyor... (1-2 dakika)
 echo Node.js kuruluyor (msiexec)... >> "%LOGFILE%"
 
 msiexec /i "%NODE_MSI%" /qn /norestart /l*v "%LOGFILE%_msi.txt"
+set "MSI_EXIT=%errorlevel%"
 
-if %errorlevel% neq 0 (
+REM MSI'nin dosya yazmayı tamamlamasini bekle
+echo MSI tamamlaniyor... >> "%LOGFILE%"
+timeout /t 5 /nobreak > nul
+
+if %MSI_EXIT% neq 0 (
     echo [HATA] Node.js kurulum hatasi (exit code: %errorlevel%) >> "%LOGFILE%"
     echo MSI log: %LOGFILE%_msi.txt >> "%LOGFILE%"
     echo.
@@ -93,34 +98,48 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM PATH'i yenile (Node.js eklendi)
-echo PATH yenileniyor... >> "%LOGFILE%"
-call refreshenv 2>nul
+REM PATH'i yenile (Node.js eklendi) - Native Windows yontemi (refreshenv Chocolatey gerektirir)
+echo PATH yenileniyor (native method)... >> "%LOGFILE%"
+
+REM System PATH'i registry'den oku
+for /f "skip=2 tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYSTEM_PATH=%%b"
+
+REM User PATH'i registry'den oku
+for /f "skip=2 tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%b"
+
+REM Mevcut session icin PATH'i guncelle
+set "PATH=%SYSTEM_PATH%;%USER_PATH%;C:\Program Files\nodejs"
+
+echo [BILGI] PATH guncellendi (session icin) >> "%LOGFILE%"
+echo System PATH: %SYSTEM_PATH% >> "%LOGFILE%"
+echo User PATH: %USER_PATH% >> "%LOGFILE%"
 
 REM Kurulumu dogrula
 echo Node.js kurulum dogrulamasi... >> "%LOGFILE%"
-timeout /t 2 /nobreak > nul
+timeout /t 3 /nobreak > nul
 
 where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [UYARI] Node.js PATH'te bulunamadi, yeniden baslatma gerekli >> "%LOGFILE%"
+    echo [KRITIK] Node.js PATH'te bulunamadi - SETUP DURDURULDU >> "%LOGFILE%"
     echo.
     echo ============================================
-    echo    UYARI: Bilgisayar Yeniden Baslatilmali!
+    echo    KRITIK: Setup Durduruldu!
     echo ============================================
     echo.
-    echo Node.js basariyla kuruldu ancak komut satirindan
-    echo erisilebilmesi icin bilgisayarin yeniden baslatilmasi
-    echo gerekmektedir.
+    echo Node.js MSI kurulumu tamamlandi ancak PATH'te bulunamadi.
     echo.
-    echo Kurulumdan sonra bilgisayari yeniden baslatin,
-    echo aksi takdirde Claude AI ozelligi calismaz!
+    echo COZUM:
+    echo 1. Bu setup penceresini kapatin
+    echo 2. Bilgisayari yeniden baslatin
+    echo 3. Setup'i tekrar calistirin
+    echo.
+    echo NOT: Restart sonrasi Node.js ve Claude CLI otomatik kurulacak.
     echo.
     echo Log dosyasi: %LOGFILE%
     echo.
-    timeout /t 8 /nobreak > nul
-    REM Basarili kabul et, restart gerekli
-    exit /b 0
+    pause
+    REM BASARISIZ exit code (Claude CLI kurulmasini engelle)
+    exit /b 2
 )
 
 REM Version bilgisi

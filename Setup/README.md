@@ -108,8 +108,26 @@ Prerequisites klasörüne şu dosyaları indirin:
 - **İlk çalıştırma:** ChatGPT ve Gemini bridge'leri otomatik başlar
 - **Claude kullanımı:** API key gerekli (https://console.anthropic.com/)
 - **E-posta özellikleri:** Outlook önerilir ama zorunlu değil
-- **⚠️ ÖNEMLİ:** Node.js kurulumundan sonra **bilgisayarın yeniden başlatılması gerekebilir**
-- **Hata mesajları:** Node.js ve Claude CLI kurulum adımlarında hata oluşursa detaylı mesajlar gösterilir
+
+### ⚠️ ÖNEMLİ KURULUM NOTLARI
+
+**Node.js Kurulumu:**
+- Kurulum sırasında console penceresi açılacak (NORMAL davranış)
+- Eğer "Node.js PATH'te bulunamadı" uyarısı alırsanız:
+  1. **Setup DURDURULACAK** - Bu normaldir!
+  2. Bilgisayarı yeniden başlatın
+  3. Setup'ı **TEKRAR** çalıştırın
+  4. İkinci deneme başarılı olacak (Node.js zaten kurulu)
+
+**Claude CLI Kurulumu:**
+- Internet bağlantısı gereklidir (1-2 dakika)
+- Kurulum ilerleme mesajları console'da görünür
+- npm paket indirme işlemi gösterilir
+
+**Hata Durumunda:**
+- Tüm hata mesajları ekranda görünür
+- Log dosyaları: `%TEMP%\QuadroAI_*.log`
+- Pause komutu ile hata incelenebilir
 
 ### Kurulum İçeriği:
 1. Python 3.11.7 + pip → %LOCALAPPDATA%\QuadroAIPilot\Python
