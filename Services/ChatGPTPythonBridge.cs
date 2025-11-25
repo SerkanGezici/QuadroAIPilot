@@ -40,35 +40,51 @@ namespace QuadroAIPilot.Services
             {
                 if (_isStarted)
                 {
-                    LogService.LogWarning("[ChatGPTBridge] Already started");
+                    LogService.LogWarning("[ChatGPTBridge] Already started - returning early");
                     return;
                 }
+                _isStarted = true; // ✅ LOCK İÇİNDE SET ET - Race condition önlenir
             }
 
             try
             {
+                LogService.LogInfo("[ChatGPTBridge] ========== STARTUP DEBUG ==========");
                 LogService.LogInfo("[ChatGPTBridge] Starting HTTP bridge...");
 
                 // Python script yolu
                 var appDir = AppDomain.CurrentDomain.BaseDirectory;
-                var scriptPath = Path.Combine(appDir, "PythonBridge", "chatgpt_http_bridge.py");
+                LogService.LogInfo($"[ChatGPTBridge] App directory: {appDir}");
+
+                var pythonBridgeDir = Path.Combine(appDir, "PythonBridge");
+                LogService.LogInfo($"[ChatGPTBridge] PythonBridge directory: {pythonBridgeDir}");
+                LogService.LogInfo($"[ChatGPTBridge] PythonBridge exists: {Directory.Exists(pythonBridgeDir)}");
+
+                var scriptPath = Path.Combine(pythonBridgeDir, "chatgpt_http_bridge.py");
+                LogService.LogInfo($"[ChatGPTBridge] Script path: {scriptPath}");
+                LogService.LogInfo($"[ChatGPTBridge] Script exists: {File.Exists(scriptPath)}");
 
                 if (!File.Exists(scriptPath))
                 {
-                    LogService.LogError($"[ChatGPTBridge] Script not found: {scriptPath}");
+                    LogService.LogError($"[ChatGPTBridge] FATAL: Script not found at {scriptPath}");
+                    LogService.LogError("[ChatGPTBridge] Bridge başlatılamadı - script dosyası eksik");
                     return;
                 }
 
                 // Python path bul
                 var pythonPath = await FindPythonAsync();
+                LogService.LogInfo($"[ChatGPTBridge] Python path: {pythonPath ?? "NOT FOUND"}");
+
                 if (string.IsNullOrEmpty(pythonPath))
                 {
-                    LogService.LogError("[ChatGPTBridge] Python not found in PATH");
+                    LogService.LogError("[ChatGPTBridge] FATAL: Python not found in PATH or standard locations");
+                    LogService.LogError("[ChatGPTBridge] Bridge başlatılamadı - Python bulunamadı");
                     return;
                 }
 
-                LogService.LogInfo($"[ChatGPTBridge] Using Python: {pythonPath}");
+                LogService.LogInfo($"[ChatGPTBridge] Python executable: {pythonPath}");
+                LogService.LogInfo($"[ChatGPTBridge] Python exists: {File.Exists(pythonPath)}");
                 LogService.LogInfo($"[ChatGPTBridge] Script: {scriptPath}");
+                LogService.LogInfo("[ChatGPTBridge] ====================================");
 
                 // Process başlat
                 var psi = new ProcessStartInfo
@@ -108,11 +124,6 @@ namespace QuadroAIPilot.Services
                 _pythonProcess.Start();
                 _pythonProcess.BeginOutputReadLine();
                 _pythonProcess.BeginErrorReadLine();
-
-                lock (_lock)
-                {
-                    _isStarted = true;
-                }
 
                 var pythonPid = _pythonProcess.Id;
                 LogService.LogInfo($"[ChatGPTBridge] Process started (PID: {pythonPid})");
@@ -172,36 +183,56 @@ namespace QuadroAIPilot.Services
             catch (Exception ex)
             {
                 LogService.LogError($"[ChatGPTBridge] Start failed: {ex.Message}");
+                LogService.LogError($"[ChatGPTBridge] Exception Type: {ex.GetType().Name}");
+                LogService.LogError($"[ChatGPTBridge] StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    LogService.LogError($"[ChatGPTBridge] InnerException: {ex.InnerException.Message}");
+                }
                 lock (_lock)
                 {
-                    _isStarted = false;
+                    _isStarted = false; // ✅ Hata durumunda reset et
                 }
+                throw; // ✅ Exception'ı App.xaml.cs catch bloğuna fırlat
             }
         }
 
         /// <summary>
-        /// Python yolu bul (python3 veya python)
+        /// Python yolu bul (embedded Python öncelikli, sonra system Python fallback)
         /// </summary>
         private async Task<string> FindPythonAsync()
         {
             try
             {
-                // Önce python3 dene
-                var result = await RunCommandAsync("python3", "--version");
-                if (result.success)
+                // 1. QuadroAIPilot embedded Python (Setup tarafından kurulmuş)
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var embeddedPython = Path.Combine(localAppData, "QuadroAIPilot", "Python", "python.exe");
+
+                if (File.Exists(embeddedPython))
                 {
-                    LogService.LogInfo($"[ChatGPTBridge] Found python3: {result.output.Trim()}");
-                    return "python3";
+                    LogService.LogInfo($"[ChatGPTBridge] Found embedded Python: {embeddedPython}");
+                    return embeddedPython;
                 }
 
-                // Sonra python dene
-                result = await RunCommandAsync("python", "--version");
+                LogService.LogWarning("[ChatGPTBridge] Embedded Python not found, trying system Python...");
+
+                // 2. System Python fallback (development ortamı için)
+                var result = await RunCommandAsync("python", "--version");
                 if (result.success)
                 {
-                    LogService.LogInfo($"[ChatGPTBridge] Found python: {result.output.Trim()}");
+                    LogService.LogInfo($"[ChatGPTBridge] Found system python: {result.output.Trim()}");
                     return "python";
                 }
 
+                // 3. python3 fallback (Linux/WSL için)
+                result = await RunCommandAsync("python3", "--version");
+                if (result.success)
+                {
+                    LogService.LogInfo($"[ChatGPTBridge] Found system python3: {result.output.Trim()}");
+                    return "python3";
+                }
+
+                LogService.LogError("[ChatGPTBridge] Python not found anywhere!");
                 return null;
             }
             catch (Exception ex)
@@ -270,6 +301,7 @@ namespace QuadroAIPilot.Services
                 {
                     return;
                 }
+                _isStarted = false; // ✅ Flag reset et
             }
 
             try

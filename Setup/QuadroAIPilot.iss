@@ -115,6 +115,12 @@ Source: "Scripts\edge-tts-nossl.py"; DestDir: "{app}\Scripts"; Flags: ignorevers
 Source: "Scripts\InstallNodeJS.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 Source: "Scripts\InstallClaudeCLI.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 
+; PythonBridge Python scriptleri (ChatGPT/Gemini AI Bridges) - AÇIKÇA EKLE
+Source: "..\bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish\PythonBridge\*.py"; DestDir: "{app}\PythonBridge"; Flags: ignoreversion; Components: main
+Source: "..\bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish\PythonBridge\*.txt"; DestDir: "{app}\PythonBridge"; Flags: ignoreversion; Components: main
+Source: "..\bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish\PythonBridge\*.md"; DestDir: "{app}\PythonBridge"; Flags: ignoreversion; Components: main
+Source: "..\bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish\PythonBridge\*.bat"; DestDir: "{app}\PythonBridge"; Flags: ignoreversion; Components: main
+
 ; WebDriver dosyaları
 Source: "Prerequisites\chromedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignoreversion; Components: main
 Source: "Prerequisites\msedgedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignoreversion; Components: main

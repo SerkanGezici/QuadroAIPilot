@@ -14,7 +14,8 @@ namespace QuadroAIPilot.Services
     public class GeminiService
     {
         private static readonly HttpClient _httpClient = new HttpClient();
-        private const string API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+        // Using Gemini 1.5 Flash for speed and efficiency
+        private const string API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
         /// <summary>
         /// Gemini API'ye mesaj gönderir ve yanıt alır

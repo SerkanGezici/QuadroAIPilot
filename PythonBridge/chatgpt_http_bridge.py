@@ -7,11 +7,17 @@ Basit HTTP server ile ChatGPT browser automation
 import asyncio
 import json
 import logging
+import os
 import sys
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from playwright.async_api import async_playwright
 import threading
+
+# Log klasörünü hazırla (AppData/QuadroAIPilot/Logs)
+log_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'QuadroAIPilot', 'Logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'chatgpt_bridge.log')
 
 # Logging - Windows console için UTF-8 encoding
 logging.basicConfig(
@@ -19,7 +25,7 @@ logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s',
     datefmt='%H:%M:%S',
     handlers=[
-        logging.FileHandler('chatgpt_bridge.log', encoding='utf-8'),
+        logging.FileHandler(log_file, encoding='utf-8'),
         logging.StreamHandler(sys.stdout)
     ]
 )

@@ -135,10 +135,48 @@ echo [7/9] Chromium browser kuruluyor... (2-3 dakika surebilir)
 echo.
 echo Playwright Chromium kuruluyor... >> "%LOGFILE%"
 "%PYTHON_DIR%\python.exe" -m playwright install chromium 2>>"%LOGFILE%"
-if %errorlevel% neq 0 (
-    echo [UYARI] Chromium kurulum hatasi (ChatGPT/Gemini etkilenebilir) >> "%LOGFILE%"
+set "PLAYWRIGHT_EXIT=%errorlevel%"
+
+if %PLAYWRIGHT_EXIT% neq 0 (
+    echo [UYARI] Chromium kurulum hatasi - ChatGPT ve Gemini ozellikleri calismayabilir >> "%LOGFILE%"
+    echo.
+    echo ============================================
+    echo    UYARI: Chromium Browser Kurulamadi
+    echo ============================================
+    echo.
+    echo Bu sorun ChatGPT ve Gemini AI ozelliklerini etkiler.
+    echo Claude ve diger AI servisleri calismaya devam eder.
+    echo.
+    echo Olasi sebepler:
+    echo - Internet baglantisi kesintisi
+    echo - Disk alanı yetersiz ^(Chromium: ~150MB^)
+    echo - Guvenlik yazilimi Chromium indirmeyi engelledi
+    echo.
+    echo Manuel cozum:
+    echo   %PYTHON_DIR%\python.exe -m playwright install chromium
+    echo.
+    echo Log: %LOGFILE%
+    echo.
+    timeout /t 8 /nobreak > nul
 ) else (
     echo [BASARILI] Playwright Chromium kuruldu >> "%LOGFILE%"
+
+    REM Playwright kurulumunu dogrula
+    echo Playwright kurulum dogrulamasi... >> "%LOGFILE%"
+    "%PYTHON_DIR%\python.exe" -m playwright --version >> "%LOGFILE%" 2>&1
+    if %errorlevel% equ 0 (
+        echo [BASARILI] Playwright kurulum dogrulandi >> "%LOGFILE%"
+    ) else (
+        echo [UYARI] Playwright dogrulama basarisiz >> "%LOGFILE%"
+    )
+
+    REM Chromium binary kontrolu
+    "%PYTHON_DIR%\python.exe" -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print('Chromium:', p.chromium.executable_path); p.stop()" >> "%LOGFILE%" 2>&1
+    if %errorlevel% equ 0 (
+        echo [BASARILI] Chromium binary bulundu ve test edildi >> "%LOGFILE%"
+    ) else (
+        echo [UYARI] Chromium binary testi basarisiz - bridge'ler calismayabilir >> "%LOGFILE%"
+    )
 )
 
 REM 8. edge-tts-nossl.py dosyasini kopyala

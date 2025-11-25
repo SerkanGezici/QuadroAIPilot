@@ -40,33 +40,49 @@ namespace QuadroAIPilot.Services
             {
                 if (_isStarted)
                 {
-                    LogService.LogWarning("[GeminiBridge] Already started");
+                    LogService.LogWarning("[GeminiBridge] Already started - returning early");
                     return;
                 }
+                _isStarted = true; // ✅ LOCK İÇİNDE SET ET - Race condition önlenir
             }
 
             try
             {
+                LogService.LogInfo("[GeminiBridge] ========== STARTUP DEBUG ==========");
                 LogService.LogInfo("[GeminiBridge] Starting HTTP bridge...");
 
                 var appDir = AppDomain.CurrentDomain.BaseDirectory;
-                var scriptPath = Path.Combine(appDir, "PythonBridge", "gemini_http_bridge.py");
+                LogService.LogInfo($"[GeminiBridge] App directory: {appDir}");
+
+                var pythonBridgeDir = Path.Combine(appDir, "PythonBridge");
+                LogService.LogInfo($"[GeminiBridge] PythonBridge directory: {pythonBridgeDir}");
+                LogService.LogInfo($"[GeminiBridge] PythonBridge exists: {Directory.Exists(pythonBridgeDir)}");
+
+                var scriptPath = Path.Combine(pythonBridgeDir, "gemini_http_bridge.py");
+                LogService.LogInfo($"[GeminiBridge] Script path: {scriptPath}");
+                LogService.LogInfo($"[GeminiBridge] Script exists: {File.Exists(scriptPath)}");
 
                 if (!File.Exists(scriptPath))
                 {
-                    LogService.LogError($"[GeminiBridge] Script not found: {scriptPath}");
+                    LogService.LogError($"[GeminiBridge] FATAL: Script not found at {scriptPath}");
+                    LogService.LogError("[GeminiBridge] Bridge başlatılamadı - script dosyası eksik");
                     return;
                 }
 
                 var pythonPath = await FindPythonAsync();
+                LogService.LogInfo($"[GeminiBridge] Python path: {pythonPath ?? "NOT FOUND"}");
+
                 if (string.IsNullOrEmpty(pythonPath))
                 {
-                    LogService.LogError("[GeminiBridge] Python not found");
+                    LogService.LogError("[GeminiBridge] FATAL: Python not found in PATH or standard locations");
+                    LogService.LogError("[GeminiBridge] Bridge başlatılamadı - Python bulunamadı");
                     return;
                 }
 
-                LogService.LogInfo($"[GeminiBridge] Using Python: {pythonPath}");
+                LogService.LogInfo($"[GeminiBridge] Python executable: {pythonPath}");
+                LogService.LogInfo($"[GeminiBridge] Python exists: {File.Exists(pythonPath)}");
                 LogService.LogInfo($"[GeminiBridge] Script: {scriptPath}");
+                LogService.LogInfo("[GeminiBridge] ====================================");
 
                 var psi = new ProcessStartInfo
                 {
@@ -97,11 +113,6 @@ namespace QuadroAIPilot.Services
                 _pythonProcess.Start();
                 _pythonProcess.BeginOutputReadLine();
                 _pythonProcess.BeginErrorReadLine();
-
-                lock (_lock)
-                {
-                    _isStarted = true;
-                }
 
                 LogService.LogInfo($"[GeminiBridge] Process started (PID: {_pythonProcess.Id})");
 
@@ -151,15 +162,41 @@ namespace QuadroAIPilot.Services
             catch (Exception ex)
             {
                 LogService.LogError($"[GeminiBridge] Start failed: {ex.Message}");
-                _isStarted = false;
+                LogService.LogError($"[GeminiBridge] Exception Type: {ex.GetType().Name}");
+                LogService.LogError($"[GeminiBridge] StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    LogService.LogError($"[GeminiBridge] InnerException: {ex.InnerException.Message}");
+                }
+                lock (_lock)
+                {
+                    _isStarted = false; // ✅ Hata durumunda reset et
+                }
+                throw; // ✅ Exception'ı App.xaml.cs catch bloğuna fırlat
             }
         }
 
 
+        /// <summary>
+        /// Python yolu bul (embedded Python öncelikli, sonra system Python fallback)
+        /// </summary>
         private async Task<string> FindPythonAsync()
         {
             try
             {
+                // 1. QuadroAIPilot embedded Python (Setup tarafından kurulmuş)
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var embeddedPython = Path.Combine(localAppData, "QuadroAIPilot", "Python", "python.exe");
+
+                if (File.Exists(embeddedPython))
+                {
+                    LogService.LogInfo($"[GeminiBridge] Found embedded Python: {embeddedPython}");
+                    return embeddedPython;
+                }
+
+                LogService.LogWarning("[GeminiBridge] Embedded Python not found, trying system Python...");
+
+                // 2. System Python fallback (development ortamı için)
                 var psi = new ProcessStartInfo
                 {
                     FileName = "python",
@@ -180,13 +217,34 @@ namespace QuadroAIPilot.Services
                     if (process.ExitCode == 0)
                     {
                         var version = string.IsNullOrEmpty(output) ? error : output;
-                        LogService.LogInfo($"[GeminiBridge] Found python: {version.Trim()}");
+                        LogService.LogInfo($"[GeminiBridge] Found system python: {version.Trim()}");
                         return "python";
                     }
                 }
-            }
-            catch { }
 
+                // 3. python3 fallback (Linux/WSL için)
+                psi.FileName = "python3";
+                using (var process = new Process { StartInfo = psi })
+                {
+                    process.Start();
+                    var output = await process.StandardOutput.ReadToEndAsync();
+                    var error = await process.StandardError.ReadToEndAsync();
+                    await process.WaitForExitAsync();
+
+                    if (process.ExitCode == 0)
+                    {
+                        var version = string.IsNullOrEmpty(output) ? error : output;
+                        LogService.LogInfo($"[GeminiBridge] Found system python3: {version.Trim()}");
+                        return "python3";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.LogError($"[GeminiBridge] Python search failed: {ex.Message}");
+            }
+
+            LogService.LogError("[GeminiBridge] Python not found anywhere!");
             return null;
         }
 
@@ -198,6 +256,7 @@ namespace QuadroAIPilot.Services
                 {
                     return;
                 }
+                _isStarted = false; // ✅ Flag reset et
             }
 
             try

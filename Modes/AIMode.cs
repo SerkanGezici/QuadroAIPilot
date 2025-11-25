@@ -267,7 +267,7 @@ namespace QuadroAIPilot.Modes
                 }
                 else if (currentProvider == AppState.AIProvider.Gemini)
                 {
-                    // Gemini'ye gönder
+                    // Gemini Bridge'e gönder
                     if (await GeminiBridgeService.IsAvailableAsync())
                     {
                         var geminiResponse = await GeminiBridgeService.SendMessageAsync(userInput);

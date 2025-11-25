@@ -71,27 +71,37 @@ namespace QuadroAIPilot
                     try
                     {
                         await Task.Delay(3000); // 3 saniye bekle (UI yüklensin)
+                        LogService.LogInfo("[App] ChatGPT Python Bridge başlatılıyor...");
                         SimpleCrashLogger.Log("ChatGPT Python Bridge başlatılıyor (headless)...");
                         await Services.ChatGPTPythonBridge.Instance.StartBridgeAsync();
+                        LogService.LogInfo("[App] ChatGPT Python Bridge başlatıldı.");
+                        SimpleCrashLogger.Log("ChatGPT Python Bridge başlatıldı.");
                     }
                     catch (Exception bridgeEx)
                     {
                         SimpleCrashLogger.LogException(bridgeEx, "ChatGPTBridge");
+                        LogService.LogError($"[App] ChatGPT Bridge başlatma hatası: {bridgeEx.Message}");
+                        LogService.LogError($"[App] ChatGPT Bridge StackTrace: {bridgeEx.StackTrace}");
                     }
                 });
 
-                // Gemini Python Bridge'i başlat (arka planda, 5 saniye sonra - resource conflict önleme)
+                // Gemini Python Bridge'i başlat (arka planda, headless mode)
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await Task.Delay(8000); // 8 saniye bekle (ChatGPT'den sonra)
-                        SimpleCrashLogger.Log("Gemini Python Bridge başlatılıyor...");
+                        await Task.Delay(3500); // 3.5 saniye bekle (ChatGPT'den sonra)
+                        LogService.LogInfo("[App] Gemini Python Bridge başlatılıyor...");
+                        SimpleCrashLogger.Log("Gemini Python Bridge başlatılıyor (headless)...");
                         await Services.GeminiPythonBridge.Instance.StartBridgeAsync();
+                        LogService.LogInfo("[App] Gemini Python Bridge başlatıldı.");
+                        SimpleCrashLogger.Log("Gemini Python Bridge başlatıldı.");
                     }
                     catch (Exception bridgeEx)
                     {
                         SimpleCrashLogger.LogException(bridgeEx, "GeminiBridge");
+                        LogService.LogError($"[App] Gemini Bridge başlatma hatası: {bridgeEx.Message}");
+                        LogService.LogError($"[App] Gemini Bridge StackTrace: {bridgeEx.StackTrace}");
                     }
                 });
 
@@ -161,6 +171,7 @@ namespace QuadroAIPilot
                         SimpleCrashLogger.Log("Window closed - stopping Python bridges...");
                         Services.ChatGPTPythonBridge.Instance.Dispose();
                         Services.GeminiPythonBridge.Instance.Dispose();
+                        SimpleCrashLogger.Log("Python bridges stopped.");
                     }
                     catch (Exception cleanupEx)
                     {

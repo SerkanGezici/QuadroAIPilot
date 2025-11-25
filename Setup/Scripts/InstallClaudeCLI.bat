@@ -91,15 +91,41 @@ if %errorlevel% equ 0 (
     exit /b 0
 )
 
-REM Claude CLI global kurulum (npm install -g) - Buffer cozumu ile
+REM Claude CLI global kurulum (npm install -g) - Retry logic ile
 echo.
 echo Claude CLI kuruluyor... (1-2 dakika)
 echo Bu islem internet gerektirir, lutfen bekleyin...
 echo.
+
+REM npm ayarlarini optimize et
+echo npm ayarlari optimize ediliyor... >> "%LOGFILE%"
+call npm config set registry https://registry.npmjs.org/ >> "%LOGFILE%" 2>&1
+call npm config set fetch-retries 5 >> "%LOGFILE%" 2>&1
+call npm config set fetch-retry-mintimeout 20000 >> "%LOGFILE%" 2>&1
+call npm config set fetch-retry-maxtimeout 120000 >> "%LOGFILE%" 2>&1
+
 echo npm install -g @anthropics/claude basladi... >> "%LOGFILE%"
 
 REM Temp dosya ile output buffer problemini coz
 set "TEMP_NPM_LOG=%TEMP%\npm_install_claude.txt"
+
+REM Retry logic: 3 deneme
+set "NPM_EXIT=1"
+set "RETRY_COUNT=0"
+set "MAX_RETRIES=3"
+
+:RETRY_LOOP
+if %RETRY_COUNT% geq %MAX_RETRIES% goto RETRY_FAILED
+
+if %RETRY_COUNT% gtr 0 (
+    echo [UYARI] Deneme %RETRY_COUNT% basarisiz, tekrar deneniyor... >> "%LOGFILE%"
+    echo.
+    echo Kurulum basarisiz oldu, tekrar deneniyor... ^(Deneme %RETRY_COUNT%/%MAX_RETRIES%^)
+    timeout /t 3 /nobreak > nul
+)
+
+set /a RETRY_COUNT+=1
+echo [DENEME %RETRY_COUNT%/%MAX_RETRIES%] npm install calistiriliyor... >> "%LOGFILE%"
 
 REM npm install calistir ve output'u temp dosyaya yaz
 call npm install -g @anthropics/claude > "%TEMP_NPM_LOG%" 2>&1
@@ -107,45 +133,61 @@ set "NPM_EXIT=%errorlevel%"
 
 REM Temp log'u ana log'a ekle
 echo. >> "%LOGFILE%"
-echo === npm install output baslangici === >> "%LOGFILE%"
+echo === npm install output (deneme %RETRY_COUNT%) === >> "%LOGFILE%"
 type "%TEMP_NPM_LOG%" >> "%LOGFILE%"
 echo === npm install output sonu === >> "%LOGFILE%"
 echo. >> "%LOGFILE%"
 
+if %NPM_EXIT% equ 0 goto INSTALL_SUCCESS
+
+REM Hata durumunda cache temizle ve tekrar dene
+if %RETRY_COUNT% lss %MAX_RETRIES% (
+    echo npm cache temizleniyor... >> "%LOGFILE%"
+    call npm cache clean --force >> "%LOGFILE%" 2>&1
+    goto RETRY_LOOP
+)
+
+:RETRY_FAILED
 REM Temp dosyayi sil
 del "%TEMP_NPM_LOG%" 2>nul
 
-if %NPM_EXIT% neq 0 (
-    echo [HATA] Claude CLI kurulum hatasi (exit code: %NPM_EXIT%) >> "%LOGFILE%"
-    echo.
-    echo ============================================
-    echo    KRITIK HATA: Claude CLI Kurulamadi!
-    echo ============================================
-    echo.
-    echo Exit Code: %NPM_EXIT%
-    echo.
-    echo Olasi sebepler:
-    echo - Internet baglantisi kesildi veya yavas
-    echo - npm kayit sunucusuna erisilemedi (npmjs.com)
-    echo - Guvenlik duvari npm'i engelliyor
-    echo - npm cache bozuk
-    echo - @anthropics/claude paketi bulunamadi
-    echo.
-    echo Cozum:
-    echo 1. Internet baglantinizi kontrol edin
-    echo 2. Kurulum tamamlandiktan sonra manuel calistirin:
-    echo    npm install -g @anthropics/claude
-    echo.
-    echo Log dosyasi: %LOGFILE%
-    echo Npm output: %TEMP_NPM_LOG%
-    echo.
-    echo ONEMLI: Claude AI ozelligi bu hatayla calismaz!
-    echo.
-    pause
-    exit /b 1
-)
+echo [HATA] Claude CLI kurulum hatasi - %MAX_RETRIES% deneme basarisiz (exit code: %NPM_EXIT%) >> "%LOGFILE%"
+echo.
+echo ============================================
+echo    KRITIK HATA: Claude CLI Kurulamadi!
+echo ============================================
+echo.
+echo %MAX_RETRIES% deneme yapildi, hepsi basarisiz oldu.
+echo Exit Code: %NPM_EXIT%
+echo.
+echo Olasi sebepler:
+echo - Internet baglantisi kesildi veya cok yavas
+echo - npm kayit sunucusuna erisilemedi ^(npmjs.com^)
+echo - Guvenlik duvari npm'i engelliyor
+echo - Proxy/firewall ayarlari npm'i blokluyor
+echo - @anthropics/claude paketi bulunamadi veya kaldirdi
+echo.
+echo Cozum:
+echo 1. Internet baglantinizi kontrol edin
+echo 2. Guvenlik duvari ayarlarinizi kontrol edin
+echo 3. Kurulum tamamlandiktan sonra manuel calistirin:
+echo    npm install -g @anthropics/claude
+echo 4. Sorun devam ederse npm log dosyasina bakin:
+echo    npm install -g @anthropics/claude --loglevel verbose
+echo.
+echo Log dosyasi: %LOGFILE%
+echo.
+echo ONEMLI: Claude AI ozelligi bu hatayla calismaz!
+echo Uygulama diger AI servisleri ile kullanilabilir.
+echo.
+pause
+exit /b 1
 
-echo [BASARILI] npm install tamamlandi >> "%LOGFILE%"
+:INSTALL_SUCCESS
+REM Temp dosyayi sil
+del "%TEMP_NPM_LOG%" 2>nul
+
+echo [BASARILI] npm install tamamlandi ^(Deneme %RETRY_COUNT%/%MAX_RETRIES%^) >> "%LOGFILE%"
 
 REM PATH'i guncelle (claude komutu npm global'e eklendi)
 echo Claude PATH'e ekleniyor... >> "%LOGFILE%"
