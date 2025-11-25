@@ -32,22 +32,39 @@ namespace QuadroAIPilot.Dialogs
         public SettingsDialog()
         {
             this.InitializeComponent();
-            
+
             _settingsManager = SettingsManager.Instance;
             _performanceMonitor = PerformanceMonitor.Instance;
             _profileService = ServiceContainer.GetService<PersonalProfileService>();
             _tempSettings = _settingsManager.Settings.Clone();
-            
-            InitializeControls();
-            SetupEventHandlers();
+
+            // DEBUG: Constructor'da provider değerini logla
+            System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Constructor: DefaultAIProvider = {_tempSettings.DefaultAIProvider}");
+
             LoadSystemInfo();
             LoadProfileDataAsync();
-            
+
+            // ✅ DispatcherQueue kullan (WinUI 3 best practice)
+            // UI thread'de sıralanan bu callback, ComboBox items render edildikten SONRA çalışır
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[SettingsDialog] DispatcherQueue: DefaultAIProvider = {_tempSettings.DefaultAIProvider}");
+                LoadSettingsToUI(_tempSettings);
+
+                // ✅ KRITIK: Event handler'ı UI yüklendikten SONRA bağla
+                // Böylece LoadSettingsToUI() içindeki SelectedItem set işlemi SelectionChanged trigger etmez
+                SetupEventHandlers();
+                System.Diagnostics.Debug.WriteLine("[SettingsDialog] Event handlers registered AFTER UI load");
+            });
+
             // Dialog kapatılırken ayarları kaydet
             this.Closing += async (sender, args) =>
             {
                 if (args.Result == ContentDialogResult.Primary)
                 {
+                    // DEBUG: Kaydedilecek değeri logla
+                    System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Closing: Saving DefaultAIProvider = {_tempSettings.DefaultAIProvider}");
+
                     // Ayarları kaydet
                     await _settingsManager.UpdateSettingsAsync(_tempSettings);
                 }
@@ -990,7 +1007,8 @@ namespace QuadroAIPilot.Dialogs
                 EnableGlowEffects = original.EnableGlowEffects,
                 EnableParallaxEffects = original.EnableParallaxEffects,
                 BlurIntensity = original.BlurIntensity,
-                TTSVoice = original.TTSVoice
+                TTSVoice = original.TTSVoice,
+                DefaultAIProvider = original.DefaultAIProvider // ✅ AI Provider kopyalanıyor
             };
         }
     }
