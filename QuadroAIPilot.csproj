@@ -33,7 +33,9 @@
 		<!-- Build numarası runtime'da okunacak -->
 	</PropertyGroup>
 	<ItemGroup>
-	
+		<!-- Setup/Scripts klasörünü hariç tut - ayrı projeler içeriyor -->
+		<Compile Remove="Setup\**\*.cs" />
+		<None Remove="Setup\**\*.cs" />
 	</ItemGroup>
   <!-- COMReference kaldırıldı: SHDocVw -->
 	<ItemGroup>
