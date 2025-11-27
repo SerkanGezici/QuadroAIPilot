@@ -63,11 +63,11 @@ if %NODE_FOUND% neq 0 (
 )
 
 echo Node.js bulundu: >> "%LOGFILE%"
-node --version >> "%LOGFILE%" 2>&1
-npm --version >> "%LOGFILE%" 2>&1
+call node --version >> "%LOGFILE%" 2>&1
+call npm --version >> "%LOGFILE%" 2>&1
 
 REM npm version kontrolü (Node.js varsa npm da olmalı)
-npm --version >nul 2>&1
+call npm --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [HATA] npm calismiyor! >> "%LOGFILE%"
     echo.
@@ -78,17 +78,30 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Claude CLI zaten kurulu mu kontrol et
+REM Claude CLI zaten kurulu mu kontrol et (npm modül kontrolü - daha güvenilir)
 echo Claude CLI kontrol ediliyor... >> "%LOGFILE%"
-where claude >nul 2>&1
+
+REM Önce npm modülünü kontrol et (where claude yerine)
+call npm list -g @anthropics/claude >nul 2>&1
 if %errorlevel% equ 0 (
-    echo Claude CLI zaten kurulu, version: >> "%LOGFILE%"
+    echo [BILGI] Claude CLI npm modülü zaten kurulu >> "%LOGFILE%"
     claude --version >> "%LOGFILE%" 2>&1
-    echo [BILGI] Claude CLI zaten kurulu >> "%LOGFILE%"
     echo Claude CLI zaten sistemde kurulu.
     echo.
     timeout /t 2 /nobreak > nul
     exit /b 0
+)
+
+REM Binary var ama npm modülü yoksa (eski/bozuk kurulum) - temizle
+where claude >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [UYARI] Claude binary mevcut ama npm modülü yok - eski kurulum temizleniyor... >> "%LOGFILE%"
+    echo.
+    echo Eski Claude CLI kurulumu tespit edildi, temizleniyor...
+    call npm uninstall -g @anthropics/claude >> "%LOGFILE%" 2>&1
+    timeout /t 2 /nobreak > nul
+    echo Yeniden kurulum yapılıyor...
+    echo.
 )
 
 REM Claude CLI global kurulum (npm install -g) - Retry logic ile

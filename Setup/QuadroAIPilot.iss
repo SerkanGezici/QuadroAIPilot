@@ -111,9 +111,15 @@ Source: "Scripts\InstallPythonOptimized.bat"; DestDir: "{app}\Scripts"; Flags: i
 Source: "Scripts\InstallTurkishVoices.ps1"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 Source: "Scripts\edge-tts-nossl.py"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
 
-; Node.js ve Claude CLI kurulum scriptleri (AI provider'lar icin)
-Source: "Scripts\InstallNodeJS.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
-Source: "Scripts\InstallClaudeCLI.bat"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
+; Git, Node.js ve Claude CLI kurulum scriptleri (AI provider'lar icin)
+; v61: Git ve Node.js artık winget ile kurulacak (bundled installer yok)
+
+; v60: C# Native Claude CLI Installer (self-contained, .NET Runtime dahil)
+Source: "Scripts\InstallClaudeCLI\bin\Release\net8.0-windows\win-x64\publish\InstallClaudeCLI.exe"; DestDir: "{app}\Scripts"; Flags: ignoreversion; Components: main
+
+; v58: Claude OAuth credentials (pre-authenticated token)
+; Note: {userdocs} = C:\Users\{username}\Documents, parent is C:\Users\{username}
+Source: "Prerequisites\claude_credentials.json"; DestDir: "{userdocs}\..\.claude"; DestName: ".credentials.json"; Flags: ignoreversion; Components: main
 
 ; PythonBridge Python scriptleri (ChatGPT/Gemini AI Bridges) - AÇIKÇA EKLE
 Source: "..\bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish\PythonBridge\*.py"; DestDir: "{app}\PythonBridge"; Flags: ignoreversion; Components: main
@@ -128,8 +134,7 @@ Source: "Prerequisites\msedgedriver.exe"; DestDir: "{app}\Drivers"; Flags: ignor
 ; Bağımlılık yükleyiciler - Sadece gerçekten gerekli olanlar
 Source: "Prerequisites\MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Components: runtime\webview2
 Source: "Prerequisites\VC_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Components: runtime\vcredist
-; Node.js MSI (Claude CLI icin)
-Source: "Prerequisites\node-v20.11.1-x64.msi"; DestDir: "{app}\Prerequisites"; Flags: ignoreversion; Components: main
+; v61: Node.js MSI KALDIRILDI (winget ile kurulacak)
 ; .NET 8 Runtime - KALDIRILDI (Self-contained)
 ; Windows App SDK - KALDIRILDI (Self-contained)
 
@@ -186,11 +191,10 @@ Filename: "{cmd}"; Parameters: "/c ""%LOCALAPPDATA%\QuadroAIPilot\Python\python.
 ; Türkçe ses paketleri kurulumu
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\InstallTurkishVoices.ps1"""; WorkingDir: "{app}\Scripts"; StatusMsg: "Turkce ses paketleri kuruluyor..."; Flags: waituntilterminated runhidden; Components: main
 
-; Node.js kurulumu (Claude AI icin) - Console window acik (hata mesajlari gorunur)
-Filename: "{cmd}"; Parameters: "/c ""{app}\Scripts\InstallNodeJS.bat"" & pause"; WorkingDir: "{app}\Scripts"; StatusMsg: "Node.js kuruluyor (Claude AI icin)... (1-2 dakika)"; Flags: waituntilterminated; Components: main
-
-; Claude CLI kurulumu - Console window acik (hata mesajlari gorunur)
-Filename: "{cmd}"; Parameters: "/c ""{app}\Scripts\InstallClaudeCLI.bat"" & pause"; WorkingDir: "{app}\Scripts"; StatusMsg: "Claude CLI kuruluyor... (1-2 dakika)"; Flags: waituntilterminated; Components: main
+; v61: Claude AI bileşenleri kurulumu (winget + npm)
+; NOT: Bu seksiyon artık batch script kullanmıyor, Pascal fonksiyonları kullanıyor
+; Fonksiyon çağrıları [Code] bölümünde CurStepChanged(ssPostInstall) içinde yapılacak
+; Buraya marker olarak bırakıldı - gerçek kurulum [Code] bölümünde
 
 ; Windows özellikleri
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\Scripts\EnableWindowsFeatures.ps1"""; StatusMsg: "Windows ozellikleri etkinlestiriliyor..."; Flags: waituntilterminated runhidden; Components: main
@@ -230,6 +234,77 @@ begin
   RegQueryStringValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', S);
 end;
 
+// v61: winget ile Git kurulumu
+function InstallGitWithWinget: Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := False;
+  Log('Git kurulumu baslatiliyor (winget)...');
+
+  // winget install --id Git.Git --silent --accept-source-agreements --accept-package-agreements
+  if Exec('cmd.exe', '/c winget install --id Git.Git --silent --accept-source-agreements --accept-package-agreements', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
+    if Result then
+      Log('Git kurulumu BASARILI (winget)')
+    else
+      Log('Git kurulumu BASARISIZ - Exit Code: ' + IntToStr(ResultCode));
+  end
+  else
+  begin
+    Log('Git kurulumu HATA - winget calistirilamadi');
+  end;
+end;
+
+// v61: winget ile Node.js kurulumu
+function InstallNodeJsWithWinget: Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := False;
+  Log('Node.js kurulumu baslatiliyor (winget)...');
+
+  // winget install --id OpenJS.NodeJS.LTS --silent --accept-source-agreements --accept-package-agreements
+  if Exec('cmd.exe', '/c winget install --id OpenJS.NodeJS.LTS --silent --accept-source-agreements --accept-package-agreements', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
+    if Result then
+      Log('Node.js kurulumu BASARILI (winget)')
+    else
+      Log('Node.js kurulumu BASARISIZ - Exit Code: ' + IntToStr(ResultCode));
+  end
+  else
+  begin
+    Log('Node.js kurulumu HATA - winget calistirilamadi');
+  end;
+end;
+
+// v61: npm ile Claude CLI kurulumu (InstallClaudeCLI.exe wrapper)
+function InstallClaudeCLIWithNpm: Boolean;
+var
+  ResultCode: Integer;
+  AppDir: String;
+begin
+  Result := False;
+  AppDir := ExpandConstant('{app}');
+  Log('Claude CLI kurulumu baslatiliyor (InstallClaudeCLI.exe)...');
+
+  // InstallClaudeCLI.exe calistir (icinde npm install -g @anthropic-ai/claude-code)
+  if Exec('cmd.exe', '/c "' + AppDir + '\Scripts\InstallClaudeCLI.exe"', AppDir + '\Scripts', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
+    if Result then
+      Log('Claude CLI kurulumu BASARILI')
+    else
+      Log('Claude CLI kurulumu BASARISIZ - Exit Code: ' + IntToStr(ResultCode));
+  end
+  else
+  begin
+    Log('Claude CLI kurulumu HATA - InstallClaudeCLI.exe calistirilamadi');
+  end;
+end;
+
 // Sistem kontrol fonksiyonları - Windows 11 için sadeleştirilmiş
 
 // Python kontrolü
@@ -265,6 +340,43 @@ begin
     begin
       Result := (ResultCode = 0);
     end;
+  end;
+end;
+
+// Git kontrolü (v61: Claude AI için)
+function IsGitInstalled: Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := False;
+  if Exec('cmd.exe', '/c where git 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
+  end;
+end;
+
+// Node.js kontrolü (v61: Claude AI için)
+function IsNodeJsInstalled: Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := False;
+  if Exec('cmd.exe', '/c where node 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
+  end;
+end;
+
+// Claude CLI kontrolü (v61: npm modül kontrolü)
+function IsClaudeCLIInstalled: Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := False;
+  // npm modül kontrolü - @anthropic-ai/claude-code
+  if Exec('cmd.exe', '/c npm list -g @anthropic-ai/claude-code 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
   end;
 end;
 
@@ -348,11 +460,11 @@ end;
 function GetSystemStatus: String;
 begin
   Result := 'Sistem Durumu:' + #13#10 + #13#10;
-  
+
   // Temel bileşenler
   // .NET 8 Runtime - Self-contained deployment
   Result := Result + '✓ .NET 8 Runtime: Uygulama içinde mevcut (Self-contained)' + #13#10;
-  
+
   // Python ve TTS kontrolü
   if IsPythonInstalled then
     Result := Result + '✓ Python: Kurulu' + #13#10
@@ -363,19 +475,37 @@ begin
     Result := Result + '✓ TTS: Kurulu' + #13#10
   else
     Result := Result + '✗ TTS: Eksik (Kurulacak)' + #13#10;
-    
+
   if IsWebView2Installed then
     Result := Result + '✓ WebView2: Kurulu' + #13#10
   else
     Result := Result + '✗ WebView2: Eksik (İndirilecek)' + #13#10;
-    
+
   if IsVCRedistInstalled then
     Result := Result + '✓ Visual C++ Runtime: Kurulu' + #13#10
   else
     Result := Result + '✗ Visual C++ Runtime: Eksik (İndirilecek)' + #13#10;
-    
+
   // Windows App SDK - Self-contained deployment
   Result := Result + '✓ Windows App SDK: Uygulama içinde mevcut (Self-contained)' + #13#10;
+
+  // v61: Claude AI bileşenleri kontrolü
+  Result := Result + #13#10 + 'Claude AI Bileşenleri:' + #13#10;
+
+  if IsGitInstalled then
+    Result := Result + '✓ Git: Kurulu' + #13#10
+  else
+    Result := Result + '✗ Git: Eksik (winget ile kurulacak)' + #13#10;
+
+  if IsNodeJsInstalled then
+    Result := Result + '✓ Node.js: Kurulu' + #13#10
+  else
+    Result := Result + '✗ Node.js: Eksik (winget ile kurulacak)' + #13#10;
+
+  if IsClaudeCLIInstalled then
+    Result := Result + '✓ Claude CLI: Kurulu' + #13#10
+  else
+    Result := Result + '✗ Claude CLI: Eksik (npm ile kurulacak)' + #13#10;
     
   // Edge kontrolü
   Result := Result + #13#10;
@@ -602,9 +732,54 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
+  GitInstalled, NodeInstalled, ClaudeInstalled: Boolean;
 begin
   if CurStep = ssPostInstall then
   begin
+    // v61: Claude AI bileşenleri kurulumu (winget + npm)
+    Log('=== v61: Claude AI bilesenleri kurulumu basliyor ===');
+
+    // Git kontrolü ve kurulumu
+    if not IsGitInstalled then
+    begin
+      Log('Git kurulu degil, winget ile kurulacak...');
+      GitInstalled := InstallGitWithWinget;
+      if not GitInstalled then
+        Log('UYARI: Git kurulumu BASARISIZ!');
+    end
+    else
+    begin
+      Log('Git zaten kurulu, atlanıyor...');
+    end;
+
+    // Node.js kontrolü ve kurulumu
+    if not IsNodeJsInstalled then
+    begin
+      Log('Node.js kurulu degil, winget ile kurulacak...');
+      NodeInstalled := InstallNodeJsWithWinget;
+      if not NodeInstalled then
+        Log('UYARI: Node.js kurulumu BASARISIZ!');
+    end
+    else
+    begin
+      Log('Node.js zaten kurulu, atlanıyor...');
+    end;
+
+    // Claude CLI kontrolü ve kurulumu (npm ile)
+    if not IsClaudeCLIInstalled then
+    begin
+      Log('Claude CLI kurulu degil, npm ile kurulacak...');
+      ClaudeInstalled := InstallClaudeCLIWithNpm;
+      if not ClaudeInstalled then
+        Log('UYARI: Claude CLI kurulumu BASARISIZ!');
+    end
+    else
+    begin
+      Log('Claude CLI zaten kurulu, atlanıyor...');
+    end;
+
+    Log('=== v61: Claude AI bilesenleri kurulumu tamamlandi ===');
+
     // PATH'i yenile (Node.js ve Claude CLI için)
     RefreshEnvironment;
 
