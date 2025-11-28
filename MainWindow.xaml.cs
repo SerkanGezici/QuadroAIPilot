@@ -235,9 +235,6 @@ namespace QuadroAIPilot
                 }
             };
 
-            // Setup coordinate tracking for WindowController
-            SetupCoordinateTracking();
-
             // Event coordinator initialization
             _eventCoordinator.AttachEvents();
             
@@ -501,31 +498,6 @@ namespace QuadroAIPilot
             }
         }
         
-        #endregion
-        
-        #region Coordinate Tracking Setup
-        
-        /// <summary>
-        /// Sets up coordinate tracking between WebView and WindowController
-        /// </summary>
-        private void SetupCoordinateTracking()
-        {
-            _webViewManager.TextareaPositionChanged += OnTextareaPositionChanged;
-        }
-
-        /// <summary>
-        /// Handles textarea position changes and updates WindowController
-        /// </summary>
-        private void OnTextareaPositionChanged(object? sender, TextareaPositionEventArgs e)
-        {
-            if (e == null) return;
-            
-            // Update WindowController with new coordinates
-            _windowController.UpdateTextareaCoordinates(e.Left, e.Top, e.Width, e.Height);
-            
-            // Debug.WriteLine($"[MainWindow] Textarea coordinates updated and forwarded to WindowController: L={e.Left}, T={e.Top}, W={e.Width}, H={e.Height}");
-        }
-
         #endregion
 
         #region Window Event Handlers
@@ -1016,12 +988,8 @@ namespace QuadroAIPilot
                     _uiManager?.Dispose();
                     _windowController?.Dispose();
                     
-                    // Clean up coordinate tracking
-                    if (_webViewManager != null)
-                    {
-                        _webViewManager.TextareaPositionChanged -= OnTextareaPositionChanged;
-                        _webViewManager.Dispose();
-                    }
+                    // Clean up WebViewManager
+                    _webViewManager?.Dispose();
                     
                     // Clean up dictation
                     _dictationManager?.Dispose();

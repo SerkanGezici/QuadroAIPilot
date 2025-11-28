@@ -979,7 +979,6 @@ namespace QuadroAIPilot.Managers
                     if (textarea) {
                         console.log('[WebViewManager Script] Mevcut değer:', textarea.value);
                         textarea.value = '';
-                        textarea.focus();
                         textarea.setSelectionRange(0, 0);
                         if (typeof checkButtonStates === 'function') {
                             checkButtonStates();
@@ -1062,27 +1061,10 @@ namespace QuadroAIPilot.Managers
             {
                 LogService.LogDebug($" Ses testi hatası: {ex.Message}");
             }
-        }        public async Task FocusTextArea()
-        {
-            
-            // UI thread safe ExecuteScript kullan
-            await ExecuteScript(@"
-                const textarea = document.querySelector('#txtCikti');
-                if (textarea) {
-                    textarea.click();
-                    textarea.focus();
-                    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-                    console.log('[WebViewManager] FocusTextArea - textarea focus edildi');
-                    
-                    // Ek güvenlik için tekrar focus at
-                    setTimeout(function() {
-                        textarea.focus();
-                    }, 100);
-                } else {
-                    console.error('[WebViewManager] FocusTextArea - textarea bulunamadı!');
-                }
-            ");
         }
+
+        // Note: FocusTextArea metodu kaldırıldı - Eski Win+H dikte sistemi için gerekli idi
+        // Web Speech API bu mekanizmaya ihtiyaç duymuyor
 
         public async Task ExecuteScript(string script)
         {
