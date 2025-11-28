@@ -16,7 +16,8 @@ using QuadroAIPilot.Services.WebServices.Interfaces;
 namespace QuadroAIPilot.Commands
 {
     /// <summary>
-    /// Command for web information retrieval (Wikipedia, news, trends)
+    /// Command for web information retrieval (news, trends)
+    /// Wikipedia kaldırıldı - araştırmalar AI modu üzerinden yapılıyor
     /// </summary>
     public partial class WebInfoCommand : ISystemCommand
     {
@@ -72,10 +73,8 @@ namespace QuadroAIPilot.Commands
                 "haberlerde ne var", "neler oluyor", "gündemde neler var", "son haberler neler",
                 "bugünkü haberler", "en son haberler", "güncel haberler",
                 
-                // Wikipedia bilgi sorguları (fiil bazlı)
-                "nedir", "kimdir", "ne demek", "hakkında bilgi ver", "açıkla",
-                "vikipedi'de ara", "wikipedia'da ara",
-                
+                // Wikipedia kaldırıldı - artık AI modu üzerinden araştırma yapılıyor
+
                 // Twitter/X gündem
                 "twitter gündem", "twitter trendleri", "x gündem", "x trendleri",
                 "gündemde neler var", "trendler neler", "popüler konular",
@@ -136,14 +135,8 @@ namespace QuadroAIPilot.Commands
                 }
             }
             
-            // Bilgi soruları
-            if ((words.Contains("nedir") || words.Contains("kimdir") || 
-                 words.Contains("ne") && words.Contains("demek")) ||
-                (words.Contains("hakkında") && words.Contains("bilgi")))
-            {
-                return true;
-            }
-            
+            // Wikipedia kaldırıldı - bilgi soruları artık AI moduna yönlendiriliyor
+
             // Twitter/X trendleri
             if ((words.Contains("twitter") || words.Contains("x")) && 
                 (words.Contains("gündem") || words.Contains("trend")))
@@ -369,12 +362,8 @@ namespace QuadroAIPilot.Commands
             var lowerCommand = command.ToLowerInvariant();
 
             // Determine content type preference
-            if (lowerCommand.Contains("vikipedi") || lowerCommand.Contains("nedir") || 
-                lowerCommand.Contains("kimdir") || lowerCommand.Contains("ne demek"))
-            {
-                request.PreferredType = ContentType.Wikipedia;
-            }
-            else if (lowerCommand.Contains("haber") || lowerCommand.Contains("gündem") ||
+            // Wikipedia kaldırıldı - bilgi soruları AI moduna yönlendirilecek
+            if (lowerCommand.Contains("haber") || lowerCommand.Contains("gündem") ||
                      lowerCommand.Contains("son dakika"))
             {
                 request.PreferredType = ContentType.News;
@@ -618,11 +607,7 @@ namespace QuadroAIPilot.Commands
 
             switch (content.Type)
             {
-                case ContentType.Wikipedia:
-                    html = FormatWikipediaHtml(content);
-                    voice = FormatWikipediaVoice(content);
-                    message = $"{content.Title}\n\n{content.Summary ?? content.Content}";
-                    break;
+                // Wikipedia case kaldırıldı - artık AI moduna yönlendiriliyor
 
                 case ContentType.News:
                 case ContentType.RSS:
@@ -699,47 +684,7 @@ namespace QuadroAIPilot.Commands
             };
         }
 
-        private string FormatWikipediaHtml(WebContent content)
-        {
-            var html = new StringBuilder();
-            html.AppendLine("<!DOCTYPE html>");
-            html.AppendLine("<html lang='tr'>");
-            html.AppendLine("<head>");
-            html.AppendLine("<meta charset='UTF-8'>");
-            html.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine("<title>Wikipedia - " + System.Net.WebUtility.HtmlEncode(content.Title) + "</title>");
-            html.AppendLine(GetCommonStyles());
-            html.AppendLine("</head>");
-            html.AppendLine("<body>");
-            
-            html.AppendLine("<div class='container'>");
-            html.AppendLine($"<h1>{System.Net.WebUtility.HtmlEncode(content.Title)}</h1>");
-            
-            if (content.Tags?.Any() == true)
-            {
-                html.AppendLine("<div class='categories'>");
-                foreach (var tag in content.Tags.Take(5))
-                {
-                    html.AppendLine($"<span class='category-badge'>{System.Net.WebUtility.HtmlEncode(tag)}</span>");
-                }
-                html.AppendLine("</div>");
-            }
-
-            // Convert markdown-style content to HTML
-            var htmlContent = ConvertMarkdownToHtml(content.Content);
-            html.AppendLine($"<div class='content'>{htmlContent}</div>");
-
-            if (!string.IsNullOrEmpty(content.SourceUrl))
-            {
-                html.AppendLine($"<div class='source'><a href='{content.SourceUrl}' target='_blank'>Wikipedia'da Oku →</a></div>");
-            }
-
-            html.AppendLine("</div>");
-            html.AppendLine("</body>");
-            html.AppendLine("</html>");
-
-            return html.ToString();
-        }
+        // FormatWikipediaHtml kaldırıldı - Wikipedia artık AI moduna yönlendiriliyor
 
         private string FormatNewsHtml(WebContent content)
         {
@@ -892,27 +837,7 @@ namespace QuadroAIPilot.Commands
             return html.ToString();
         }
 
-        private string FormatWikipediaVoice(WebContent content)
-        {
-            var voice = new StringBuilder();
-            voice.Append($"{content.Title}. ");
-            
-            if (!string.IsNullOrEmpty(content.Summary))
-            {
-                voice.Append(content.Summary);
-            }
-            else
-            {
-                // Get first paragraph
-                var firstParagraph = content.Content.Split('\n').FirstOrDefault(p => p.Length > 50);
-                if (!string.IsNullOrEmpty(firstParagraph))
-                {
-                    voice.Append(firstParagraph);
-                }
-            }
-
-            return voice.ToString();
-        }
+        // FormatWikipediaVoice kaldırıldı - Wikipedia artık AI moduna yönlendiriliyor
 
         private string FormatNewsText(WebContent content)
         {

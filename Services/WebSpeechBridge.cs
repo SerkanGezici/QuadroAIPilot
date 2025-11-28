@@ -14,12 +14,14 @@ namespace QuadroAIPilot.Services
         private readonly IWebViewManager _webViewManager;
         private readonly IDictationManager _dictationManager;
         private readonly ICommandProcessor _commandProcessor;
-        
+
         private bool _isWebSpeechActive = false;
-        
+        private bool _isProcessingSuspended = false;  // TTS sırasında işlemeyi durdur
+
         public event EventHandler<bool>? StateChanged;
-        
+
         public bool IsActive => _isWebSpeechActive;
+        public bool IsSuspended => _isProcessingSuspended;
         
         public WebSpeechBridge(IWebViewManager webViewManager, IDictationManager dictationManager)
         {
@@ -89,18 +91,43 @@ namespace QuadroAIPilot.Services
         }
         
         /// <summary>
+        /// TTS sırasında işlemeyi durdur
+        /// </summary>
+        public void SuspendProcessing()
+        {
+            _isProcessingSuspended = true;
+            LogService.LogDebug("[WebSpeechBridge] Processing suspended for TTS");
+        }
+
+        /// <summary>
+        /// TTS bittikten sonra işlemeyi devam ettir
+        /// </summary>
+        public void ResumeProcessing()
+        {
+            _isProcessingSuspended = false;
+            LogService.LogDebug("[WebSpeechBridge] Processing resumed after TTS");
+        }
+
+        /// <summary>
         /// Web Speech API'den gelen sonuçları işle
         /// </summary>
         public async Task HandleWebSpeechResult(string text, bool isFinal)
         {
             LogService.LogDebug($"[WebSpeechBridge] HandleWebSpeechResult çağrıldı - Text: '{text}', IsFinal: {isFinal}");
-            
+
             if (!isFinal)
             {
                 LogService.LogDebug("[WebSpeechBridge] Final olmayan sonuç, işlenmiyor");
                 return;
             }
-            
+
+            // TTS sırasında işleme askıya alınmışsa atla
+            if (_isProcessingSuspended)
+            {
+                LogService.LogDebug($"[WebSpeechBridge] Processing suspended (TTS playing), metin atlanıyor: '{text}'");
+                return;
+            }
+
             // TTS filtreleme kontrolü
             bool isTTSPlaying = TextToSpeechService.IsSpeaking;
             if (isTTSPlaying)
@@ -108,7 +135,7 @@ namespace QuadroAIPilot.Services
                 LogService.LogDebug($"[WebSpeechBridge] TTS çalışıyor, metin filtreleniyor: '{text}'");
                 return;
             }
-            
+
             // DictationManager'a gönder
             LogService.LogDebug($"[WebSpeechBridge] Final sonuç alındı: '{text}' - DictationManager'a gönderiliyor");
             _dictationManager.ProcessTextChanged(text);

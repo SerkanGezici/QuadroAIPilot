@@ -310,6 +310,22 @@ namespace QuadroAIPilot.Managers
                         return;
                     }
                     
+                    // TTS başladı bildirimi - JavaScript'ten gelir
+                    if (action == "ttsStarted")
+                    {
+                        var previousState = root.TryGetProperty("previousState", out var prevStateElement) ? prevStateElement.GetString() : "unknown";
+                        var wasDictationActive = root.TryGetProperty("wasDictationActive", out var wasDictElement) && wasDictElement.GetBoolean();
+                        LogService.LogInfo($"[WebViewManager] TTS started notification - previousState: {previousState}, wasDictationActive: {wasDictationActive}");
+
+                        // DictationManager'a TTS başladığını bildir
+                        _ = Task.Run(() =>
+                        {
+                            DictationManager.OnTTSStarted(previousState, wasDictationActive);
+                        });
+
+                        return;
+                    }
+
                     // ÇÖZÜM: Edge TTS tamamlandı bildirimi (V4 - audio bittiğinde çağrılır)
                     if (action == "ttsCompleted")
                     {
@@ -334,6 +350,9 @@ namespace QuadroAIPilot.Managers
                                 ?.GetValue(null) as EventHandler;
                             speechCompletedEvent?.Invoke(null, EventArgs.Empty);
                             LogService.LogInfo("[WebViewManager] SpeechCompleted event tetiklendi");
+
+                            // DictationManager'a TTS tamamlandığını bildir
+                            DictationManager.OnTTSCompleted();
                         });
 
                         return;
@@ -548,6 +567,41 @@ namespace QuadroAIPilot.Managers
                             var focused = focusedProp.GetBoolean();
                             LogService.LogDebug($"[WebViewManager] Input focus changed: {focused}");
                         }
+                        return;
+                    }
+
+                    // Manuel yazı modu başladı - textarea'ya tıklandı
+                    if (action == "manualTypingStarted")
+                    {
+                        LogService.LogInfo("[WebViewManager] Manuel yazı modu başladı - textarea tıklandı");
+                        // DictationManager'a bildir - işlemeyi durdur
+                        DictationManager.OnManualTypingStarted();
+                        return;
+                    }
+
+                    // Manuel yazı modu bitti - textarea blur oldu
+                    if (action == "manualTypingEnded")
+                    {
+                        LogService.LogInfo("[WebViewManager] Manuel yazı modu bitti - textarea blur oldu");
+                        // DictationManager'a bildir - işlemeyi devam ettir
+                        DictationManager.OnManualTypingEnded();
+                        return;
+                    }
+
+                    // JavaScript'ten listening state değişikliği bildirimi
+                    if (action == "listeningStateChanged")
+                    {
+                        var previousState = root.TryGetProperty("previousState", out var prevElement) ? prevElement.GetString() : "unknown";
+                        var newState = root.TryGetProperty("newState", out var newElement) ? newElement.GetString() : "unknown";
+                        var isDictationActive = root.TryGetProperty("isDictationActive", out var dictElement) && dictElement.GetBoolean();
+
+                        LogService.LogInfo($"[WebViewManager] ListeningState değişti: {previousState} → {newState}, isDictationActive: {isDictationActive}");
+
+                        // DictationManager'a state değişikliğini bildir
+                        _ = Task.Run(() =>
+                        {
+                            DictationManager.OnListeningStateChanged(previousState, newState, isDictationActive);
+                        });
                         return;
                     }
                 }

@@ -44,7 +44,7 @@ namespace QuadroAIPilot.Services.WebServices
             // Add providers in priority order
             _providers.Add(new TwitterTrendsProvider());
             _providers.Add(new RSSProvider(translateService: _translateService));
-            _providers.Add(new WikipediaProvider());
+            // WikipediaProvider kaldırıldı - artık araştırmalar AI modu üzerinden yapılıyor
             _providers.Add(new WebScraperProvider()); // Selenium-based scraper as fallback
             
             // Sort by priority (lower number = higher priority)

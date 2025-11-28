@@ -388,13 +388,27 @@ namespace QuadroAIPilot.Commands
         
         /// <summary>
         /// Eski yöntem: Metin analizi ile intent belirleme
+        /// DÜZELTİLDİ: Çok genel "aç" kontrolü yerine spesifik uygulama açma pattern'leri kullan
+        /// "5 kere 5 kaç eder?" gibi sorular uygulama açma komutu olarak algılanmamalı
         /// </summary>
         private CommandIntentResult DetermineLegacyIntent(string commandText)
         {
-            // TODO: Daha gelişmiş bir metin analizi yapılabilir
             string lowercaseCommand = commandText.ToLowerInvariant();
-            
-            if (lowercaseCommand.Contains("aç") || lowercaseCommand.Contains("başlat"))
+
+            // Sadece belirli pattern'ler uygulama açma olarak kabul edilmeli:
+            // - "X uygulamasını aç"
+            // - "X programını aç"
+            // - "X aç" (sadece kısa metinlerde ve sonunda "aç" varsa)
+            bool isOpenAppCommand =
+                lowercaseCommand.Contains("uygulamasını aç") ||
+                lowercaseCommand.Contains("programını aç") ||
+                lowercaseCommand.Contains("uygulamasını başlat") ||
+                lowercaseCommand.Contains("programını başlat") ||
+                // Kısa komutlar için (4 kelimeden az) "aç" veya "başlat" ile biten
+                (lowercaseCommand.Split(' ').Length <= 4 &&
+                 (lowercaseCommand.EndsWith(" aç") || lowercaseCommand.EndsWith(" başlat")));
+
+            if (isOpenAppCommand)
             {
                 return new CommandIntentResult
                 {
@@ -413,6 +427,8 @@ namespace QuadroAIPilot.Commands
             }
             else
             {
+                // Tanınmayan komutlar SystemCommand olarak gönderilir
+                // SystemCommand da bulamazsa AI moduna yönlendirilecek
                 return new CommandIntentResult
                 {
                     Type = CommandIntentType.SystemCommand,

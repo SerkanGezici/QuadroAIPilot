@@ -80,9 +80,7 @@ namespace QuadroAIPilot.Constants
         );
 
         // Web komutları için regex pattern'ler
-        public static readonly Regex WikipediaRegex = new Regex(
-            @"\b(nedir|kimdir|ne demek|kim|nasıl|neden|ne zaman|hangi)\b",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        // WikipediaRegex kaldırıldı - artık araştırmalar AI modu üzerinden yapılıyor
 
         public static readonly Regex NewsRegex = new Regex(
             @"\b(haber|haberler|son dakika|gündem|güncel|son gelişme|duyuru|finans|ekonomi|business|bloomberg|reuters|bbc|cnn|spor haberleri|ekonomi haberleri|teknoloji haberleri|sağlık haberleri|dünya haberleri|magazin haberleri|siyaset haberleri|haberlerde|haberlerini|haberlerinde)\b",
@@ -102,7 +100,7 @@ namespace QuadroAIPilot.Constants
             "vazgeç", "iptal", "iptal et", "esc", "escape",
             "tab", "boşluk", "onay", "onaylıyorum", "evet",
             "hayır", "kabul et", "devam et", "onayla",
-            "test wikipedia", "test haberler", "test twitter", "test cache",
+            "test haberler", "test twitter", "test cache",
             "test google trends", "test ekşi sözlük", "test reddit"
         };
 
