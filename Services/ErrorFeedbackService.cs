@@ -103,20 +103,7 @@ namespace QuadroAIPilot.Services
                 }
             },
             
-            // Wikipedia hataları
-            {
-                "Wikipedia", new ErrorSuggestion
-                {
-                    UserMessage = "Wikipedia bilgisi alınamadı.",
-                    VoiceMessage = "Aradığınız konuda Wikipedia bilgisi bulunamadı. Farklı bir arama terimi deneyin.",
-                    Suggestions = new[]
-                    {
-                        "Daha genel terimlerle arama yapın",
-                        "Türkçe kelimeler kullanın",
-                        "Konu ismini tam olarak söyleyin"
-                    }
-                }
-            }
+            // Wikipedia kaldırıldı - artık araştırmalar AI modu üzerinden yapılıyor
         };
 
         /// <summary>

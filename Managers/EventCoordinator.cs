@@ -356,7 +356,14 @@ namespace QuadroAIPilot.Managers
                             var changedText = changedTextElement.GetString();
                             if (!string.IsNullOrEmpty(changedText))
                             {
-                                _dispatcherQueue.TryEnqueue(() => HandleTextChanged(changedText));
+                                // Gönder butonundan mı geldi kontrol et
+                                bool fromSendButton = false;
+                                if (root.TryGetProperty("fromSendButton", out var fromSendButtonElement))
+                                {
+                                    fromSendButton = fromSendButtonElement.GetBoolean();
+                                }
+
+                                _dispatcherQueue.TryEnqueue(() => HandleTextChanged(changedText, fromSendButton));
                             }
                         }
                         break;
@@ -988,18 +995,25 @@ namespace QuadroAIPilot.Managers
         /// <summary>
         /// Handles text changed action
         /// </summary>
-        private void HandleTextChanged(string text)
+        private void HandleTextChanged(string text, bool fromSendButton = false)
         {
             ErrorHandler.SafeExecute(() =>
             {
+                // Gönder butonundan geldiyse manuel yazı modunu resetle
+                if (fromSendButton)
+                {
+                    LogService.LogInfo($"[EventCoordinator] HandleTextChanged - Gönder butonundan geldi, manuel yazı modu kapatılıyor");
+                    DictationManager.OnManualTypingEnded();
+                }
+
                 // Yazı modunda textChanged event'lerini işleme
                 if (State.AppState.CurrentMode == State.AppState.UserMode.Writing)
                 {
                     LogService.LogDebug($"[EventCoordinator] HandleTextChanged - Writing mode, ignoring textChanged event: '{text}'");
                     return;
                 }
-                
-                LogService.LogDebug($"[EventCoordinator] HandleTextChanged - Command mode, processing text: '{text}'");
+
+                LogService.LogInfo($"[ProcessTextChanged] [EventCoordinator] HandleTextChanged - Metin işleniyor: '{text}', fromSendButton: {fromSendButton}");
                 _dictationManager.HandleTextChanged(text);
             }, "HandleTextChanged");
         }

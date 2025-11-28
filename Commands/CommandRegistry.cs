@@ -640,17 +640,7 @@ namespace QuadroAIPilot.Commands
                 Description = "Magazin haberlerini getirir ve okur."
             });
 
-            // Wikipedia ve bilgi sorgulama komutları
-            _commands.Add(new CommandMetadata
-            {
-                CommandId = "wikipedia_search",
-                CommandName = "Wikipedia Araması",
-                CommandTriggers = new List<string> { "nedir", "kimdir", "ne demek", "hakkında bilgi", "vikipedi", "wikipedia" },
-                FocusType = CommandFocusType.SystemWide,
-                KeyCombination = "custom_command",
-                DelayAfterFocusChange = 300,
-                Description = "Wikipedia'dan bilgi arar."
-            });
+            // Wikipedia kaldırıldı - artık araştırmalar AI modu üzerinden yapılıyor
 
             // Twitter/X gündem komutları
             _commands.Add(new CommandMetadata

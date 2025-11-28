@@ -503,7 +503,8 @@ namespace QuadroAIPilot.Commands
                     _logger.LogInformation("[CommandProcessor] CommandRegistry'de komut bulundu: {CommandId}", commandMeta.CommandId);
                     
                     // Web/haber komutlarını WebInfoCommand'e yönlendir
-                    if (commandMeta.CommandId.Contains("news") || commandMeta.CommandId.Contains("wikipedia") || 
+                    // Wikipedia kaldırıldı - artık araştırmalar AI modu üzerinden yapılıyor
+                    if (commandMeta.CommandId.Contains("news") ||
                         commandMeta.CommandId.Contains("twitter") || commandMeta.CommandId == "read_news")
                     {
                         var webInfoCmd = new WebInfoCommand();
@@ -704,7 +705,7 @@ namespace QuadroAIPilot.Commands
                 // Edge TTS kontrolü yukarıda yapıldı
                 
                 /*----------- 2) WEB INFO KOMUTLARI -----------*/
-                // Wikipedia, haberler, Twitter trendleri - öncelikli kontrol
+                // Haberler, Twitter trendleri - öncelikli kontrol (Wikipedia kaldırıldı)
                 Debug.WriteLine($"[CommandProcessor] *** 2. BÖLÜM *** Web komut kontrolü başlıyor: '{txt}'");
                 var webInfoCommand = new WebInfoCommand();
                 Debug.WriteLine($"[CommandProcessor] WebInfoCommand oluşturuldu");
@@ -785,27 +786,8 @@ namespace QuadroAIPilot.Commands
 
                 /*----------- 3) TEST KOMUTLARI ----------*/
                 // Web servislerini test etmek için basit komutlar
-                if (txt == "test wikipedia")
-                {
-                    // Debug.WriteLine($"[CommandProcessor] Wikipedia testi başlatılıyor...");
-                    var testCommand = new WebInfoCommand();
-                    var testContext = new CommandContext { RawCommand = "Atatürk nedir?" };
-                    var testResult = await testCommand.ExecuteAsync(testContext);
-                    
-                    if (testResult.IsSuccess)
-                    {
-                        ok = true;
-                        det = "Wikipedia Test";
-                        Raise(raw, true, "Wikipedia servisi çalışıyor: Atatürk sorgusu başarılı", det);
-                        return true;
-                    }
-                    else
-                    {
-                        Raise(raw, false, $"Wikipedia servisi hata verdi: {testResult.Message}", "Wikipedia Test");
-                        return false;
-                    }
-                }
-                
+                // Wikipedia test komutu kaldırıldı - artık AI modu üzerinden araştırma yapılıyor
+
                 if (txt == "test haberler")
                 {
                     // Debug.WriteLine($"[CommandProcessor] Haber servisi testi başlatılıyor...");
@@ -956,7 +938,7 @@ namespace QuadroAIPilot.Commands
                 }
 
                 /*----------- 4) WEB INFO KOMUTLARI ----------*/
-                // Web komutlarını önce kontrol et (haber, wikipedia, twitter gündem vb.)
+                // Web komutlarını önce kontrol et (haber, twitter gündem vb.) - Wikipedia kaldırıldı
                 var commandFactory = new CommandFactory(_applicationService, _fileSearchService, _windowsApiService);
                 var webCommand = commandFactory.CreateCommandFromText(txt);
                 if (webCommand != null && webCommand.GetType().Name == "CommandWrapper")

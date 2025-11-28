@@ -285,6 +285,11 @@ namespace QuadroAIPilot.Managers
         private WebSpeechBridge _webSpeechBridge;
         private static WebSpeechBridge _staticWebSpeechBridge; // ServiceContainer yerine static referans
 
+        // TTS-Dikte senkronizasyonu için static değişkenler
+        private static string _stateBeforeTTS = null;
+        private static bool _wasDictationActiveBeforeTTS = false;
+        private static bool _isTTSPlaying = false;
+
         // Events
         // TextRecognized event'i kaldırıldı - artık ModeManager üzerinden işleniyor
         public event EventHandler<DictationStateChangedEventArgs>? StateChanged;
@@ -362,12 +367,19 @@ namespace QuadroAIPilot.Managers
         public void ProcessTextChanged(string text)
         {
             text = text.Trim();
-            if (string.IsNullOrWhiteSpace(text)) 
+            if (string.IsNullOrWhiteSpace(text))
             {
                 return;
             }
-            
-            LogService.LogInfo($"[DictationManager] Metin alındı: '{text}'");
+
+            LogService.LogInfo($"[ProcessTextChanged] [DictationManager] Metin alındı: '{text}'");
+
+            // Manuel yazı modu kontrolü - textarea'ya tıklandığında işleme
+            if (_isManualTyping)
+            {
+                LogService.LogInfo($"[DictationManager] Manuel yazı modu aktif - metin işlenmiyor: '{text}'");
+                return;
+            }
             
             // YAZIM MODUNDA - doğrudan aktif pencereye gönder
             if (AppState.CurrentMode == AppState.UserMode.Writing)
@@ -572,12 +584,7 @@ namespace QuadroAIPilot.Managers
                 return true;
             }
 
-            // 1.11. Wikipedia komutlarını kontrol et
-            if (AppConstants.WikipediaRegex.IsMatch(text))
-            {
-                LogService.LogInfo($"[DictationManager] Wikipedia komutu algılandı: {text}");
-                return true;
-            }
+            // 1.11. Wikipedia kaldırıldı - artık araştırmalar AI modu üzerinden yapılıyor
 
             // 1.12. Haber komutlarını kontrol et
             if (AppConstants.NewsRegex.IsMatch(text))
@@ -720,7 +727,7 @@ namespace QuadroAIPilot.Managers
                 "teşekkür", "teşekkürler", "sağol", "sağ ol",
                 "komut modu", "yazı modu",
                 "eposta", "e-posta", "mail",
-                "haber", "wikipedia", "twitter",
+                "haber", "twitter",
                 "ses yükselt", "ses azalt", "ses kapat",
                 "mikrofon aç", "mikrofon kapat"
             };
@@ -1078,6 +1085,143 @@ namespace QuadroAIPilot.Managers
         // IsWakeWordOnly() ve IsValidCommand() metodları kaldırıldı
         // Wake word ve sleep command kontrolü artık JavaScript (index.html) tarafında yapılıyor
         // JavaScript bu durumları C#'a bildirim olarak gönderiyor (wakeWordDetected, sleepCommandDetected)
+
+        /// <summary>
+        /// TTS başladığında çağrılır - dikteyi tamamen durdurur ve state'i kaydeder
+        /// </summary>
+        public static void OnTTSStarted(string previousState, bool wasDictationActive)
+        {
+            LogService.LogInfo($"[DictationManager] OnTTSStarted - previousState: {previousState}, wasDictationActive: {wasDictationActive}");
+
+            _stateBeforeTTS = previousState;
+            _wasDictationActiveBeforeTTS = wasDictationActive;
+            _isTTSPlaying = true;
+
+            // WebSpeechBridge varsa dikte girişini engelle
+            if (_staticWebSpeechBridge != null)
+            {
+                _staticWebSpeechBridge.SuspendProcessing();
+                LogService.LogDebug("[DictationManager] Web Speech processing suspended for TTS");
+            }
+        }
+
+        /// <summary>
+        /// TTS tamamlandığında çağrılır - dikteyi eski state'e döndürür
+        /// </summary>
+        public static void OnTTSCompleted()
+        {
+            LogService.LogInfo($"[DictationManager] OnTTSCompleted - restoring state: {_stateBeforeTTS}, wasDictationActive: {_wasDictationActiveBeforeTTS}");
+
+            _isTTSPlaying = false;
+
+            // WebSpeechBridge'i tekrar aktif et
+            if (_staticWebSpeechBridge != null)
+            {
+                _staticWebSpeechBridge.ResumeProcessing();
+                LogService.LogDebug("[DictationManager] Web Speech processing resumed after TTS");
+            }
+
+            // State'leri temizle
+            _stateBeforeTTS = null;
+            _wasDictationActiveBeforeTTS = false;
+        }
+
+        /// <summary>
+        /// TTS çalıyor mu kontrolü
+        /// </summary>
+        public static bool IsTTSPlaying => _isTTSPlaying;
+
+        // Manuel yazı modu flag'i
+        private static bool _isManualTyping = false;
+
+        /// <summary>
+        /// Manuel yazı modu kontrolü - textarea'ya tıklandığında aktif
+        /// </summary>
+        public static bool IsManualTyping => _isManualTyping;
+
+        /// <summary>
+        /// Manuel yazı modu başladığında çağrılır (textarea'ya tıklandığında)
+        /// </summary>
+        public static void OnManualTypingStarted()
+        {
+            _isManualTyping = true;
+            LogService.LogInfo("[DictationManager] Manuel yazı modu başladı - ProcessTextChanged devre dışı");
+
+            // WebSpeechBridge'e bildir - işlemeyi durdur
+            if (_staticWebSpeechBridge != null)
+            {
+                _staticWebSpeechBridge.SuspendProcessing();
+            }
+        }
+
+        /// <summary>
+        /// Manuel yazı modu bittiğinde çağrılır (metin gönderildiğinde veya blur olduğunda)
+        /// </summary>
+        public static void OnManualTypingEnded()
+        {
+            _isManualTyping = false;
+            LogService.LogInfo("[DictationManager] Manuel yazı modu bitti - ProcessTextChanged tekrar aktif");
+
+            // WebSpeechBridge'e bildir - işlemeyi devam ettir
+            if (_staticWebSpeechBridge != null && !_isTTSPlaying)
+            {
+                _staticWebSpeechBridge.ResumeProcessing();
+            }
+        }
+
+        // JavaScript ListeningState ile senkronize state
+        private static string _currentJsListeningState = "PASSIVE";
+        private static bool _isDictationActiveFromJs = false;
+
+        /// <summary>
+        /// JavaScript'ten listening state değişikliği bildirimi
+        /// </summary>
+        public static void OnListeningStateChanged(string previousState, string newState, bool isDictationActive)
+        {
+            LogService.LogInfo($"[DictationManager] JS ListeningState: {previousState} → {newState}, isDictationActive: {isDictationActive}");
+
+            _currentJsListeningState = newState;
+            _isDictationActiveFromJs = isDictationActive;
+
+            // TTS_PLAYING state'ine geçildiğinde işlemeyi durdur
+            if (newState == "TTS_PLAYING")
+            {
+                if (_staticWebSpeechBridge != null)
+                {
+                    _staticWebSpeechBridge.SuspendProcessing();
+                }
+                _isTTSPlaying = true;
+            }
+            // TTS_PLAYING'den çıkıldığında işlemeyi devam ettir
+            else if (previousState == "TTS_PLAYING" && newState != "TTS_PLAYING")
+            {
+                _isTTSPlaying = false;
+                if (_staticWebSpeechBridge != null && !_isManualTyping)
+                {
+                    _staticWebSpeechBridge.ResumeProcessing();
+                }
+            }
+            // ACTIVE'den PASSIVE'e geçildiğinde (dikte durdu)
+            else if (previousState == "ACTIVE" && newState == "PASSIVE")
+            {
+                LogService.LogInfo("[DictationManager] Dikte durdu (ACTIVE → PASSIVE)");
+            }
+            // PASSIVE'den ACTIVE'e geçildiğinde (dikte başladı)
+            else if (previousState == "PASSIVE" && newState == "ACTIVE")
+            {
+                LogService.LogInfo("[DictationManager] Dikte başladı (PASSIVE → ACTIVE)");
+            }
+        }
+
+        /// <summary>
+        /// JavaScript'teki mevcut listening state
+        /// </summary>
+        public static string CurrentJsListeningState => _currentJsListeningState;
+
+        /// <summary>
+        /// JavaScript'te dikte aktif mi
+        /// </summary>
+        public static bool IsDictationActiveFromJs => _isDictationActiveFromJs;
 
         /// <summary>
         /// Levenshtein mesafesi hesaplama
