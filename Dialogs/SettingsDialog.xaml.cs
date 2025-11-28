@@ -99,6 +99,9 @@ namespace QuadroAIPilot.Dialogs
                 }
             }
 
+            // TTS Enabled ayarını yükle
+            TTSEnabledToggle.IsOn = settings.TTSEnabled;
+
             // Diğer ayarlar zaten UI'dan dinamik yükleniyor
         }
 
@@ -134,6 +137,15 @@ namespace QuadroAIPilot.Dialogs
                     // PreferredVoice özelliği yoksa, ayarları genişletelim
                     // Şimdilik sadece local olarak saklayalım
                 }
+            };
+
+            // TTS Enabled toggle handler
+            TTSEnabledToggle.Toggled += (s, e) =>
+            {
+                _tempSettings.TTSEnabled = TTSEnabledToggle.IsOn;
+                // Anında TTS durumunu güncelle
+                TextToSpeechService.IsMuted = !TTSEnabledToggle.IsOn;
+                LogService.LogInfo($"[SettingsDialog] TTS Enabled değiştirildi: {TTSEnabledToggle.IsOn}");
             };
 
             // BlurIntensitySlider kaldırıldı

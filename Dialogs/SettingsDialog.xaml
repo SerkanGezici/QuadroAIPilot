@@ -41,6 +41,19 @@
                 </ComboBox>
             </StackPanel>
             
+            <!-- TTS Açık/Kapalı -->
+            <StackPanel Margin="0,0,0,16">
+                <ToggleSwitch x:Name="TTSEnabledToggle"
+                              Header="Metin Seslendirme (TTS)"
+                              OnContent="Açık"
+                              OffContent="Kapalı"
+                              IsOn="True"/>
+                <TextBlock Text="Yapay zekanın yanıtlarını sesli okur"
+                           Style="{ThemeResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+
             <!-- Ses Seçimi -->
             <StackPanel>
                 <TextBlock Text="TTS Ses Seçimi"
