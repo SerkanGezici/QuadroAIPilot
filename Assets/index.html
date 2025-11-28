@@ -1171,9 +1171,10 @@
 
         // Merkezi dinleme durumu yönetimi (Sadeleştirilmiş: 2 mod)
         function setListeningState(newState) {
-            if (currentListeningState === newState) return;
+            const previousState = currentListeningState;
+            if (previousState === newState) return;
 
-            console.log(`[ListeningState] Değişiyor: ${currentListeningState} → ${newState}`);
+            console.log(`[ListeningState] Değişiyor: ${previousState} → ${newState}`);
 
             // Önce tüm dinlemeleri durdur
             stopAllListening();
@@ -1186,6 +1187,17 @@
 
             // Dikte butonunu da güncelle
             updateDikteButtonState(newState);
+
+            // C#'a state değişikliğini bildir (kritik senkronizasyon)
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    action: 'listeningStateChanged',
+                    previousState: previousState,
+                    newState: newState,
+                    isDictationActive: isDictationActive
+                }));
+                console.log(`[ListeningState] C#'a bildirildi: ${previousState} → ${newState}`);
+            }
 
             switch (newState) {
                 case ListeningState.PASSIVE:
@@ -1352,21 +1364,14 @@
             console.log('[updateModeIndicator] After update - text:', modeText.textContent);
         }
 
-        // TTS öncesi dikte durumunu saklamak için değişken
-        let wasDictationActiveBeforeTTS = false;
-
-        // TTS başladığında çağrılacak (yedek v62 uyumlu - C# mesajı YOK!)
+        // TTS başladığında çağrılacak (V50 basit tarz)
         function onTTSStarted() {
             console.log('[TTS] TTS başladı, dinleme durumu: TTS_PLAYING');
             setListeningState(ListeningState.TTS_PLAYING);
-
-            // VAD'i pause et (echo önleme)
             pauseVADForTTS();
-
-            // NOT: C#'a mesaj GÖNDERMİYORUZ - sadece JavaScript state yönetimi!
         }
 
-        // TTS bittiğinde çağrılacak (yedek v62 uyumlu - C# mesajı YOK!)
+        // TTS bittiğinde çağrılacak (V50 basit tarz)
         function onTTSCompleted() {
             console.log('[TTS] TTS tamamlandı, dinleme durumunu belirle...');
             console.log('[TTS] isDictationActive:', typeof isDictationActive !== 'undefined' ? isDictationActive : 'tanımsız');
@@ -1380,7 +1385,7 @@
                 return;
             }
 
-            // Dikte aktifse aktif dinlemeye devam et (yedek v62 mantığı)
+            // Dikte aktifse aktif dinlemeye devam et
             if (typeof isDictationActive !== 'undefined' && isDictationActive) {
                 console.log('[TTS] Dikte aktif, aktif dinlemeye devam');
                 setListeningState(ListeningState.ACTIVE);
@@ -1392,8 +1397,6 @@
 
             // VAD'i resume et (TTS bitti)
             resumeVADAfterTTS();
-
-            // NOT: C#'a mesaj GÖNDERMİYORUZ - sadece JavaScript state yönetimi!
         }
 
         let currentAudioUrl = null;
@@ -1431,6 +1434,7 @@
         let isDictationActive = false;
         let isFromWakeWord = false; // Wake word'den mi başlatıldı
         let shouldStartDikteAfterTTS = false; // TTS bitince dikte başlatılmalı mı
+        let isManualTyping = false; // Manuel yazı modu - textarea'ya tıklandığında aktif olur
 
         // Dikte mod yönetimi için bayraklar
         const dikteMode = {
@@ -1584,19 +1588,24 @@
                 }
             }
 
+            // Mevcut source'u kaydet (callback'te kullanmak için)
+            const savedSource = dikteMode.source || 'wakeword';
+
             // TTS bittiğinde yapılacak işlemler için callback ayarla
             window.readySoundCallback = () => {
-                console.log('[playReadySound] TTS tamamlandı:', selectedText);
+                console.log('[playReadySound] TTS tamamlandı:', selectedText, 'Source:', savedSource);
 
                 // Ses tipine göre işlem yap
                 if (soundType === 'wake') {
                     // Wake sesi bittiğinde dikteyi başlat
+                    console.log('[playReadySound] ACTIVE moduna geçiliyor - isDictationActive = true');
                     dikteMode.isActive = true;
-                    dikteMode.source = 'wakeword';
-                    isDictationActive = true; // ÖNEMLİ: Bu flag'i de ayarla!
+                    dikteMode.source = savedSource; // Kaydedilen source'u kullan (button veya wakeword)
+                    isDictationActive = true; // ÖNEMLİ: Bu flag'i BURADA set et!
                     setListeningState(ListeningState.ACTIVE);
                 } else if (soundType === 'sleep') {
                     // Sleep sesi bittiğinde wake word dinlemeyi başlat
+                    console.log('[playReadySound] PASSIVE moduna geçiliyor - isDictationActive = false');
                     dikteMode.isActive = false;
                     dikteMode.source = null;
                     isDictationActive = false;
@@ -1848,13 +1857,19 @@
                     // Buton durumu setListeningState tarafından yönetiliyor
                 };
 
-                recognition.onend = function () {
+                // V50 basit tarz - recognition.onend handler
+                recognition.onend = function() {
                     isWebSpeechActive = false;
                     console.log('[Web Speech API] Dinleme sona erdi');
                     console.log('[Web Speech API] Current mode:', currentMode);
                     console.log('[Web Speech API] isDictationActive:', isDictationActive);
 
-                    // PASSIVE modda ve dikte aktif değilse yeniden başlatma
+                    // TTS oynatılıyor mu kontrol et
+                    if (currentListeningState === ListeningState.TTS_PLAYING) {
+                        console.log('[Web Speech API] TTS oynatılıyor, bekleniyor...');
+                        return;
+                    }
+
                     // Otomatik yeniden başlatma (sürekli dinleme için)
                     // Yazı modunda da dinleme devam etmeli
                     if (isDictationActive || currentMode === 'writing') {
@@ -2402,18 +2417,40 @@
             toggleDikte();
         }
 
-        // Dikte toggle fonksiyonu - Sadeleştirilmiş (PASSIVE ↔ ACTIVE toggle)
+        // V50 basit tarz - toggleDikte fonksiyonu
         function toggleDikte() {
-            console.log('[toggleDikte] Current state:', currentListeningState);
+            console.log('[toggleDikte] Current listening state:', currentListeningState);
 
+            // Mevcut dinleme durumuna göre geçiş yap
             if (currentListeningState === ListeningState.ACTIVE) {
-                // ACTIVE → PASSIVE (durdur)
-                console.log('[toggleDikte] ACTIVE → PASSIVE');
+                // Aktif dinlemedeyse -> Pasif dinlemeye (wake word) geç
+                console.log('[toggleDikte] Switching from ACTIVE to PASSIVE...');
                 stopDikte();
-                setListeningState(ListeningState.PASSIVE);
-            } else {
-                // PASSIVE → ACTIVE (başlat)
-                console.log('[toggleDikte] PASSIVE → ACTIVE');
+            } else if (currentListeningState === ListeningState.PASSIVE || currentListeningState === ListeningState.NONE) {
+                // Pasif dinlemedeyse veya dinleme kapalıysa -> Aktif dinlemeye geç
+                console.log('[toggleDikte] Switching from PASSIVE/NONE to ACTIVE...');
+
+                // Mevcut ses seçimine göre voice belirle
+                const currentVoice = window.currentEdgeVoiceName || 'Emel';
+                const voiceName = currentVoice.toLowerCase().includes('ahmet') ? 'ahmet' : 'emel';
+
+                // C#'a başlatma mesajı gönder
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({ action: 'startDikte' }));
+                }
+
+                // Bayrakları ayarla - isDictationActive readySoundCallback'te set edilecek
+                dikteMode.source = 'button';
+
+                // TTS durumuna geç ve hazır ses dosyasını oynat
+                onTTSStarted();
+                playReadySound('wake', voiceName);
+            } else if (currentListeningState === ListeningState.TTS_PLAYING) {
+                // TTS oynatılıyorsa bir şey yapma
+                console.log('[toggleDikte] TTS playing, ignoring toggle');
+            } else if (currentListeningState === ListeningState.WAITING) {
+                // Bekleme modundaysa aktif dinlemeye geç
+                console.log('[toggleDikte] Switching from WAITING to ACTIVE...');
 
                 // Mevcut ses seçimine göre voice belirle
                 const currentVoice = window.currentEdgeVoiceName || 'Emel';
@@ -2425,11 +2462,10 @@
                 }
 
                 // Bayrakları ayarla
-                dikteMode.isActive = true;
                 dikteMode.source = 'button';
-                isDictationActive = true;
 
-                // Hazır ses dosyasını oynat, sonra ACTIVE'e geç
+                // TTS durumuna geç ve hazır ses dosyasını oynat
+                onTTSStarted();
                 playReadySound('wake', voiceName);
             }
         }
@@ -2481,6 +2517,13 @@
 
                 if (checkForWakeWords(transcript)) {
                     console.log('[Wake Word] Wake word detected! Playing wake sound...');
+
+                    // ÖNEMLİ: isDictationActive'i HEMEN TRUE yapıyoruz!
+                    // Race condition düzeltmesi: onTTSStarted()'dan ÖNCE set et
+                    isDictationActive = true;  // ← HEMEN set et!
+                    dikteMode.isActive = true;
+                    dikteMode.source = 'wakeword';
+                    console.log('[Wake Word] isDictationActive HEMEN true yapıldı');
 
                     // Önce TTS durumuna geç
                     onTTSStarted();
@@ -2637,8 +2680,10 @@
                 textarea.focus();
                 textarea.click();
 
+                // ACTIVE moduna geç - buton "Dinliyor" olacak
+                setListeningState(ListeningState.ACTIVE);
+
                 // Web Speech API kullan
-                // Buton durumu setListeningState tarafından yönetiliyor
                 startWebSpeechRecognition();
             } catch (error) {
                 console.error("[JavaScript] startDikte hatası:", error);
@@ -2780,8 +2825,19 @@
                 // TTS kontrol butonlarını gizle
                 hideTTSControls();
 
-                // TTS tamamlandı - merkezi durum yönetimine bildir
-                onTTSCompleted();
+                // ÖNCELİK: readySoundCallback varsa ÖNCE onu çağır
+                // Bu sayede isDictationActive doğru set edilir SONRA state değişir
+                if (window.readySoundCallback) {
+                    console.log('[TTS] readySoundCallback var, önce çağrılıyor');
+                    const callback = window.readySoundCallback;
+                    window.readySoundCallback = null; // Önce temizle
+                    callback(); // Sonra çağır
+                    // readySoundCallback çağrıldıysa onTTSCompleted'ı ÇAĞIRMA
+                    // çünkü readySoundCallback zaten state'i doğru ayarladı
+                } else {
+                    // readySoundCallback yoksa normal onTTSCompleted işle
+                    onTTSCompleted();
+                }
 
                 // ÇÖZÜM: Edge TTS bittiğinde C#'a bildir
                 if (window.chrome && window.chrome.webview) {
@@ -2792,7 +2848,6 @@
                     }));
                 }
 
-                // Buton durumunu güncelle - dikte pasif
                 // Buton durumu setListeningState tarafından yönetiliyor
             };
 
@@ -3062,13 +3117,28 @@
 
             console.log('[sendTextToAI] Metin gönderiliyor:', text);
 
-            // Mevcut webSpeechResult action'ını kullan (C# tarafı değişmez)
+            // Manuel yazı modunu kapat - metin gönderildi
+            if (isManualTyping) {
+                isManualTyping = false;
+                console.log('[sendTextToAI] Manuel yazı modu kapatıldı');
+
+                // C#'a bildir - manuel yazı modu bitti
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'manualTypingEnded'
+                    }));
+                }
+            }
+
+            // textChanged action'ı ile gönder - ProcessTextChanged üzerinden normal akışa girsin
+            // Böylece komut modu / AI modu mantığı çalışır
             if (window.chrome && window.chrome.webview) {
                 window.chrome.webview.postMessage(JSON.stringify({
-                    action: 'webSpeechResult',
+                    action: 'textChanged',
                     text: text,
-                    isFinal: true
+                    fromSendButton: true  // Gönder butonundan geldiğini belirt
                 }));
+                console.log('[sendTextToAI] textChanged action gönderildi');
             }
 
             // Textarea'yı temizle
@@ -3084,6 +3154,12 @@
             checkButtonStates();
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
+                // Manuel yazı modunda textChanged event gönderme - sadece gönder butonu ile işlenecek
+                if (isManualTyping) {
+                    console.log('[TextChanged] Manuel yazı modu - textChanged event atlanıyor');
+                    return;
+                }
+
                 // Yazı modunda textChanged event gönderme
                 if (currentMode === 'writing') {
                     console.log('[TextChanged] Writing mode - skipping textChanged event');
@@ -3153,6 +3229,21 @@
                 }
             } else {
                 // Blur - önceki state'e dön (eğer ACTIVE idiyse)
+
+                // TTS çalışıyorsa ACTIVE'e dönme - TTS bitene kadar bekle
+                if (currentListeningState === ListeningState.TTS_PLAYING) {
+                    console.log('[handleInputFocus] Blur - TTS çalıyor, ACTIVE\'e dönülmüyor');
+                    previousStateBeforeFocus = null;
+                    // C#'a bildir ama state değiştirme
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify({
+                            action: 'inputFocusChanged',
+                            focused: false
+                        }));
+                    }
+                    return;
+                }
+
                 if (previousStateBeforeFocus === ListeningState.ACTIVE) {
                     console.log('[handleInputFocus] Blur - ACTIVE state\'e dönülüyor');
 
@@ -3222,14 +3313,49 @@
         document.getElementById('txtCikti').addEventListener('blur', function (e) {
             clearTimeout(focusDebounceTimer);
             focusDebounceTimer = setTimeout(() => {
+                // Manuel yazı modunu kapat - focus kaybedildi
+                if (isManualTyping) {
+                    isManualTyping = false;
+                    console.log('[TextArea Blur] Manuel yazı modu kapatıldı');
+
+                    // C#'a bildir - manuel yazı modu bitti
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify({
+                            action: 'manualTypingEnded'
+                        }));
+                    }
+                }
                 handleInputFocus(false);
             }, FOCUS_DEBOUNCE_MS);
         });
 
-        // Textarea click event
+        // Textarea click event - tıklanınca metni temizle ve manuel yazı moduna geç
         document.getElementById('txtCikti').addEventListener('click', function (e) {
             try {
                 const textarea = e.target;
+
+                // Zaten manuel yazı modundaysak veya kullanıcı metin yazmışsa temizleme
+                if (isManualTyping) {
+                    console.log('[TextArea Click] Zaten manuel yazı modunda, metin korunuyor');
+                    return; // Click koordinat bilgisini göndermeye gerek yok, zaten focus'ta
+                }
+
+                // Manuel yazı modunu aktif et
+                isManualTyping = true;
+                console.log('[TextArea Click] Manuel yazı modu aktif edildi, metin temizleniyor');
+
+                // Textarea'yı temizle (sadece ilk tıklamada)
+                textarea.value = '';
+                checkButtonStates();
+
+                // C#'a bildir - manuel yazı modu başladı
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        action: 'manualTypingStarted'
+                    }));
+                }
+
+                // Koordinat bilgisini de gönder (mevcut davranış)
                 const rect = textarea.getBoundingClientRect();
                 const scale = window.devicePixelRatio || 1;
                 const screenLeft = ((window.screenLeft !== undefined ? window.screenLeft : window.screenX) + rect.left) * scale;
@@ -3443,8 +3569,8 @@
                 } else if (data.action === 'playAudioStream') {
                     appendFeedback('[DEBUG] playAudioStream mesajı alındı');
 
-                    // TTS başlıyor - PASSIVE moduna geç
-                    setListeningState(ListeningState.PASSIVE);
+                    // TTS başlıyor - onTTSStarted çağır (state kaydeder ve dinlemeyi tamamen durdurur)
+                    onTTSStarted();
 
                     // Komut sonrası TTS ise bayrak ayarla
                     if (data.isCommandResponse) {
@@ -3604,10 +3730,21 @@
                     console.log('[TTS] C# TTS audio tamamlandı');
                     hideTTSControls();
 
-                    // TTS tamamlandı - merkezi durum yönetimine bildir
-                    onTTSCompleted();
+                    // ÖNCELİK: readySoundCallback varsa ÖNCE onu çağır
+                    // Bu sayede isDictationActive doğru set edilir SONRA recognition başlar
+                    if (window.readySoundCallback) {
+                        console.log('[TTS] readySoundCallback var, önce çağrılıyor');
+                        const callback = window.readySoundCallback;
+                        window.readySoundCallback = null; // Önce temizle
+                        callback(); // Sonra çağır
+                        // readySoundCallback çağrıldıysa onTTSCompleted'ı ÇAĞIRMA
+                        // çünkü readySoundCallback zaten state'i doğru ayarladı
+                    } else {
+                        // readySoundCallback yoksa normal onTTSCompleted işle
+                        onTTSCompleted();
+                    }
 
-                    // ÇÖZÜM: Edge TTS bittiğinde C#'a bildir
+                    // C#'a TTS completion bildirimi gönder
                     if (window.chrome && window.chrome.webview) {
                         console.log('[TTS] C#\'a TTS completion bildirimi gönderiliyor');
                         window.chrome.webview.postMessage(JSON.stringify({
