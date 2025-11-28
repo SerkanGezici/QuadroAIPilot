@@ -2675,10 +2675,8 @@
                     window.chrome.webview.postMessage(JSON.stringify({ action: 'stopTts' }));
                 }
 
-                // Textarea'ya odaklan
-                const textarea = document.getElementById('txtCikti');
-                textarea.focus();
-                textarea.click();
+                // Note: Eski Win+H dikte sistemi için gerekli olan textarea focus/click kodları kaldırıldı
+                // Web Speech API bu mekanizmalara ihtiyaç duymuyor
 
                 // ACTIVE moduna geç - buton "Dinliyor" olacak
                 setListeningState(ListeningState.ACTIVE);
@@ -3310,6 +3308,7 @@
         });
 
         // Textarea blur event - focus dışına çıkıldığında
+        // ÖNEMLİ: PASSIVE moduna dön (wake word dinleme), ACTIVE değil!
         document.getElementById('txtCikti').addEventListener('blur', function (e) {
             clearTimeout(focusDebounceTimer);
             focusDebounceTimer = setTimeout(() => {
@@ -3324,25 +3323,61 @@
                             action: 'manualTypingEnded'
                         }));
                     }
+
+                    // ÖNEMLİ: PASSIVE moduna dön - sadece wake word dinle
+                    // ACTIVE'e dönme! Kullanıcı dikte istemişti mi bilmiyoruz
+                    console.log('[TextArea Blur] PASSIVE moduna dönülüyor (wake word dinleme)');
+                    setListeningState(ListeningState.PASSIVE);
                 }
-                handleInputFocus(false);
             }, FOCUS_DEBOUNCE_MS);
         });
 
         // Textarea click event - tıklanınca metni temizle ve manuel yazı moduna geç
+        // ÖNEMLİ: Dikte TAMAMEN durmalı, kullanıcı manuel yazacak
         document.getElementById('txtCikti').addEventListener('click', function (e) {
             try {
                 const textarea = e.target;
 
-                // Zaten manuel yazı modundaysak veya kullanıcı metin yazmışsa temizleme
+                // Zaten manuel yazı modundaysak metin korunuyor
                 if (isManualTyping) {
                     console.log('[TextArea Click] Zaten manuel yazı modunda, metin korunuyor');
-                    return; // Click koordinat bilgisini göndermeye gerek yok, zaten focus'ta
+                    return;
                 }
 
                 // Manuel yazı modunu aktif et
                 isManualTyping = true;
-                console.log('[TextArea Click] Manuel yazı modu aktif edildi, metin temizleniyor');
+                console.log('[TextArea Click] Manuel yazı modu aktif edildi');
+
+                // ÖNEMLİ: Dikteyi TAMAMEN durdur - kullanıcı manuel yazacak
+                isDictationActive = false;
+                dikteMode.isActive = false;
+                dikteMode.source = null;
+                console.log('[TextArea Click] Dikte durduruldu - isDictationActive = false');
+
+                // Web Speech API'yi durdur
+                if (typeof recognition !== 'undefined' && recognition) {
+                    try {
+                        recognition.abort();
+                        isWebSpeechActive = false;
+                        console.log('[TextArea Click] Web Speech API durduruldu');
+                    } catch (err) {
+                        console.log('[TextArea Click] Web Speech durdurma hatası (normal):', err.message);
+                    }
+                }
+
+                // Wake word dinlemeyi de durdur
+                if (typeof wakeWordRecognition !== 'undefined' && wakeWordRecognition) {
+                    try {
+                        isWakeWordListening = false;
+                        wakeWordRecognition.abort();
+                        console.log('[TextArea Click] Wake word dinleme durduruldu');
+                    } catch (err) {
+                        console.log('[TextArea Click] Wake word durdurma hatası (normal):', err.message);
+                    }
+                }
+
+                // Listening state'i NONE yap - hiçbir şey dinleme
+                setListeningState(ListeningState.NONE);
 
                 // Textarea'yı temizle (sadece ilk tıklamada)
                 textarea.value = '';
@@ -3354,24 +3389,8 @@
                         action: 'manualTypingStarted'
                     }));
                 }
-
-                // Koordinat bilgisini de gönder (mevcut davranış)
-                const rect = textarea.getBoundingClientRect();
-                const scale = window.devicePixelRatio || 1;
-                const screenLeft = ((window.screenLeft !== undefined ? window.screenLeft : window.screenX) + rect.left) * scale;
-                const screenTop = ((window.screenTop !== undefined ? window.screenTop : window.screenY) + rect.top) * scale;
-
-                if (window.chrome && window.chrome.webview) {
-                    window.chrome.webview.postMessage(JSON.stringify({
-                        action: 'textareaPosition',
-                        left: screenLeft,
-                        top: screenTop,
-                        width: rect.width * scale,
-                        height: rect.height * scale
-                    }));
-                }
             } catch (error) {
-                console.error('[JavaScript] Click event koordinat hatası:', error);
+                console.error('[JavaScript] Click event hatası:', error);
             }
         });
 
@@ -3421,15 +3440,7 @@
                         textarea.textContent = '';
                         textarea.innerText = '';
                         textarea.setAttribute('value', '');
-                        textarea.focus();
                         textarea.setSelectionRange(0, 0);
-
-                        setTimeout(() => {
-                            textarea.value = '';
-                            textarea.focus();
-                            checkButtonStates();
-                        }, 10);
-
                         checkButtonStates();
                     }
                 } else if (data.action === 'updateButtonText') {
@@ -4301,8 +4312,8 @@
                 }
             }, 2000);
 
-            // Focus on textarea
-            document.getElementById('txtCikti').focus();
+            // Note: Eski Win+H dikte sistemi için gerekli olan otomatik textarea focus kaldırıldı
+            // Web Speech API bu mekanizmaya ihtiyaç duymuyor
         });
     </script>
 </body>
