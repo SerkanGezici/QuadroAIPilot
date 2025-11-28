@@ -310,24 +310,32 @@ namespace QuadroAIPilot.Managers
                         return;
                     }
                     
-                    // ÇÖZÜM: Edge TTS tamamlandı bildirimi
+                    // ÇÖZÜM: Edge TTS tamamlandı bildirimi (V4 - audio bittiğinde çağrılır)
                     if (action == "ttsCompleted")
                     {
                         var source = root.TryGetProperty("source", out var sourceElement) ? sourceElement.GetString() : "unknown";
-                        LogService.LogDebug($"[WebViewManager] TTS completed notification received from: {source}");
-                        
-                        // TTS state'i otomatik olarak SpeechCompleted event'inde sıfırlanır
-                        
-                        // SpeechCompleted event'ini tetikle
-                        _ = Task.Run(() => 
+                        LogService.LogInfo($"[WebViewManager] TTS completed notification received from: {source}");
+
+                        // V4: Önce _isSpeaking flag'ini sıfırla (reflection ile)
+                        _ = Task.Run(() =>
                         {
+                            // _isSpeaking field'ını sıfırla
+                            var isSpeakingField = typeof(TextToSpeechService)
+                                .GetField("_isSpeaking", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                            if (isSpeakingField != null)
+                            {
+                                isSpeakingField.SetValue(null, false);
+                                LogService.LogDebug("[WebViewManager] _isSpeaking flag sıfırlandı");
+                            }
+
+                            // SpeechCompleted event'ini tetikle
                             var speechCompletedEvent = typeof(TextToSpeechService)
                                 .GetField("SpeechCompleted", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
                                 ?.GetValue(null) as EventHandler;
                             speechCompletedEvent?.Invoke(null, EventArgs.Empty);
+                            LogService.LogInfo("[WebViewManager] SpeechCompleted event tetiklendi");
                         });
-                        
-                        LogService.LogDebug($"[WebViewManager] TTS state reset edildi ve event tetiklendi");
+
                         return;
                     }
                     
@@ -526,6 +534,19 @@ namespace QuadroAIPilot.Managers
                                     });
                                 });
                             }
+                        }
+                        return;
+                    }
+
+                    // TTS Mute toggle - KALDIRILDI (artık Settings'ten yönetiliyor)
+
+                    // Input focus değişikliği (logging için)
+                    if (action == "inputFocusChanged")
+                    {
+                        if (root.TryGetProperty("focused", out var focusedProp))
+                        {
+                            var focused = focusedProp.GetBoolean();
+                            LogService.LogDebug($"[WebViewManager] Input focus changed: {focused}");
                         }
                         return;
                     }

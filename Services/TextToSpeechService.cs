@@ -60,6 +60,32 @@ namespace QuadroAIPilot.Services
         /// TTS çalışıyor mu?
         /// </summary>
         private static bool _isSpeaking = false;
+
+        /// <summary>
+        /// TTS sessize alınmış mı?
+        /// </summary>
+        private static bool _isMuted = false;
+
+        /// <summary>
+        /// TTS sessize al/aç
+        /// </summary>
+        public static bool IsMuted
+        {
+            get => _isMuted;
+            set
+            {
+                _isMuted = value;
+
+                // Mute edildiğinde ve konuşma devam ediyorsa durdur
+                if (_isMuted && _isSpeaking)
+                {
+                    StopSpeaking();
+                }
+
+                // WebView mesajı kaldırıldı - artık Settings'ten yönetiliyor
+                LogService.LogDebug($"[TextToSpeechService] Mute state changed: {_isMuted}");
+            }
+        }
         
         /// <summary>
         /// WebViewManager'ı ayarlar
@@ -114,6 +140,14 @@ namespace QuadroAIPilot.Services
         /// </summary>
         public static async Task SpeakTextAsync(string text, bool useEdgeVoice = true)
         {
+            // Mute kontrolü
+            if (_isMuted)
+            {
+                LogService.LogDebug("[TextToSpeechService] TTS muted, seslendirme atlanıyor");
+                SpeechCompleted?.Invoke(null, EventArgs.Empty);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(text))
             {
                 LogService.LogDebug("[TextToSpeechService] Boş metin, seslendirme yapılmadı");
@@ -254,7 +288,17 @@ namespace QuadroAIPilot.Services
                         }
                     }
                 }
-                
+
+                // Edge TTS başarılı olduysa, SpeechCompleted WebView'dan gelecek (ttsCompleted mesajı)
+                // Burada çağırırsak audio henüz çalmadan "tamamlandı" sinyali gider!
+                if (speechSuccessful && useEdgeVoice)
+                {
+                    LogService.LogDebug("[TextToSpeechService] Edge TTS gönderildi, SpeechCompleted WebView'dan beklenecek");
+                    // _isSpeaking'i SIFIRLAMIYORUZ - WebView audio bitince sıfırlayacak
+                    return;
+                }
+
+                // Sadece fallback TTS'ler için (Windows Tolga vb.) burada çağır
                 _isSpeaking = false;
                 SpeechCompleted?.Invoke(null, EventArgs.Empty);
             }
