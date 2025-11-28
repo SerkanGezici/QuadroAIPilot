@@ -42,6 +42,7 @@ namespace QuadroAIPilot.Managers
         public bool EnableGlowEffects { get; set; } = true;
         public double BlurIntensity { get; set; } = 20.0; // 0-30 arası
         public string TTSVoice { get; set; } = "automatic"; // TTS ses seçimi
+        public bool TTSEnabled { get; set; } = true; // TTS açık/kapalı
         public WindowBounds WindowBounds { get; set; } = new WindowBounds(); // Pencere konum ve boyutu
         public QuadroAIPilot.State.AppState.AIProvider DefaultAIProvider { get; set; } = QuadroAIPilot.State.AppState.AIProvider.Claude; // Varsayılan AI provider
         public string GeminiApiKey { get; set; } = ""; // Gemini API anahtarı (isteğe bağlı)

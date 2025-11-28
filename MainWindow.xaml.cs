@@ -1290,7 +1290,12 @@ namespace QuadroAIPilot
                 // TextToSpeechService'e WebViewManager'ı bağla
                 TextToSpeechService.SetWebViewManager(_webViewManager);
                 Debug.WriteLine("[MainWindow] WebViewManager TextToSpeechService'e bağlandı");
-                
+
+                // Settings'ten TTS Enabled durumunu yükle
+                var settings = SettingsManager.Instance.Settings;
+                TextToSpeechService.IsMuted = !settings.TTSEnabled;
+                Debug.WriteLine($"[MainWindow] TTS Enabled: {settings.TTSEnabled}, IsMuted: {TextToSpeechService.IsMuted}");
+
                 // Start Browser Integration Service
                 var browserIntegrationService = ServiceContainer.GetService<IBrowserIntegrationService>();
                 await browserIntegrationService.StartAsync();
