@@ -222,94 +222,48 @@ namespace QuadroAIPilot.Modes
                 LogService.LogInfo($"[AIMode] Sending to {providerName}: '{userInput}'");
                 var startTime = DateTime.Now;
 
-                // Smart fallback mekanizması
-                object response = null;
+                // Dinamik fallback mekanizması
                 bool isError = false;
                 string errorMessage = null;
                 string content = null;
+                bool allProvidersFailed = true;
 
-                if (currentProvider == AppState.AIProvider.ChatGPT)
+                // Provider ve fallback zincirini belirle
+                var providersToTry = GetProviderChain(currentProvider);
+
+                foreach (var provider in providersToTry)
                 {
-                    // ChatGPT'ye gönder
-                    if (await ChatGPTBridgeService.IsAvailableAsync())
+                    var (success, providerContent, providerError) = await TrySendToProviderAsync(provider, userInput);
+
+                    if (success)
                     {
-                        var chatgptResponse = await ChatGPTBridgeService.SendMessageAsync(userInput);
-                        isError = chatgptResponse.IsError;
-                        errorMessage = chatgptResponse.ErrorMessage;
-                        content = chatgptResponse.Content;
-                        response = chatgptResponse;
-
-                        if (isError)
-                        {
-                            LogService.LogWarning($"[AIMode] ChatGPT failed, falling back to Claude: {errorMessage}");
-                            await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sisteme geçiyor.");
-
-                            // Fallback: Claude
-                            var claudeResponse = await _claudeService.SendMessageAsync(userInput);
-                            isError = claudeResponse.IsError;
-                            errorMessage = claudeResponse.ErrorMessage;
-                            content = claudeResponse.Content;
-                            response = claudeResponse;
-                        }
+                        content = providerContent;
+                        isError = false;
+                        allProvidersFailed = false;
+                        break;
                     }
                     else
                     {
-                        LogService.LogWarning("[AIMode] ChatGPT not available, falling back to Claude");
-                        await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sistem kullanıyor.");
+                        // Bu provider başarısız, bir sonrakine geç
+                        errorMessage = providerError;
+                        isError = true;
 
-                        // Fallback: Claude
-                        var claudeResponse = await _claudeService.SendMessageAsync(userInput);
-                        isError = claudeResponse.IsError;
-                        errorMessage = claudeResponse.ErrorMessage;
-                        content = claudeResponse.Content;
-                        response = claudeResponse;
-                    }
-                }
-                else if (currentProvider == AppState.AIProvider.Gemini)
-                {
-                    // Gemini Bridge'e gönder
-                    if (await GeminiBridgeService.IsAvailableAsync())
-                    {
-                        var geminiResponse = await GeminiBridgeService.SendMessageAsync(userInput);
-                        isError = geminiResponse.IsError;
-                        errorMessage = geminiResponse.ErrorMessage;
-                        content = geminiResponse.Content;
-                        response = geminiResponse;
-
-                        if (isError)
+                        // Eğer son provider değilse, fallback bildirimi yap
+                        if (provider != providersToTry[providersToTry.Length - 1])
                         {
-                            LogService.LogWarning($"[AIMode] Gemini failed, falling back to Claude: {errorMessage}");
+                            LogService.LogWarning($"[AIMode] {provider} failed, trying next fallback: {providerError}");
                             await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sisteme geçiyor.");
-
-                            // Fallback: Claude
-                            var claudeResponse = await _claudeService.SendMessageAsync(userInput);
-                            isError = claudeResponse.IsError;
-                            errorMessage = claudeResponse.ErrorMessage;
-                            content = claudeResponse.Content;
-                            response = claudeResponse;
                         }
                     }
-                    else
-                    {
-                        LogService.LogWarning("[AIMode] Gemini not available, falling back to Claude");
-                        await TextToSpeechService.SpeakTextAsync("Quadro Asistan alternatif sistem kullanıyor.");
-
-                        // Fallback: Claude
-                        var claudeResponse = await _claudeService.SendMessageAsync(userInput);
-                        isError = claudeResponse.IsError;
-                        errorMessage = claudeResponse.ErrorMessage;
-                        content = claudeResponse.Content;
-                        response = claudeResponse;
-                    }
                 }
-                else
+
+                // Tüm provider'lar başarısız olduysa
+                if (allProvidersFailed)
                 {
-                    // Claude'a gönder
-                    var claudeResponse = await _claudeService.SendMessageAsync(userInput);
-                    isError = claudeResponse.IsError;
-                    errorMessage = claudeResponse.ErrorMessage;
-                    content = claudeResponse.Content;
-                    response = claudeResponse;
+                    LogService.LogError("[AIMode] All AI providers failed!");
+                    content = null;
+                    isError = true;
+                    errorMessage = "AI servisine ulaşılamadı";
                 }
 
                 var duration = (DateTime.Now - startTime).TotalSeconds;
@@ -455,6 +409,78 @@ namespace QuadroAIPilot.Modes
             }
 
             return excerpt;
+        }
+
+        /// <summary>
+        /// Seçili provider'a göre fallback zincirini döndürür
+        /// Gemini -> ChatGPT -> Claude
+        /// ChatGPT -> Gemini -> Claude
+        /// Claude -> Gemini -> ChatGPT
+        /// </summary>
+        private AppState.AIProvider[] GetProviderChain(AppState.AIProvider primary)
+        {
+            return primary switch
+            {
+                AppState.AIProvider.Gemini => new[] { AppState.AIProvider.Gemini, AppState.AIProvider.ChatGPT, AppState.AIProvider.Claude },
+                AppState.AIProvider.ChatGPT => new[] { AppState.AIProvider.ChatGPT, AppState.AIProvider.Gemini, AppState.AIProvider.Claude },
+                AppState.AIProvider.Claude => new[] { AppState.AIProvider.Claude, AppState.AIProvider.Gemini, AppState.AIProvider.ChatGPT },
+                _ => new[] { AppState.AIProvider.Gemini, AppState.AIProvider.ChatGPT, AppState.AIProvider.Claude }
+            };
+        }
+
+        /// <summary>
+        /// Belirtilen provider'a mesaj göndermeyi dener
+        /// </summary>
+        private async Task<(bool success, string content, string error)> TrySendToProviderAsync(AppState.AIProvider provider, string userInput)
+        {
+            try
+            {
+                switch (provider)
+                {
+                    case AppState.AIProvider.ChatGPT:
+                        if (await ChatGPTBridgeService.IsAvailableAsync())
+                        {
+                            var chatgptResponse = await ChatGPTBridgeService.SendMessageAsync(userInput);
+                            if (!chatgptResponse.IsError && !string.IsNullOrWhiteSpace(chatgptResponse.Content))
+                            {
+                                LogService.LogInfo($"[AIMode] ChatGPT responded successfully");
+                                return (true, chatgptResponse.Content, null);
+                            }
+                            return (false, null, chatgptResponse.ErrorMessage ?? "ChatGPT yanıt vermedi");
+                        }
+                        return (false, null, "ChatGPT kullanılamıyor");
+
+                    case AppState.AIProvider.Gemini:
+                        if (await GeminiBridgeService.IsAvailableAsync())
+                        {
+                            var geminiResponse = await GeminiBridgeService.SendMessageAsync(userInput);
+                            if (!geminiResponse.IsError && !string.IsNullOrWhiteSpace(geminiResponse.Content))
+                            {
+                                LogService.LogInfo($"[AIMode] Gemini responded successfully");
+                                return (true, geminiResponse.Content, null);
+                            }
+                            return (false, null, geminiResponse.ErrorMessage ?? "Gemini yanıt vermedi");
+                        }
+                        return (false, null, "Gemini kullanılamıyor");
+
+                    case AppState.AIProvider.Claude:
+                        var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                        if (!claudeResponse.IsError && !string.IsNullOrWhiteSpace(claudeResponse.Content))
+                        {
+                            LogService.LogInfo($"[AIMode] Claude responded successfully");
+                            return (true, claudeResponse.Content, null);
+                        }
+                        return (false, null, claudeResponse.ErrorMessage ?? "Claude yanıt vermedi");
+
+                    default:
+                        return (false, null, "Bilinmeyen provider");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.LogError($"[AIMode] Provider {provider} exception: {ex.Message}");
+                return (false, null, ex.Message);
+            }
         }
 
         /// <summary>
