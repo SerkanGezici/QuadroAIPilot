@@ -453,18 +453,20 @@
             align-items: center;
             justify-content: center;
             color: white;
-            transition: background var(--transition-fast), transform var(--transition-fast);
-            opacity: 0.8;
         }
 
-        .send-button:hover {
+        button.send-button:hover,
+        button.send-button:hover:not(:disabled) {
             background: var(--accent-color);
-            opacity: 1;
-            /* scale kaldırıldı - kayma sorunu için */
+            transform: translateY(-50%) !important; /* Genel button:hover override - sabit kal */
+            box-shadow: none !important;
         }
 
-        .send-button:active {
-            transform: translateY(-50%) scale(0.95);
+        button.send-button:active,
+        button.send-button:active:not(:disabled) {
+            background: var(--accent-color);
+            transform: translateY(-50%) !important; /* Genel button:active override - sabit kal */
+            box-shadow: none !important;
         }
 
         .send-button svg {
@@ -1009,7 +1011,7 @@
                 <div id="feedbackArea">Sistem durumu...</div>
                 <div class="textarea-wrapper">
                     <textarea id="txtCikti" placeholder="Komut yazın veya dikte kullanın..."></textarea>
-                    <button id="btnSend" class="send-button" onclick="sendTextToAI()" title="Gönder (Ctrl+Enter)">
+                    <button id="btnSend" class="send-button" onclick="sendTextToAI()" title="Gönder (Enter)">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -4057,6 +4059,17 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function (e) {
+            // Enter tuşu davranışı - textarea için
+            if (e.key === 'Enter' && !e.shiftKey) {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.id === 'txtCikti') {
+                    e.preventDefault();
+                    sendTextToAI();
+                    return;
+                }
+            }
+
+            // Ctrl+Enter de çalışsın (alternatif)
             if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
                 sendTextToAI();
