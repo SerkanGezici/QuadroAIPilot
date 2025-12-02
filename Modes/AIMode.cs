@@ -210,33 +210,36 @@ namespace QuadroAIPilot.Modes
                 // 2. Kimlik sorusu kontrolü - AI'a göndermeden lokal yanıtla
                 if (IsIdentityQuestion(userInput))
                 {
-                    LogService.LogInfo("[AIMode] Kimlik sorusu tespit edildi - lokal yanıt veriliyor");
+                    LogService.LogInfo("[AIMode] Kimlik sorusu tespit edildi - lokal yanıt veriliyor (3sn gecikme)");
                     var identityResponse = GetIdentityResponse();       // Ekran için (AI yazılı)
                     var identityResponseTTS = GetIdentityResponseForTTS(); // TTS için (EyAy sesli)
 
-                    // WebView'a asistan yanıtı ekle (ekran versiyonu)
-                    SendToWebView("aiAssistantMessage", new
-                    {
-                        content = identityResponse,
-                        timestamp = DateTime.Now
-                    });
-
-                    // Conversation history'ye ekle
-                    _conversationHistory.Add(new ConversationTurn
-                    {
-                        Role = "assistant",
-                        Content = identityResponse,
-                        Timestamp = DateTime.Now
-                    });
-
-                    // TTS ile seslendir (TTS versiyonu - "EyAy" telaffuzu)
+                    // 3 saniye gecikme - gerçek AI yanıtı gibi görünsün
                     _ = Task.Run(async () =>
                     {
-                        await TextToSpeechService.SpeakTextAsync(identityResponseTTS);
-                    });
+                        await Task.Delay(3000);
 
-                    // Düşünme durumunu kapat
-                    SendToWebView("aiThinkingDone", new { });
+                        // WebView'a asistan yanıtı ekle (ekran versiyonu)
+                        SendToWebView("aiAssistantMessage", new
+                        {
+                            content = identityResponse,
+                            timestamp = DateTime.Now
+                        });
+
+                        // Conversation history'ye ekle
+                        _conversationHistory.Add(new ConversationTurn
+                        {
+                            Role = "assistant",
+                            Content = identityResponse,
+                            Timestamp = DateTime.Now
+                        });
+
+                        // TTS ile seslendir (TTS versiyonu - "EyAy" telaffuzu)
+                        await TextToSpeechService.SpeakTextAsync(identityResponseTTS);
+
+                        // Düşünme durumunu kapat
+                        SendToWebView("aiThinkingDone", new { });
+                    });
 
                     return; // AI'a gönderme!
                 }
