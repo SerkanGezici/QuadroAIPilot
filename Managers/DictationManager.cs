@@ -462,10 +462,17 @@ namespace QuadroAIPilot.Managers
                 {
                     return;
                 }
-                if (text == _lastProcessedText)
+
+                // AI modunda aynı soruyu tekrar sormaya izin ver
+                // (Kullanıcı bilinçli olarak tekrar soruyor olabilir)
+                if (AppState.CurrentMode != AppState.UserMode.AI)
                 {
-                    return;
+                    if (text == _lastProcessedText)
+                    {
+                        return;
+                    }
                 }
+
                 if (!string.IsNullOrEmpty(_lastTtsResponse) && text.Contains(_lastTtsResponse))
                 {
                     return;

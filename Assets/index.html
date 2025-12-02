@@ -2069,7 +2069,9 @@
                                 // Reset
                                 aiModeTimer = null;
                                 aiModePendingText = '';
-                                console.log('[Web Speech API] AI Mode - Timer ve pending text resetlendi');
+                                // Textarea'yı da temizle
+                                textarea.value = '';
+                                console.log('[Web Speech API] AI Mode - Timer, pending text ve textarea resetlendi');
                             }, AI_MODE_SILENCE_DURATION);
                         }
                         // Komut ve Yazı modunda hemen gönder (mevcut davranış)
