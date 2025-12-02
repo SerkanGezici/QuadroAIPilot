@@ -95,9 +95,11 @@ class ChatGPTBridge:
             # DÜZELTME: Page close event listener ekle (browser crash detection)
             self.page.on('close', lambda: logger.warning("⚠️ Page closed unexpectedly!"))
 
-            # ChatGPT'ye git
+            # ChatGPT'ye git (UTM parametreleri ile - Search özelliği aktif olması için)
+            # NOT: Google Ads linki gibi UTM parametreleri ChatGPT'nin search özelliğini aktif ediyor
             logger.info("🌐 ChatGPT'ye bağlanılıyor...")
-            await self.page.goto('https://chat.openai.com/', wait_until='domcontentloaded', timeout=90000)
+            chatgpt_url = 'https://chatgpt.com/?utm_source=quadro&utm_medium=app&utm_campaign=pilot'
+            await self.page.goto(chatgpt_url, wait_until='domcontentloaded', timeout=90000)
 
             # Network idle bekle (timeout artırıldı)
             try:
@@ -120,12 +122,13 @@ class ChatGPTBridge:
 
             # Page health check: Temel elementleri kontrol et
             try:
-                # ChatGPT textarea veya contenteditable div var mı?
-                await self.page.wait_for_selector('textarea, div[contenteditable="true"]', timeout=5000)
+                # UTM URL için daha spesifik selector (ProseMirror editör)
+                await self.page.wait_for_selector('#prompt-textarea, div.ProseMirror, textarea[name="prompt-textarea"]', timeout=15000)
                 logger.info("✅ ChatGPT input elementi bulundu, page sağlıklı")
             except:
                 logger.warning("⚠️ ChatGPT input elementi bulunamadı, ama devam ediliyor...")
 
+            # NOT: System prompt kaldırıldı - kimlik soruları artık C# uygulama seviyesinde yakalanıyor
             self.is_ready = True
             logger.info("✅ ChatGPT browser hazır!")
             return True
@@ -225,17 +228,30 @@ class ChatGPTBridge:
             # NOT: Modal'lar init_browser()'da kapatıldı, tekrar kapatmaya gerek yok
             # Her mesajda modal kapatma yeni chat başlatabilir, bu yüzden YAPMA!
 
-            # Textarea bul ve mesaj gönder (ChatGPT artık contenteditable div kullanıyor)
-            # Önce textarea dene, yoksa contenteditable div kullan
+            # Textarea bul ve mesaj gönder (UTM URL'de ProseMirror editör kullanılıyor)
+            # Selector öncelik sırası (en spesifikten genele)
             textarea_selector = None
-            try:
-                await self.page.wait_for_selector('textarea[placeholder*="Message"]', timeout=3000)
-                textarea_selector = 'textarea[placeholder*="Message"]'
-                logger.info("✅ Textarea bulundu (eski format)")
-            except:
-                await self.page.wait_for_selector('div[contenteditable="true"]', timeout=5000)
-                textarea_selector = 'div[contenteditable="true"]'
-                logger.info("✅ Contenteditable div bulundu (yeni format)")
+            selectors = [
+                ('#prompt-textarea', 'ProseMirror ID (UTM format)'),
+                ('div.ProseMirror[contenteditable="true"]', 'ProseMirror class'),
+                ('textarea[name="prompt-textarea"]', 'Named textarea'),
+                ('textarea[placeholder*="Message"]', 'English placeholder'),
+                ('textarea[placeholder*="sor"]', 'Turkish placeholder'),
+                ('div[contenteditable="true"]', 'Generic contenteditable'),
+            ]
+
+            for selector, description in selectors:
+                try:
+                    await self.page.wait_for_selector(selector, timeout=10000)
+                    textarea_selector = selector
+                    logger.info(f"✅ Input bulundu: {description}")
+                    break
+                except:
+                    logger.debug(f"⏭️ Selector bulunamadı: {selector}")
+                    continue
+
+            if not textarea_selector:
+                raise Exception("❌ Hiçbir input selector bulunamadı!")
 
             # Contenteditable div için type() kullan (headless modda daha güvenilir)
             element = await self.page.query_selector(textarea_selector)

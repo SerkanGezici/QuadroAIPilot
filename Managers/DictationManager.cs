@@ -384,19 +384,35 @@ namespace QuadroAIPilot.Managers
             // YAZIM MODUNDA - doğrudan aktif pencereye gönder
             if (AppState.CurrentMode == AppState.UserMode.Writing)
             {
-                // Sadece "komut moduna geç" kontrolü
-                if (text.ToLowerInvariant().Contains("komut moduna geç"))
+                var normalizedText = text.ToLowerInvariant();
+
+                // "komut moduna geç" kontrolü
+                if (normalizedText.Contains("komut moduna geç"))
                 {
                     LogService.LogInfo($"[DictationManager] Yazı modundan komut moduna geçiş komutu: '{text}'");
                     _lastModeChangeCommand = text;
                     _lastModeChangeTime = DateTime.UtcNow;
-                    
+
                     // Direkt mod değişikliği yap
                     _modeManager.Switch(AppState.UserMode.Command);
                     _ = TextToSpeechService.SpeakTextAsync("Komut moduna geçildi");
                     return;
                 }
-                
+
+                // "yapay zeka moduna geç" kontrolü
+                if (normalizedText.Contains("yapay zeka moduna geç") ||
+                    normalizedText.Contains("ai moduna geç"))
+                {
+                    LogService.LogInfo($"[DictationManager] Yazı modundan AI moduna geçiş komutu: '{text}'");
+                    _lastModeChangeCommand = text;
+                    _lastModeChangeTime = DateTime.UtcNow;
+
+                    // Direkt mod değişikliği yap
+                    _modeManager.Switch(AppState.UserMode.AI);
+                    _ = TextToSpeechService.SpeakTextAsync("Yapay zeka moduna geçildi");
+                    return;
+                }
+
                 // Son mod değişikliği komutunu tekrar yazmayı önle
                 if (!string.IsNullOrEmpty(_lastModeChangeCommand) && 
                     text.Equals(_lastModeChangeCommand, StringComparison.OrdinalIgnoreCase) &&
