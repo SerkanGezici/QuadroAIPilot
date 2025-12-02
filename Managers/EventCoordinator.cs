@@ -1006,10 +1006,42 @@ namespace QuadroAIPilot.Managers
                     DictationManager.OnManualTypingEnded();
                 }
 
-                // Yazı modunda textChanged event'lerini işleme
+                // Yazı modunda - ama mod değiştirme komutlarını kontrol et
                 if (State.AppState.CurrentMode == State.AppState.UserMode.Writing)
                 {
-                    LogService.LogDebug($"[EventCoordinator] HandleTextChanged - Writing mode, ignoring textChanged event: '{text}'");
+                    var normalizedText = text.ToLowerInvariant().TrimEnd('.');
+
+                    // Komut moduna geç
+                    if (normalizedText.Contains("komut moduna geç"))
+                    {
+                        LogService.LogInfo($"[EventCoordinator] Yazı modundan komut moduna geçiş (klavye): '{text}'");
+                        var modeManager = ServiceContainer.GetService<ModeManager>();
+                        modeManager?.Switch(State.AppState.UserMode.Command);
+                        _ = TextToSpeechService.SpeakTextAsync("Komut moduna geçildi");
+                        return;
+                    }
+
+                    // Yapay zeka moduna geç
+                    if (normalizedText.Contains("yapay zeka moduna geç") ||
+                        normalizedText.Contains("ai moduna geç"))
+                    {
+                        LogService.LogInfo($"[EventCoordinator] Yazı modundan AI moduna geçiş (klavye): '{text}'");
+                        var modeManager = ServiceContainer.GetService<ModeManager>();
+                        modeManager?.Switch(State.AppState.UserMode.AI);
+                        _ = TextToSpeechService.SpeakTextAsync("Yapay zeka moduna geçildi");
+                        return;
+                    }
+
+                    // Diğer yazı modu komutları ignore
+                    LogService.LogDebug($"[EventCoordinator] HandleTextChanged - Writing mode, ignoring: '{text}'");
+                    return;
+                }
+
+                // AI modunda klavyeden yazarken sadece Gönder butonuna basıldığında işle
+                // NOT: Sesli komutlar WebSpeechBridge üzerinden DictationManager'a doğrudan gider, buradan geçmez
+                if (State.AppState.CurrentMode == State.AppState.UserMode.AI && !fromSendButton)
+                {
+                    LogService.LogDebug($"[EventCoordinator] HandleTextChanged - AI mode, klavye girişi (fromSendButton: False), bekleniyor: '{text}'");
                     return;
                 }
 

@@ -121,26 +121,24 @@ class GeminiBridge:
 
             # Page health check: Temel elementleri kontrol et
             try:
-                # Gemini input elementi var mı? (birden fazla selector dene)
+                # Gemini input elementi var mı? (optimize edilmiş selector listesi - 6'dan 3'e düşürüldü)
                 textarea_selectors = [
-                    'div[contenteditable="true"][role="textbox"]',
-                    'textarea',
-                    'rich-textarea',
-                    'div[contenteditable="true"]',
-                    'div.ql-editor',  # Quill editor
-                    'textarea[placeholder*="message"]',  # Placeholder içeren textarea
+                    'div[contenteditable="true"][role="textbox"]',  # En yaygın Gemini selector
+                    'rich-textarea',  # Gemini custom component
+                    'div[contenteditable="true"]',  # Fallback
                 ]
 
-                logger.info("🔍 DEBUG: Textarea selector'ları deneniyor...")
+                logger.info("🔍 Textarea selector'ları deneniyor (optimize edilmiş)...")
                 found = False
                 for selector in textarea_selectors:
                     try:
-                        await self.page.wait_for_selector(selector, timeout=5000)
+                        # Timeout 5s → 2s (toplam bekleme 6s vs eski 30s)
+                        await self.page.wait_for_selector(selector, timeout=2000)
                         logger.info(f"✅ Gemini input elementi bulundu: {selector}")
                         found = True
                         break
                     except:
-                        logger.info(f"❌ Selector bulunamadı: {selector}")
+                        logger.info(f"⏳ Selector bulunamadı: {selector}")
                         continue
 
                 if not found:
@@ -156,7 +154,7 @@ class GeminiBridge:
             except Exception as e:
                 logger.warning(f"⚠️ Input check hatası: {e}")
 
-            # Sistem promptu SİLİNDİ - İlk mesajda gönderilecek (hızlı health check için)
+            # NOT: System prompt kaldırıldı - kimlik soruları artık C# uygulama seviyesinde yakalanıyor
             self.is_ready = True
             logger.info("✅ Gemini browser hazır!")
             return True

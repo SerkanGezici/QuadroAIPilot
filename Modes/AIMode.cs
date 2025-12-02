@@ -207,7 +207,41 @@ namespace QuadroAIPilot.Modes
                     Timestamp = DateTime.Now
                 });
 
-                // 2. Provider'a göre "düşünüyor..." mesajı
+                // 2. Kimlik sorusu kontrolü - AI'a göndermeden lokal yanıtla
+                if (IsIdentityQuestion(userInput))
+                {
+                    LogService.LogInfo("[AIMode] Kimlik sorusu tespit edildi - lokal yanıt veriliyor");
+                    var identityResponse = GetIdentityResponse();       // Ekran için (AI yazılı)
+                    var identityResponseTTS = GetIdentityResponseForTTS(); // TTS için (EyAy sesli)
+
+                    // WebView'a asistan yanıtı ekle (ekran versiyonu)
+                    SendToWebView("aiAssistantMessage", new
+                    {
+                        content = identityResponse,
+                        timestamp = DateTime.Now
+                    });
+
+                    // Conversation history'ye ekle
+                    _conversationHistory.Add(new ConversationTurn
+                    {
+                        Role = "assistant",
+                        Content = identityResponse,
+                        Timestamp = DateTime.Now
+                    });
+
+                    // TTS ile seslendir (TTS versiyonu - "EyAy" telaffuzu)
+                    _ = Task.Run(async () =>
+                    {
+                        await TextToSpeechService.SpeakTextAsync(identityResponseTTS);
+                    });
+
+                    // Düşünme durumunu kapat
+                    SendToWebView("aiThinkingDone", new { });
+
+                    return; // AI'a gönderme!
+                }
+
+                // 3. Provider'a göre "düşünüyor..." mesajı
                 var currentProvider = AppState.CurrentAIProvider;
 
                 SendToWebView("aiThinking", new
@@ -467,6 +501,13 @@ namespace QuadroAIPilot.Modes
                         var claudeResponse = await _claudeService.SendMessageAsync(userInput);
                         if (!claudeResponse.IsError && !string.IsNullOrWhiteSpace(claudeResponse.Content))
                         {
+                            // Claude hata mesajlarını kontrol et - bunlar başarısız yanıt sayılmalı
+                            if (IsClaudeErrorResponse(claudeResponse.Content))
+                            {
+                                LogService.LogWarning($"[AIMode] Claude returned error in content: {claudeResponse.Content.Substring(0, Math.Min(100, claudeResponse.Content.Length))}");
+                                return (false, null, "Claude authentication/token hatası - fallback devreye giriyor");
+                            }
+
                             LogService.LogInfo($"[AIMode] Claude responded successfully");
                             return (true, claudeResponse.Content, null);
                         }
@@ -481,6 +522,114 @@ namespace QuadroAIPilot.Modes
                 LogService.LogError($"[AIMode] Provider {provider} exception: {ex.Message}");
                 return (false, null, ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Claude yanıt içeriğinde hata pattern'lerini kontrol eder
+        /// Token expired, authentication error gibi durumlar başarısız yanıt sayılır
+        /// </summary>
+        private bool IsClaudeErrorResponse(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return false;
+
+            var errorPatterns = new[]
+            {
+                "API Error:",
+                "authentication_error",
+                "OAuth token has expired",
+                "Please run /login",
+                "rate_limit",
+                "invalid_api_key",
+                "permission_denied",
+                "token has expired",
+                "401",
+                "403"
+            };
+
+            return errorPatterns.Any(pattern =>
+                content.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Kimlik sorularını tespit eder (sen kimsin, hangi AI, vs.)
+        /// Bu sorular AI'a gönderilmeden lokal olarak yanıtlanır
+        /// </summary>
+        private bool IsIdentityQuestion(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+
+            var normalizedText = text.ToLowerInvariant()
+                .Replace("?", "")
+                .Replace("!", "")
+                .Replace(".", "")
+                .Trim();
+
+            var identityPatterns = new[]
+            {
+                // Direkt kimlik soruları
+                "sen kimsin",
+                "sen nesin",
+                "adın ne",
+                "ismin ne",
+                "adınız ne",
+                "isminiz ne",
+                "kendini tanıt",
+                "kendinden bahset",
+
+                // Yapımcı/geliştirici soruları
+                "kim yaptı",
+                "kim geliştirdi",
+                "kim üretti",
+                "kim yarattı",
+                "kimin ürünü",
+                "kimin yapay zeka",
+                "seni kim yaptı",
+                "seni kim geliştirdi",
+
+                // Model/AI soruları
+                "hangi yapay zeka",
+                "hangi ai",
+                "hangi model",
+                "hangi dil modeli",
+                "ne tür ai",
+                "ne tür yapay zeka",
+                "nasıl bir ai",
+                "nasıl bir yapay zeka",
+                "ne yapay zekası",
+
+                // Spesifik AI kontrolleri
+                "gpt misin",
+                "chatgpt misin",
+                "gemini misin",
+                "claude misin",
+                "bard mısın",
+                "google mısın",
+                "openai mısın",
+                "anthropic misin",
+                "microsoft misin",
+                "copilot misin",
+                "llama mısın",
+                "meta mısın"
+            };
+
+            return identityPatterns.Any(pattern =>
+                normalizedText.Contains(pattern));
+        }
+
+        /// <summary>
+        /// Kimlik sorusuna verilecek standart yanıt (ekranda gösterilecek)
+        /// </summary>
+        private string GetIdentityResponse()
+        {
+            return "Ben Quadro AI Pilot'um. Quadro Computer tarafından geliştirilen yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?";
+        }
+
+        /// <summary>
+        /// Kimlik sorusuna verilecek TTS yanıtı (Türkçe telaffuz için "AI" → "EyAy")
+        /// </summary>
+        private string GetIdentityResponseForTTS()
+        {
+            return "Ben Quadro EyAy Pilot'um. Quadro Computer tarafından geliştirilen yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?";
         }
 
         /// <summary>

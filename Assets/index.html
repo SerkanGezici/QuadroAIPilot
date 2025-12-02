@@ -3556,8 +3556,17 @@
                     console.log('[AI] Thinking...');
                     appendFeedback('🤔 Quadro AI Asistan Düşünüyor...');
                 } else if (data.action === 'aiThinkingDone') {
-                    // Thinking tamamlandı (şu an sadece log)
+                    // Thinking tamamlandı - mevcut dinleme durumuna göre feedback güncelle
                     console.log('[AI] Thinking done');
+                    if (currentListeningState === ListeningState.PASSIVE) {
+                        appendFeedback('🎤 Uyandırma dinlemesi aktif');
+                    } else if (currentListeningState === ListeningState.ACTIVE) {
+                        appendFeedback('🎙️ Dinliyorum...');
+                    } else if (currentListeningState === ListeningState.TTS_PLAYING) {
+                        appendFeedback('🔊 Konuşuyor...');
+                    } else {
+                        appendFeedback('💤 Dinleme kapalı');
+                    }
                 } else if (data.action === 'aiError') {
                     // AI hatası
                     console.error('[AI] Error:', data.data.message);
