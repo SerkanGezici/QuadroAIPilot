@@ -592,6 +592,7 @@
             display: flex;
             justify-content: flex-start;
             align-items: center;
+            position: relative;
         }
 
         .action-center {
@@ -608,7 +609,7 @@
             align-items: center;
         }
 
-        /* Mod göstergesi stilleri */
+        /* Mod göstergesi stilleri - tıklanabilir dropdown */
         .mode-indicator {
             display: flex;
             align-items: center;
@@ -619,10 +620,75 @@
             font-size: 13px;
             color: var(--text-primary);
             opacity: 0.8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .mode-indicator:hover {
+            background: rgba(59, 66, 82, 0.4);
+            opacity: 1;
         }
 
         .mode-indicator .mode-icon {
             font-size: 16px;
+        }
+
+        .mode-indicator .dropdown-arrow {
+            font-size: 10px;
+            margin-left: 4px;
+            transition: transform 0.2s ease;
+        }
+
+        .mode-indicator.menu-open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Dropdown menü */
+        .mode-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 8px;
+            background: var(--bg-secondary, #2d3748);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            min-width: 160px;
+            z-index: 1000;
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.2s ease;
+        }
+
+        .mode-menu.hidden {
+            display: none;
+        }
+
+        .mode-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .mode-menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-menu-item.active {
+            background: rgba(139, 92, 246, 0.3);
+        }
+
+        .mode-menu-icon {
+            font-size: 18px;
+        }
+
+        .mode-menu-text {
+            font-size: 14px;
+            color: var(--text-primary);
         }
 
         /* Dikte durumu göstergesi stilleri */
@@ -1022,11 +1088,27 @@
 
             <!-- Unified action buttons bar -->
             <div class="action-bar">
-                <!-- Sol: Mod göstergesi -->
+                <!-- Sol: Mod göstergesi (tıklanabilir dropdown) -->
                 <div class="action-left">
-                    <div id="modeIndicator" class="mode-indicator">
+                    <div id="modeIndicator" class="mode-indicator" onclick="toggleModeMenu(event)">
                         <span class="mode-icon">💬</span>
                         <span class="mode-text">Komut Modu</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <!-- Dropdown Menü -->
+                    <div id="modeMenu" class="mode-menu hidden">
+                        <div class="mode-menu-item" data-mode="command" onclick="selectMode('command')">
+                            <span class="mode-menu-icon">💬</span>
+                            <span class="mode-menu-text">Komut Modu</span>
+                        </div>
+                        <div class="mode-menu-item" data-mode="writing" onclick="selectMode('writing')">
+                            <span class="mode-menu-icon">✍️</span>
+                            <span class="mode-menu-text">Yazı Modu</span>
+                        </div>
+                        <div class="mode-menu-item" data-mode="ai" onclick="selectMode('ai')">
+                            <span class="mode-menu-icon">🤖</span>
+                            <span class="mode-menu-text">AI Asistan</span>
+                        </div>
                     </div>
                 </div>
 
@@ -2420,6 +2502,70 @@
             isFromWakeWord = true;
             toggleDikte();
         }
+
+        // === MOD MENÜ FONKSİYONLARI ===
+
+        // Menü aç/kapa
+        function toggleModeMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('modeMenu');
+            const indicator = document.getElementById('modeIndicator');
+
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                indicator.classList.add('menu-open');
+                // Aktif modu işaretle
+                updateActiveMenuItem();
+            } else {
+                closeModeMenu();
+            }
+        }
+
+        function closeModeMenu() {
+            const menu = document.getElementById('modeMenu');
+            const indicator = document.getElementById('modeIndicator');
+            if (menu) menu.classList.add('hidden');
+            if (indicator) indicator.classList.remove('menu-open');
+        }
+
+        function updateActiveMenuItem() {
+            const items = document.querySelectorAll('.mode-menu-item');
+            items.forEach(item => {
+                if (item.dataset.mode === currentMode) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // Mod seçimi
+        function selectMode(mode) {
+            console.log('[selectMode] Mod seçildi:', mode);
+
+            // Menüyü kapat
+            closeModeMenu();
+
+            // C#'a mod değişikliği isteği gönder
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    action: 'switchMode',
+                    mode: mode
+                }));
+            }
+        }
+
+        // Sayfa dışı tıklamada menüyü kapat
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('modeMenu');
+            const indicator = document.getElementById('modeIndicator');
+
+            if (menu && indicator && !menu.contains(event.target) && !indicator.contains(event.target)) {
+                closeModeMenu();
+            }
+        });
+
+        // === MOD MENÜ FONKSİYONLARI SONU ===
 
         // V50 basit tarz - toggleDikte fonksiyonu
         function toggleDikte() {

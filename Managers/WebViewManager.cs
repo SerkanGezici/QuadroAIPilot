@@ -588,6 +588,33 @@ namespace QuadroAIPilot.Managers
                         return;
                     }
 
+                    // Mod değişikliği isteği (dropdown menüden)
+                    if (action == "switchMode")
+                    {
+                        if (root.TryGetProperty("mode", out var modeElement))
+                        {
+                            var mode = modeElement.GetString();
+                            LogService.LogInfo($"[WebViewManager] Mod değişikliği isteği alındı: {mode}");
+
+                            // ModeManager üzerinden mod değiştir
+                            var targetMode = mode switch
+                            {
+                                "command" => State.AppState.UserMode.Command,
+                                "writing" => State.AppState.UserMode.Writing,
+                                "ai" => State.AppState.UserMode.AI,
+                                _ => State.AppState.UserMode.Command
+                            };
+
+                            // UI thread'de çalıştır
+                            _dispatcherQueue?.TryEnqueue(() =>
+                            {
+                                var modeManager = ServiceContainer.GetService<ModeManager>();
+                                modeManager?.Switch(targetMode);
+                            });
+                        }
+                        return;
+                    }
+
                     // JavaScript'ten listening state değişikliği bildirimi
                     if (action == "listeningStateChanged")
                     {
