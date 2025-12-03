@@ -514,6 +514,89 @@
             }
         }
 
+        /* ==========================================
+           WEATHER TABLE STYLES (Hava Durumu Tablosu)
+           ========================================== */
+        .weather-table-container {
+            margin: 10px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2px;
+            max-width: 100%;
+        }
+
+        .weather-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(30, 30, 46, 0.95);
+            border-radius: 10px;
+            font-size: var(--font-size-sm);
+        }
+
+        .weather-table th {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 10px 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .weather-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .weather-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .weather-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Weather header with location */
+        .weather-header {
+            padding: 12px;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .weather-header .location {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .weather-header .description {
+            font-size: 0.9em;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* Light theme support */
+        [data-theme="light"] .weather-table {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        [data-theme="light"] .weather-table th {
+            background: rgba(102, 126, 234, 0.1);
+            color: #333;
+        }
+
+        [data-theme="light"] .weather-table td {
+            color: #555;
+            border-bottom-color: #eee;
+        }
+
+        [data-theme="light"] .weather-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
         /* Dikta alanı */
         #txtCikti {
             height: 48px;
@@ -3232,6 +3315,157 @@
             }
         }
 
+        // ============================================
+        // AKILLI ICERIK FORMATLAMA (Smart Content Formatting)
+        // ============================================
+
+        /**
+         * Hava durumu verisi mi kontrol et
+         * Format 1: "19:00\n11°\n%0" (saat:dakika + derece + yagis)
+         * Format 2: "18\n14°\nAçık" (saat + derece + durum) - ChatGPT
+         */
+        function isWeatherData(text) {
+            if (!text) return false;
+
+            // Format 1: saat:dakika + derece + %yagis (Gemini eski format)
+            var pattern1 = /(\d{1,2}:\d{2})\n(\d+)°?\n%(\d+)/g;
+            var matches1 = text.match(pattern1);
+            if (matches1 && matches1.length >= 3) return true;
+
+            // Format 2: saat + derece + durum (ChatGPT format)
+            // Ornek: "18\n14°\nAçık"
+            var pattern2 = /\n(\d{1,2})\n(\d+)°\n(Açık|Kapalı|Bulutlu|Güneşli|Yağmurlu|Parçalı|Sisli)/g;
+            var matches2 = text.match(pattern2);
+            if (matches2 && matches2.length >= 2) return true;
+
+            return false;
+        }
+
+        /**
+         * Hava durumu verisini tablo formatina donustur
+         */
+        function formatAsWeatherTable(text) {
+            var rows = [];
+
+            // Format 1 dene: saat:dakika + derece + %yagis
+            var pattern1 = /(\d{1,2}:\d{2})\n(\d+)°?\n%(\d+)/g;
+            var match;
+            while ((match = pattern1.exec(text)) !== null) {
+                rows.push({
+                    time: match[1],
+                    temp: match[2],
+                    condition: '%' + match[3]
+                });
+            }
+
+            // Format 1 bulamadiysa Format 2 dene: saat + derece + durum
+            if (rows.length === 0) {
+                var pattern2 = /\n(\d{1,2})\n(\d+)°\n(Açık|Kapalı|Bulutlu|Güneşli|Yağmurlu|Parçalı|Sisli|Çok bulutlu|Az bulutlu)/gi;
+                while ((match = pattern2.exec(text)) !== null) {
+                    rows.push({
+                        time: match[1] + ':00',
+                        temp: match[2],
+                        condition: match[3]
+                    });
+                }
+            }
+
+            if (rows.length === 0) return text;
+
+            // Header bilgisi cikar (varsa)
+            var headerInfo = extractWeatherHeader(text);
+
+            // HTML tablo olustur
+            var html = '<div class="weather-table-container">';
+
+            // Header varsa ekle
+            if (headerInfo.location || headerInfo.description || headerInfo.current) {
+                html += '<div class="weather-header">';
+                if (headerInfo.location) {
+                    html += '<div class="location">📍 ' + escapeHtml(headerInfo.location) + '</div>';
+                }
+                if (headerInfo.current) {
+                    html += '<div class="description">' + escapeHtml(headerInfo.current) + '</div>';
+                }
+                html += '</div>';
+            }
+
+            html += '<table class="weather-table">';
+            html += '<thead><tr><th>⏰ Saat</th><th>🌡️ Sıcaklık</th><th>🌤️ Durum</th></tr></thead>';
+            html += '<tbody>';
+
+            rows.forEach(function(row) {
+                html += '<tr>';
+                html += '<td>' + escapeHtml(row.time) + '</td>';
+                html += '<td>' + escapeHtml(row.temp) + '°C</td>';
+                html += '<td>' + escapeHtml(row.condition) + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+
+            return html;
+        }
+
+        /**
+         * Hava durumu header bilgisini cikar
+         */
+        function extractWeatherHeader(text) {
+            var result = { location: null, description: null, current: null };
+
+            // "Şu an 13° · Çoğunlukla güneşli" formatini cikar
+            var currentMatch = text.match(/Şu an\s*(\d+)°?\s*[·•-]\s*(.+)/i);
+            if (currentMatch) {
+                result.current = 'Şu an ' + currentMatch[1] + '° · ' + currentMatch[2].trim();
+            }
+
+            // Sehir adi ara - "İstanbul, Türkiye" veya "İstanbul - " formatları
+            var locationMatch = text.match(/(İstanbul|Ankara|İzmir|Bursa|Antalya|Adana|Konya|Gaziantep|Eskişehir|Kayseri|Mersin|Diyarbakır|Samsun|Trabzon)[,\s]*(Türkiye)?/i);
+            if (locationMatch) {
+                result.location = locationMatch[1] + (locationMatch[2] ? ', ' + locationMatch[2] : '');
+            }
+
+            // Hava durumu aciklamasi ara (eger current yoksa)
+            if (!result.current) {
+                var descMatch = text.match(/(Parçalı bulutlu|Açık|Kapalı|Yağmurlu|Karlı|Sisli|Güneşli|Bulutlu|Çoğunlukla güneşli|Az bulutlu|Çok bulutlu)/i);
+                if (descMatch) {
+                    result.description = descMatch[1];
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         * HTML karakterlerini escape et (XSS korumasi)
+         */
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        /**
+         * Icerigi akilli sekilde formatla
+         * Hava durumu, tablo benzeri veriler vs. otomatik algilanir
+         */
+        function formatSmartContent(text) {
+            if (!text) return '';
+
+            // 1. Hava durumu verisi mi?
+            if (isWeatherData(text)) {
+                console.log('[SmartFormat] Hava durumu verisi algilandi');
+                return formatAsWeatherTable(text);
+            }
+
+            // 2. Normal metin - degisiklik yok
+            return text;
+        }
+
         /**
          * Markdown icerigini guvenli HTML'e donusturur
          * @param {string} markdown - Markdown formatinda metin
@@ -3421,8 +3655,11 @@
             contentDiv.className = 'markdown-content';
 
             if (role === 'assistant') {
-                // AI yanitlari icin Markdown render et (DOMPurify ile guvenli)
-                const renderedHtml = renderMarkdown(content);
+                // 1. Önce akıllı formatlama uygula (hava durumu, tablo vs.)
+                const smartContent = formatSmartContent(content);
+
+                // 2. Sonra Markdown render et (DOMPurify ile guvenli)
+                const renderedHtml = renderMarkdown(smartContent);
                 contentDiv.innerHTML = renderedHtml;
 
                 // Dosya yollarini tiklanabilir yap (rendered HTML icinde)
