@@ -172,11 +172,24 @@ namespace QuadroAIPilot.Services
             Process process = null;
             try
             {
-                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                // Claude CLI'ın script'leri oluşturacağı merkezi klasör
+                // Bu sayede kullanıcı proje klasörleri temiz kalır
+                var claudeScriptsDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".claude",
+                    "scripts"
+                );
+
+                // Klasör yoksa oluştur
+                if (!Directory.Exists(claudeScriptsDir))
+                {
+                    Directory.CreateDirectory(claudeScriptsDir);
+                    LogService.LogInfo($"[ClaudeCLI] Scripts klasörü oluşturuldu: {claudeScriptsDir}");
+                }
 
                 LogService.LogInfo($"[ClaudeCLI] Starting process with flag '{flag}'");
                 LogService.LogInfo($"[ClaudeCLI] Temp file: {tempFile}");
-                LogService.LogInfo($"[ClaudeCLI] Working dir: {userProfile}");
+                LogService.LogInfo($"[ClaudeCLI] Working dir: {claudeScriptsDir}");
 
                 // Claude Code html projesindeki gibi cmd.exe ile redirect
                 // --permission-mode acceptEdits: Düzenleme izinlerini otomatik kabul et
@@ -188,7 +201,7 @@ namespace QuadroAIPilot.Services
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    WorkingDirectory = userProfile,  // Kullanıcı ana dizini (dinamik)
+                    WorkingDirectory = claudeScriptsDir,  // Script'ler merkezi klasörde oluşturulur
                     StandardOutputEncoding = Encoding.UTF8,
                     StandardErrorEncoding = Encoding.UTF8
                 };
