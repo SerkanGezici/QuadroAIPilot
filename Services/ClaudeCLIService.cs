@@ -192,11 +192,11 @@ namespace QuadroAIPilot.Services
                 LogService.LogInfo($"[ClaudeCLI] Working dir: {claudeScriptsDir}");
 
                 // Claude Code html projesindeki gibi cmd.exe ile redirect
-                // --permission-mode acceptEdits: Düzenleme izinlerini otomatik kabul et
+                // --permission-mode bypassPermissions: Tüm izin kontrollerini bypass et (okuma, yazma, düzenleme)
                 var psi = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = $"/c \"claude {flag} --permission-mode acceptEdits < \"{tempFile}\"\"",
+                    Arguments = $"/c \"claude {flag} --permission-mode bypassPermissions < \"{tempFile}\"\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
