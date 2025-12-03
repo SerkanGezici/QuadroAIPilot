@@ -18,8 +18,9 @@ namespace QuadroAIPilot.Services
         private static readonly HttpClient _healthClient = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };  // Health check 45 saniye (ChatGPT streaming için)
         private static readonly HttpClient _resetClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };  // Reset 30 saniye
 
-        private const string BRIDGE_URL = "http://localhost:8765/chat";
-        private const string HEALTH_URL = "http://localhost:8765/health";
+        // Unified AI Bridge endpoint'leri (tek browser, 2 sekme)
+        private const string BRIDGE_URL = "http://localhost:8765/chatgpt/chat";
+        private const string HEALTH_URL = "http://localhost:8765/chatgpt/health";
 
         /// <summary>
         /// ChatGPT'ye mesaj gönderir ve yanıt alır
@@ -181,7 +182,7 @@ namespace QuadroAIPilot.Services
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                var response = await _resetClient.PostAsync("http://localhost:8765/reset", content);
+                var response = await _resetClient.PostAsync("http://localhost:8765/chatgpt/reset", content);
 
                 if (response.IsSuccessStatusCode)
                 {

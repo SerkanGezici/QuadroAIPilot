@@ -19,8 +19,9 @@ namespace QuadroAIPilot.Services
         private static readonly HttpClient _healthClient = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };  // Health check 45 saniye
         private static readonly HttpClient _resetClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };  // Reset 30 saniye
 
-        private const string BRIDGE_URL = "http://localhost:8766/chat";  // Port: 8766 (ChatGPT: 8765)
-        private const string HEALTH_URL = "http://localhost:8766/health";
+        // Unified AI Bridge endpoint'leri (tek browser, 2 sekme - aynı port!)
+        private const string BRIDGE_URL = "http://localhost:8765/gemini/chat";
+        private const string HEALTH_URL = "http://localhost:8765/gemini/health";
 
         /// <summary>
         /// Gemini'ye mesaj gönderir ve yanıt alır
@@ -179,7 +180,7 @@ namespace QuadroAIPilot.Services
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                var response = await _resetClient.PostAsync("http://localhost:8766/reset", content);
+                var response = await _resetClient.PostAsync("http://localhost:8765/gemini/reset", content);
 
                 if (response.IsSuccessStatusCode)
                 {

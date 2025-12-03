@@ -65,43 +65,24 @@ namespace QuadroAIPilot
                 State.AppState.DefaultAIProvider = settingsManager.Settings.DefaultAIProvider;
                 SimpleCrashLogger.Log($"Default AI Provider: {settingsManager.Settings.DefaultAIProvider}");
 
-                // ChatGPT Python Bridge'i başlat (arka planda, headless mode)
+                // Unified AI Python Bridge'i başlat (tek Chromium, 2 sekme - ChatGPT + Gemini)
+                // ~400-600MB RAM tasarrufu sağlar
                 _ = Task.Run(async () =>
                 {
                     try
                     {
                         await Task.Delay(3000); // 3 saniye bekle (UI yüklensin)
-                        LogService.LogInfo("[App] ChatGPT Python Bridge başlatılıyor...");
-                        SimpleCrashLogger.Log("ChatGPT Python Bridge başlatılıyor (headless)...");
-                        await Services.ChatGPTPythonBridge.Instance.StartBridgeAsync();
-                        LogService.LogInfo("[App] ChatGPT Python Bridge başlatıldı.");
-                        SimpleCrashLogger.Log("ChatGPT Python Bridge başlatıldı.");
+                        LogService.LogInfo("[App] Unified AI Python Bridge başlatılıyor (tek browser, 2 sekme)...");
+                        SimpleCrashLogger.Log("Unified AI Python Bridge başlatılıyor...");
+                        await Services.UnifiedAIPythonBridge.Instance.StartBridgeAsync();
+                        LogService.LogInfo("[App] Unified AI Python Bridge başlatıldı.");
+                        SimpleCrashLogger.Log("Unified AI Python Bridge başlatıldı.");
                     }
                     catch (Exception bridgeEx)
                     {
-                        SimpleCrashLogger.LogException(bridgeEx, "ChatGPTBridge");
-                        LogService.LogError($"[App] ChatGPT Bridge başlatma hatası: {bridgeEx.Message}");
-                        LogService.LogError($"[App] ChatGPT Bridge StackTrace: {bridgeEx.StackTrace}");
-                    }
-                });
-
-                // Gemini Python Bridge'i başlat (arka planda, headless mode)
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await Task.Delay(3500); // 3.5 saniye bekle (ChatGPT'den sonra)
-                        LogService.LogInfo("[App] Gemini Python Bridge başlatılıyor...");
-                        SimpleCrashLogger.Log("Gemini Python Bridge başlatılıyor (headless)...");
-                        await Services.GeminiPythonBridge.Instance.StartBridgeAsync();
-                        LogService.LogInfo("[App] Gemini Python Bridge başlatıldı.");
-                        SimpleCrashLogger.Log("Gemini Python Bridge başlatıldı.");
-                    }
-                    catch (Exception bridgeEx)
-                    {
-                        SimpleCrashLogger.LogException(bridgeEx, "GeminiBridge");
-                        LogService.LogError($"[App] Gemini Bridge başlatma hatası: {bridgeEx.Message}");
-                        LogService.LogError($"[App] Gemini Bridge StackTrace: {bridgeEx.StackTrace}");
+                        SimpleCrashLogger.LogException(bridgeEx, "UnifiedAIBridge");
+                        LogService.LogError($"[App] Unified AI Bridge başlatma hatası: {bridgeEx.Message}");
+                        LogService.LogError($"[App] Unified AI Bridge StackTrace: {bridgeEx.StackTrace}");
                     }
                 });
 
@@ -163,19 +144,18 @@ namespace QuadroAIPilot
                 m_window = new MainWindow();
                 SimpleCrashLogger.Log("MainWindow created");
 
-                // Window kapatma event'i - Python bridge'leri temizle
+                // Window kapatma event'i - Unified AI bridge'i temizle
                 m_window.Closed += (s, e) =>
                 {
                     try
                     {
-                        SimpleCrashLogger.Log("Window closed - stopping Python bridges...");
-                        Services.ChatGPTPythonBridge.Instance.Dispose();
-                        Services.GeminiPythonBridge.Instance.Dispose();
-                        SimpleCrashLogger.Log("Python bridges stopped.");
+                        SimpleCrashLogger.Log("Window closed - stopping Unified AI Bridge...");
+                        Services.UnifiedAIPythonBridge.Instance.Dispose();
+                        SimpleCrashLogger.Log("Unified AI Bridge stopped.");
                     }
                     catch (Exception cleanupEx)
                     {
-                        SimpleCrashLogger.LogException(cleanupEx, "PythonBridge.Cleanup");
+                        SimpleCrashLogger.LogException(cleanupEx, "UnifiedAIBridge.Cleanup");
                     }
                 };
 
