@@ -501,7 +501,19 @@ namespace QuadroAIPilot.Modes
                         return (false, null, "Gemini kullanılamıyor");
 
                     case AppState.AIProvider.Claude:
-                        var claudeResponse = await _claudeService.SendMessageAsync(userInput);
+                        // Progress callback ile Claude'a gönder (dinamik timeout desteği)
+                        var claudeResponse = await _claudeService.SendMessageAsync(userInput, (lastLine, elapsedSeconds) =>
+                        {
+                            // Progress mesajını UI'a gönder
+                            var truncatedLine = lastLine.Length > 80 ? lastLine.Substring(0, 80) + "..." : lastLine;
+                            SendToWebView("aiProgress", new
+                            {
+                                status = "working",
+                                message = $"⏳ İşlem devam ediyor ({elapsedSeconds}s): {truncatedLine}",
+                                elapsed = elapsedSeconds
+                            });
+                            LogService.LogInfo($"[AIMode] Claude CLI progress ({elapsedSeconds}s): {truncatedLine}");
+                        });
                         if (!claudeResponse.IsError && !string.IsNullOrWhiteSpace(claudeResponse.Content))
                         {
                             // Claude hata mesajlarını kontrol et - bunlar başarısız yanıt sayılmalı

@@ -3,18 +3,30 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace QuadroAIPilot.Services
 {
     /// <summary>
+    /// Progress callback delegate - CLI çalışırken ilerleme bildirimi için
+    /// </summary>
+    public delegate void ProgressCallback(string lastLine, int elapsedSeconds);
+
+    /// <summary>
     /// Claude CLI ile iletişim kuran servis
     /// Dashboard raporundaki Node.js implementasyonunun C# çevirisi
+    /// Dinamik timeout ve progress bildirimi destekler
     /// </summary>
     public class ClaudeCLIService
     {
         private bool _isFirstMessage = true;  // İlk mesaj flag'i (session değil!)
         private readonly object _sessionLock = new object();
+
+        // Timeout sabitleri
+        private const int ACTIVITY_TIMEOUT_SECONDS = 180;  // 3 dakika aktivite yoksa timeout
+        private const int MAX_TOTAL_SECONDS = 900;         // 15 dakika maksimum
+        private const int PROGRESS_INTERVAL_SECONDS = 30;  // 30 saniyede bir progress
 
         /// <summary>
         /// Claude CLI'nin kurulu olup olmadığını kontrol eder
@@ -67,8 +79,9 @@ namespace QuadroAIPilot.Services
         /// Claude CLI'ye mesaj gönderir ve yanıtı alır
         /// </summary>
         /// <param name="userInput">Kullanıcı mesajı</param>
+        /// <param name="onProgress">İlerleme callback'i (opsiyonel)</param>
         /// <returns>Claude'un yanıtı</returns>
-        public async Task<ClaudeResponse> SendMessageAsync(string userInput)
+        public async Task<ClaudeResponse> SendMessageAsync(string userInput, ProgressCallback onProgress = null)
         {
             var startTime = DateTime.Now;
 
@@ -112,8 +125,8 @@ namespace QuadroAIPilot.Services
 
                 LogService.LogInfo($"[ClaudeCLI] Command: claude {flag} < \"{tempFile}\"");
 
-                // CLI'yi çalıştır
-                var (success, output, error) = await ExecuteClaudeCLIAsync(flag, tempFile);
+                // CLI'yi çalıştır (dinamik timeout ve progress ile)
+                var (success, output, error) = await ExecuteClaudeCLIAsync(flag, tempFile, onProgress);
 
                 // Temp dosyayı temizle
                 try
@@ -165,9 +178,12 @@ namespace QuadroAIPilot.Services
         }
 
         /// <summary>
-        /// Claude CLI process'ini çalıştırır
+        /// Claude CLI process'ini çalıştırır - Dinamik timeout ve streaming output ile
         /// </summary>
-        private async Task<(bool success, string output, string error)> ExecuteClaudeCLIAsync(string flag, string tempFile)
+        private async Task<(bool success, string output, string error)> ExecuteClaudeCLIAsync(
+            string flag,
+            string tempFile,
+            ProgressCallback onProgress = null)
         {
             Process process = null;
             try
@@ -190,6 +206,7 @@ namespace QuadroAIPilot.Services
                 LogService.LogInfo($"[ClaudeCLI] Starting process with flag '{flag}'");
                 LogService.LogInfo($"[ClaudeCLI] Temp file: {tempFile}");
                 LogService.LogInfo($"[ClaudeCLI] Working dir: {claudeScriptsDir}");
+                LogService.LogInfo($"[ClaudeCLI] Dinamik timeout aktif: {ACTIVITY_TIMEOUT_SECONDS}s inaktivite, {MAX_TOTAL_SECONDS}s maksimum");
 
                 // Claude Code html projesindeki gibi cmd.exe ile redirect
                 // --permission-mode bypassPermissions: Tüm izin kontrollerini bypass et (okuma, yazma, düzenleme)
@@ -215,60 +232,158 @@ namespace QuadroAIPilot.Services
                     return (false, null, "Process başlatılamadı");
                 }
 
-                // DÜZELTME: CancellationToken ile timeout kontrolü
-                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(180));
+                // Streaming output için değişkenler
+                var outputBuilder = new StringBuilder();
+                var errorBuilder = new StringBuilder();
+                var lastActivityTime = DateTime.Now;
+                var startTime = DateTime.Now;
+                string lastLine = "";
+                var lastProgressTime = DateTime.Now;
+                var outputLock = new object();
 
-                // Output ve error'u async olarak oku (timeout ile)
-                var outputTask = process.StandardOutput.ReadToEndAsync();
-                var errorTask = process.StandardError.ReadToEndAsync();
-
-                // Process'in bitmesini bekle (CancellationToken ile)
-                try
+                // Async output okuma task'ı
+                var outputTask = Task.Run(async () =>
                 {
-                    await process.WaitForExitAsync(cts.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Timeout oluştu
                     try
                     {
-                        if (!process.HasExited)
+                        char[] buffer = new char[4096];
+                        int bytesRead;
+                        while ((bytesRead = await process.StandardOutput.ReadAsync(buffer, 0, buffer.Length)) > 0)
                         {
-                            process.Kill(entireProcessTree: true); // Tüm child process'leri de öldür
+                            var chunk = new string(buffer, 0, bytesRead);
+                            lock (outputLock)
+                            {
+                                outputBuilder.Append(chunk);
+                                lastActivityTime = DateTime.Now;
+
+                                // Son satırı güncelle
+                                var lines = chunk.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                                if (lines.Length > 0)
+                                {
+                                    lastLine = lines[lines.Length - 1].Trim();
+                                }
+                            }
                         }
                     }
-                    catch (Exception killEx)
+                    catch (Exception ex)
                     {
-                        LogService.LogError($"[ClaudeCLI] Process kill error: {killEx.Message}");
+                        LogService.LogWarning($"[ClaudeCLI] Output read task error: {ex.Message}");
+                    }
+                });
+
+                // Async error okuma task'ı
+                var errorTask = Task.Run(async () =>
+                {
+                    try
+                    {
+                        char[] buffer = new char[4096];
+                        int bytesRead;
+                        while ((bytesRead = await process.StandardError.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            var chunk = new string(buffer, 0, bytesRead);
+                            lock (outputLock)
+                            {
+                                errorBuilder.Append(chunk);
+                                lastActivityTime = DateTime.Now;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.LogWarning($"[ClaudeCLI] Error read task error: {ex.Message}");
+                    }
+                });
+
+                // Ana döngü - process bitene veya timeout olana kadar
+                while (!process.HasExited)
+                {
+                    await Task.Delay(1000); // 1 saniye bekle
+
+                    var now = DateTime.Now;
+                    double totalSeconds;
+                    double inactiveSeconds;
+                    string currentLastLine;
+
+                    lock (outputLock)
+                    {
+                        totalSeconds = (now - startTime).TotalSeconds;
+                        inactiveSeconds = (now - lastActivityTime).TotalSeconds;
+                        currentLastLine = lastLine;
                     }
 
-                    LogService.LogError("[ClaudeCLI] Timeout (3 dakika)");
-                    return (false, null, "Claude CLI timeout (3 dakika)");
+                    // Maksimum süre kontrolü (15 dakika)
+                    if (totalSeconds >= MAX_TOTAL_SECONDS)
+                    {
+                        LogService.LogError($"[ClaudeCLI] Maksimum süre aşıldı ({MAX_TOTAL_SECONDS}s / {MAX_TOTAL_SECONDS / 60} dakika)");
+                        try
+                        {
+                            process.Kill(entireProcessTree: true);
+                        }
+                        catch { }
+                        return (false, null, $"Maksimum süre aşıldı ({MAX_TOTAL_SECONDS / 60} dakika)");
+                    }
+
+                    // Aktivite timeout kontrolü (3 dakika aktivite yoksa)
+                    if (inactiveSeconds >= ACTIVITY_TIMEOUT_SECONDS)
+                    {
+                        LogService.LogError($"[ClaudeCLI] Aktivite timeout ({ACTIVITY_TIMEOUT_SECONDS}s / {ACTIVITY_TIMEOUT_SECONDS / 60} dakika aktivite yok)");
+                        try
+                        {
+                            process.Kill(entireProcessTree: true);
+                        }
+                        catch { }
+                        return (false, null, $"Claude CLI yanıt vermiyor ({ACTIVITY_TIMEOUT_SECONDS / 60} dakika aktivite yok)");
+                    }
+
+                    // Progress callback (30 saniyede bir)
+                    if ((now - lastProgressTime).TotalSeconds >= PROGRESS_INTERVAL_SECONDS)
+                    {
+                        lastProgressTime = now;
+
+                        if (!string.IsNullOrWhiteSpace(currentLastLine))
+                        {
+                            // Progress callback'i çağır
+                            try
+                            {
+                                onProgress?.Invoke(currentLastLine, (int)totalSeconds);
+                            }
+                            catch (Exception ex)
+                            {
+                                LogService.LogWarning($"[ClaudeCLI] Progress callback error: {ex.Message}");
+                            }
+
+                            var truncatedLine = currentLastLine.Length > 100
+                                ? currentLastLine.Substring(0, 100) + "..."
+                                : currentLastLine;
+                            LogService.LogInfo($"[ClaudeCLI] Progress ({totalSeconds:F0}s): {truncatedLine}");
+                        }
+                        else
+                        {
+                            LogService.LogInfo($"[ClaudeCLI] Progress ({totalSeconds:F0}s): İşlem devam ediyor...");
+                        }
+                    }
                 }
 
-                // Output ve error'u al (stream'ler kapanmış olabilir, try-catch ile)
-                string output = "";
-                string error = "";
-
+                // Task'ların bitmesini bekle (kısa timeout ile)
                 try
                 {
-                    output = await outputTask;
+                    await Task.WhenAll(outputTask, errorTask).WaitAsync(TimeSpan.FromSeconds(5));
                 }
-                catch (Exception ex)
+                catch (TimeoutException)
                 {
-                    LogService.LogWarning($"[ClaudeCLI] Output read error: {ex.Message}");
+                    LogService.LogWarning("[ClaudeCLI] Task wait timeout - devam ediliyor");
                 }
 
-                try
+                string output;
+                string error;
+                lock (outputLock)
                 {
-                    error = await errorTask;
-                }
-                catch (Exception ex)
-                {
-                    LogService.LogWarning($"[ClaudeCLI] Error read error: {ex.Message}");
+                    output = outputBuilder.ToString();
+                    error = errorBuilder.ToString();
                 }
 
-                LogService.LogInfo($"[ClaudeCLI] Process completed with exit code: {process.ExitCode}");
+                var totalDuration = (DateTime.Now - startTime).TotalSeconds;
+                LogService.LogInfo($"[ClaudeCLI] Process completed with exit code: {process.ExitCode} (toplam süre: {totalDuration:F1}s)");
                 LogService.LogInfo($"[ClaudeCLI] Output length: {output?.Length ?? 0} chars");
                 LogService.LogInfo($"[ClaudeCLI] Error length: {error?.Length ?? 0} chars");
 
@@ -299,7 +414,7 @@ namespace QuadroAIPilot.Services
             }
             finally
             {
-                // DÜZELTME: Process'i her durumda temizle
+                // Process'i her durumda temizle
                 if (process != null && !process.HasExited)
                 {
                     try

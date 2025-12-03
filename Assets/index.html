@@ -393,6 +393,114 @@
             text-decoration: underline;
         }
 
+        /* ============================================
+           MARKDOWN CONTENT STILLERI
+           ============================================ */
+        .markdown-content {
+            line-height: 1.6;
+        }
+
+        /* Tablolar */
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .markdown-content th,
+        .markdown-content td {
+            border: 1px solid #4a5568;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .markdown-content th {
+            background: #2d3748;
+            font-weight: 600;
+            color: #63b3ed;
+        }
+
+        .markdown-content tr:nth-child(even) {
+            background: rgba(45, 55, 72, 0.5);
+        }
+
+        /* Kod Bloklari */
+        .markdown-content pre {
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .markdown-content code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: #68d391;
+        }
+
+        .markdown-content p code {
+            background: #2d3748;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Basliklar */
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3 {
+            color: #63b3ed;
+            margin: 12px 0 8px 0;
+            font-weight: 600;
+        }
+
+        .markdown-content h1 { font-size: 18px; }
+        .markdown-content h2 { font-size: 16px; }
+        .markdown-content h3 { font-size: 14px; }
+
+        /* Listeler */
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+
+        .markdown-content li {
+            margin: 4px 0;
+        }
+
+        /* Blockquote */
+        .markdown-content blockquote {
+            border-left: 3px solid #4299e1;
+            margin: 10px 0;
+            padding-left: 12px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        /* Linkler */
+        .markdown-content a {
+            color: #63b3ed;
+            text-decoration: none;
+        }
+
+        .markdown-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* Paragraflar */
+        .markdown-content p {
+            margin: 8px 0;
+        }
+
+        /* Yatay Cizgi */
+        .markdown-content hr {
+            border: none;
+            border-top: 1px solid #4a5568;
+            margin: 12px 0;
+        }
+
         /* Chat Fade-in Animation */
         @keyframes fadeInChat {
             from {
@@ -1027,6 +1135,10 @@
 
     <!-- VAD (Voice Activity Detection) Kütüphaneleri - UMD Build -->
     <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.27/dist/index.browser.js"></script>
+
+    <!-- Markdown Parser ve XSS Koruma Kütüphaneleri -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 </head>
 
 <body>
@@ -3121,6 +3233,117 @@
         }
 
         /**
+         * Markdown icerigini guvenli HTML'e donusturur
+         * @param {string} markdown - Markdown formatinda metin
+         * @returns {string} Sanitize edilmis HTML
+         */
+        function renderMarkdown(markdown) {
+            if (!markdown) return '';
+
+            // Kutuphaneler yuklu mu kontrol et
+            if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') {
+                console.warn('[Markdown] marked.js veya DOMPurify yuklenemedi, duz metin kullaniliyor');
+                // Fallback: HTML karakterlerini escape et
+                return markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            }
+
+            try {
+                // Marked.js konfigurasyonu
+                marked.setOptions({
+                    breaks: true,        // Satir sonlarini <br> yap
+                    gfm: true,           // GitHub Flavored Markdown
+                    tables: true         // Tablo destegi
+                });
+
+                // Markdown to HTML
+                var rawHtml = marked.parse(markdown);
+
+                // XSS korumasi - DOMPurify ile sanitize
+                var cleanHtml = DOMPurify.sanitize(rawHtml, {
+                    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                                   'p', 'br', 'hr',
+                                   'ul', 'ol', 'li',
+                                   'table', 'thead', 'tbody', 'tr', 'th', 'td',
+                                   'pre', 'code',
+                                   'strong', 'em', 'b', 'i',
+                                   'blockquote', 'a', 'span', 'div'],
+                    ALLOWED_ATTR: ['href', 'class', 'target', 'rel']
+                });
+
+                return cleanHtml;
+            } catch (e) {
+                console.error('[Markdown] Render hatasi:', e);
+                return markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            }
+        }
+
+        /**
+         * Rendered HTML icindeki dosya yollarini tiklanabilir yapar
+         * @param {HTMLElement} container - Icinde dosya yollari aranacak element
+         */
+        function makeFilePathsClickable(container) {
+            var walker = document.createTreeWalker(
+                container,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            var textNodes = [];
+            while (walker.nextNode()) {
+                textNodes.push(walker.currentNode);
+            }
+
+            var filePathRegex = /([A-Za-z]:\\[^\s"'<>|*?]+\.[a-zA-Z0-9]+)/g;
+
+            textNodes.forEach(function(node) {
+                var text = node.textContent;
+                filePathRegex.lastIndex = 0;
+
+                if (filePathRegex.test(text)) {
+                    filePathRegex.lastIndex = 0;
+                    var fragment = document.createDocumentFragment();
+                    var lastIndex = 0;
+                    var match;
+
+                    while ((match = filePathRegex.exec(text)) !== null) {
+                        if (match.index > lastIndex) {
+                            fragment.appendChild(document.createTextNode(
+                                text.substring(lastIndex, match.index)
+                            ));
+                        }
+
+                        var link = document.createElement('a');
+                        link.href = '#';
+                        link.textContent = match[1];
+                        link.className = 'file-path-link';
+                        link.title = 'Dosyayi ac';
+                        link.setAttribute('data-filepath', match[1]);
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            var path = this.getAttribute('data-filepath');
+                            console.log('[FileLink] Dosya aciliyor:', path);
+                            openFileFromSearch(path);
+                        });
+                        fragment.appendChild(link);
+
+                        lastIndex = filePathRegex.lastIndex;
+                    }
+
+                    if (lastIndex < text.length) {
+                        fragment.appendChild(document.createTextNode(
+                            text.substring(lastIndex)
+                        ));
+                    }
+
+                    if (node.parentNode) {
+                        node.parentNode.replaceChild(fragment, node);
+                    }
+                }
+            });
+        }
+
+        /**
          * Dosya yollarini tiklanabilir link olarak ekler (guvenli DOM metodu)
          */
         function appendContentWithClickableFilePaths(container, text) {
@@ -3193,9 +3416,22 @@
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
 
-            // Content oluştur - dosya yollarını tıklanabilir link yap (güvenli DOM metodu)
+            // Content oluştur - AI yanitlari icin Markdown rendering
             const contentDiv = document.createElement('div');
-            appendContentWithClickableFilePaths(contentDiv, content);
+            contentDiv.className = 'markdown-content';
+
+            if (role === 'assistant') {
+                // AI yanitlari icin Markdown render et (DOMPurify ile guvenli)
+                const renderedHtml = renderMarkdown(content);
+                contentDiv.innerHTML = renderedHtml;
+
+                // Dosya yollarini tiklanabilir yap (rendered HTML icinde)
+                makeFilePathsClickable(contentDiv);
+            } else {
+                // Kullanici mesajlari icin duz metin (dosya yollari linkli)
+                appendContentWithClickableFilePaths(contentDiv, content);
+            }
+
             bubble.appendChild(contentDiv);
 
             // Timestamp oluştur
@@ -3773,6 +4009,11 @@
                     } else {
                         appendFeedback('💤 Dinleme kapalı');
                     }
+                } else if (data.action === 'aiProgress') {
+                    // Claude CLI progress bildirimi (dinamik timeout)
+                    console.log('[AI] Progress:', data.data.message, 'elapsed:', data.data.elapsed);
+                    // Feedback alanına progress mesajı göster
+                    appendFeedback(data.data.message);
                 } else if (data.action === 'aiError') {
                     // AI hatası
                     console.error('[AI] Error:', data.data.message);
