@@ -383,3 +383,11 @@ Output/*.msi
 # Build artifacts
 Setup/Prerequisites/*.exe
 PythonBridge/chrome-profile/
+
+# Sensitive files - NEVER commit
+Setup/Prerequisites/claude_credentials.json
+**/credentials*.json
+**/*secret*
+**/*token*
+.env
+.env.*
