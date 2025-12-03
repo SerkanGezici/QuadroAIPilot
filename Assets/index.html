@@ -380,6 +380,19 @@
             color: #a0aec0;
         }
 
+        /* Dosya yolu linkleri */
+        .file-path-link {
+            color: #63b3ed;
+            text-decoration: underline;
+            cursor: pointer;
+            word-break: break-all;
+        }
+
+        .file-path-link:hover {
+            color: #90cdf4;
+            text-decoration: underline;
+        }
+
         /* Chat Fade-in Animation */
         @keyframes fadeInChat {
             from {
@@ -3108,6 +3121,51 @@
         }
 
         /**
+         * Dosya yollarini tiklanabilir link olarak ekler (guvenli DOM metodu)
+         */
+        function appendContentWithClickableFilePaths(container, text) {
+            // Windows dosya yolu pattern: C:\...\dosya.uzanti
+            var filePathRegex = /([A-Za-z]:\\[^\s"'<>|*?]+\.[a-zA-Z0-9]+)/g;
+            var lastIndex = 0;
+            var match;
+
+            while ((match = filePathRegex.exec(text)) !== null) {
+                // Match oncesi text
+                if (match.index > lastIndex) {
+                    container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                }
+
+                // Dosya yolunu link olarak ekle
+                var filePath = match[1];
+                var link = document.createElement('a');
+                link.href = '#';
+                link.textContent = filePath;
+                link.className = 'file-path-link';
+                link.title = 'Dosyayi ac';
+                link.setAttribute('data-filepath', filePath);
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var path = this.getAttribute('data-filepath');
+                    console.log('[FileLink] Dosya aciliyor:', path);
+                    openFileFromSearch(path);
+                });
+                container.appendChild(link);
+
+                lastIndex = filePathRegex.lastIndex;
+            }
+
+            // Kalan text
+            if (lastIndex < text.length) {
+                container.appendChild(document.createTextNode(text.substring(lastIndex)));
+            }
+
+            // Hic match yoksa duz text
+            if (lastIndex === 0) {
+                container.textContent = text;
+            }
+        }
+
+        /**
          * AI chat'e mesaj ekler
          * @param {string} role - 'user' veya 'assistant'
          * @param {string} content - Mesaj içeriği
@@ -3135,9 +3193,9 @@
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
 
-            // Content oluştur
+            // Content oluştur - dosya yollarını tıklanabilir link yap (güvenli DOM metodu)
             const contentDiv = document.createElement('div');
-            contentDiv.textContent = content;
+            appendContentWithClickableFilePaths(contentDiv, content);
             bubble.appendChild(contentDiv);
 
             // Timestamp oluştur
