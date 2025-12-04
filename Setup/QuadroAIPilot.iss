@@ -224,6 +224,38 @@ Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -Command Add-Mp
 [Code]
 // var bölümü kaldırıldı - download page kullanmıyoruz
 
+// v73: Update/Reinstall öncesi Python Bridge ve Chromium'u temizle
+// Bu fonksiyon Inno Setup tarafından otomatik çağrılır
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Result := '';
+  NeedsRestart := False;
+
+  Log('=== Update Cleanup başlatılıyor (v73) ===');
+
+  // 1. HTTP shutdown endpoint'ine istek gönder (graceful shutdown)
+  Log('Python Bridge HTTP shutdown gönderiliyor...');
+  Exec('cmd.exe', '/c curl -s -X POST http://localhost:8765/shutdown 2>nul', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(2000);
+
+  // 2. Kalan Python process'lerini zorla kapat
+  Log('Python process''leri temizleniyor...');
+  Exec('cmd.exe', '/c taskkill /F /IM python.exe 2>nul', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // 3. QuadroAIPilot UnifiedProfile kullanan Chromium'ları kapat
+  Log('Chromium process''leri temizleniyor...');
+  Exec('powershell.exe', '-ExecutionPolicy Bypass -Command "Get-Process chrome -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like ''*UnifiedProfile*'' } | Stop-Process -Force -ErrorAction SilentlyContinue"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // 4. Port 8765'i dinleyen process'leri kapat (fallback)
+  Log('Port 8765 temizleniyor...');
+  Exec('cmd.exe', '/c for /f "tokens=5" %%a in (''netstat -aon 2^>nul ^| findstr :8765 ^| findstr LISTENING'') do taskkill /F /PID %%a 2>nul', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  Sleep(1000);
+  Log('=== Update Cleanup tamamlandı ===');
+end;
+
 // PATH broadcast fonksiyonu - Node.js ve Claude CLI için
 procedure RefreshEnvironment;
 var
