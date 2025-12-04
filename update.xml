@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- QuadroAIPilot Update Manifest -->
+<!-- 4-parçalı versiyon: Major.Minor.Patch.Build -->
+<!-- AutoUpdater.NET bu formatı destekler ve build bazlı güncelleme yapabilir -->
 <item>
-      <version>1.2.3</version>
-      <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v19.exe</url>
+      <version>1.2.1.68</version>
+      <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v68.exe</url>
       <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.1</changelog>
       <mandatory>false</mandatory>
       <mode>0</mode>

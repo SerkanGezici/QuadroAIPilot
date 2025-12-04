@@ -25,14 +25,14 @@ namespace QuadroAIPilot.Setup
         public async Task<bool> InstallAsync()
         {
             _logger.Log("============================================");
-            _logger.Log("Claude CLI Kurulum Başlıyor (v62)");
+            _logger.Log("Claude CLI Kurulum Başlıyor (v68)");
             _logger.Log("============================================");
             _logger.LogSeparator();
 
             try
             {
-                // v62: PATH'leri proaktif olarak yükle
-                _logger.Log("[v62] PATH environment güncelleniyor...");
+                // v68: PATH'leri proaktif olarak yükle
+                _logger.Log("[v68] PATH environment güncelleniyor...");
                 RefreshEnvironmentPaths();
                 _logger.LogSeparator();
 
@@ -44,7 +44,7 @@ namespace QuadroAIPilot.Setup
                     _logger.Log("Git kurulumu InstallGit.bat tarafından yapılmış olmalıydı.");
                     _logger.Log("Claude CLI için Git gereklidir!");
 
-                    // v62: Git fallback kontrolü
+                    // v68: Git fallback kontrolü
                     if (!await TryFixGitPath())
                     {
                         _logger.Log("Git PATH düzeltme başarısız, ancak devam ediliyor...", LogLevel.Warning);
@@ -62,7 +62,7 @@ namespace QuadroAIPilot.Setup
                 {
                     _logger.Log("Node.js PATH'te bulunamadı, fallback kontrol...", LogLevel.Warning);
 
-                    // v62: Node.js fallback
+                    // v68: Node.js fallback
                     if (!await TryFixNodePath())
                     {
                         _logger.Log("KRITIK HATA: Node.js bulunamadı!", LogLevel.Error);
@@ -115,8 +115,23 @@ namespace QuadroAIPilot.Setup
 
                 if (!installSuccess)
                 {
-                    _logger.Log("Claude CLI kurulumu BAŞARISIZ!", LogLevel.Error);
-                    return false;
+                    // v68: İkincil doğrulama - belki kurulum başarılı olmuştur ama sinyal gelmemiştir
+                    _logger.Log("[v68] npm install başarısız göründü, ikincil doğrulama yapılıyor...", LogLevel.Warning);
+
+                    // Kısa bir bekleme - PATH güncellemesi için
+                    await Task.Delay(2000);
+
+                    // Claude CLI gerçekten kurulmuş mu kontrol et
+                    if (await IsClaudeInstalledAsync())
+                    {
+                        _logger.Log("[v68] İkincil doğrulama BAŞARILI - Claude CLI kurulmuş!", LogLevel.Success);
+                        installSuccess = true;
+                    }
+                    else
+                    {
+                        _logger.Log("Claude CLI kurulumu BAŞARISIZ!", LogLevel.Error);
+                        return false;
+                    }
                 }
 
                 // 6. Claude OAuth token kontrolü (v58)
@@ -456,11 +471,11 @@ namespace QuadroAIPilot.Setup
         }
 
         // ============================================
-        // v62: PATH FIX VE VALIDATION METODLARI
+        // v68: PATH FIX VE VALIDATION METODLARI
         // ============================================
 
         /// <summary>
-        /// v62: Sistem ve user PATH'leri process environment'a yükler
+        /// v68: Sistem ve user PATH'leri process environment'a yükler
         /// </summary>
         private void RefreshEnvironmentPaths()
         {
@@ -492,7 +507,7 @@ namespace QuadroAIPilot.Setup
         }
 
         /// <summary>
-        /// v62: Git standart yollarında varsa PATH'e ekle
+        /// v68: Git standart yollarında varsa PATH'e ekle
         /// </summary>
         private async Task<bool> TryFixGitPath()
         {
@@ -529,7 +544,7 @@ namespace QuadroAIPilot.Setup
         }
 
         /// <summary>
-        /// v62: Node.js standart yollarında varsa PATH'e ekle
+        /// v68: Node.js standart yollarında varsa PATH'e ekle
         /// </summary>
         private async Task<bool> TryFixNodePath()
         {

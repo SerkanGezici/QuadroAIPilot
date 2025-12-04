@@ -19,11 +19,15 @@
 		<PublishSingleFile>false</PublishSingleFile>
 		<PublishReadyToRun>true</PublishReadyToRun>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-		<!-- Assembly version bilgisi - Hibrit sistem ile senkronize -->
-		<!-- Not: Build numarası Setup/build_version.txt'den okunacak -->
+		<!-- ============================================ -->
+		<!-- SSOT (Single Source of Truth) Versiyon Sistemi -->
+		<!-- Build numarası Setup/build_version.txt'den okunur -->
+		<!-- ============================================ -->
 		<Version>1.2.1</Version>
-		<AssemblyVersion>1.2.1.0</AssemblyVersion>
-		<FileVersion>1.2.1.0</FileVersion>
+		<!-- BuildNumber: MSBuild target'da Setup/build_version.txt'den okunacak -->
+		<BuildNumber>68</BuildNumber>
+		<AssemblyVersion>$(Version).$(BuildNumber)</AssemblyVersion>
+		<FileVersion>$(Version).$(BuildNumber)</FileVersion>
 		<!-- Şirket ve Ürün Bilgileri -->
 		<Company>Quadro Computer (Tesla Teknoloji)</Company>
 		<Authors>Quadro Computer</Authors>
@@ -195,4 +199,35 @@
 	<PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
 		<HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
 	</PropertyGroup>
+
+	<!-- ============================================ -->
+	<!-- MSBuild Pre-Build Task: Build Numarası Senkronizasyonu -->
+	<!-- Setup/build_version.txt -> Properties/BuildInfo.txt -->
+	<!-- ============================================ -->
+	<Target Name="SyncBuildNumber" BeforeTargets="BeforeBuild">
+		<!-- Build numarasını dosyadan oku (varsa) -->
+		<PropertyGroup Condition="Exists('$(ProjectDir)Setup\build_version.txt')">
+			<BuildNumber>$([System.IO.File]::ReadAllText('$(ProjectDir)Setup\build_version.txt').Trim())</BuildNumber>
+		</PropertyGroup>
+
+		<!-- Versiyon bilgilerini güncelle -->
+		<PropertyGroup>
+			<FullVersion>$(Version).$(BuildNumber)</FullVersion>
+			<AssemblyVersion>$(FullVersion)</AssemblyVersion>
+			<FileVersion>$(FullVersion)</FileVersion>
+		</PropertyGroup>
+
+		<!-- Properties/BuildInfo.txt dosyasını güncelle (embedded resource için) -->
+		<WriteLinesToFile
+			File="$(ProjectDir)Properties\BuildInfo.txt"
+			Lines="$(FullVersion)"
+			Overwrite="true" />
+
+		<!-- Build bilgisini console'a yaz -->
+		<Message Text="╔══════════════════════════════════════════════════════════╗" Importance="high" />
+		<Message Text="║  QuadroAIPilot Build Info (SSOT System)                  ║" Importance="high" />
+		<Message Text="║  Version: $(Version)  Build: $(BuildNumber)                        ║" Importance="high" />
+		<Message Text="║  Full: $(FullVersion)                                       ║" Importance="high" />
+		<Message Text="╚══════════════════════════════════════════════════════════╝" Importance="high" />
+	</Target>
 </Project>

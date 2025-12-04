@@ -693,9 +693,19 @@ namespace QuadroAIPilot.Services
         }
 
         /// <summary>
-        /// Mevcut uygulama versiyonunu al (BuildInfoHelper'dan okur)
+        /// Mevcut uygulama versiyonunu al - Kullanıcı dostu format (BuildInfoHelper'dan okur)
+        /// Örnek: "1.2.1 (Build 68)"
         /// </summary>
         public string GetCurrentVersion()
+        {
+            return Helpers.BuildInfoHelper.GetDisplayVersion();
+        }
+
+        /// <summary>
+        /// Mevcut uygulama versiyonunu al - Tam format (4-parçalı)
+        /// Örnek: "1.2.1.68" - Update karşılaştırması için kullanılır
+        /// </summary>
+        public string GetCurrentVersionFull()
         {
             return Helpers.BuildInfoHelper.GetFullVersion();
         }
