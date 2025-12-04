@@ -391,3 +391,8 @@ Setup/Prerequisites/claude_credentials.json
 **/*token*
 .env
 .env.*
+
+# Araştırma/Not dosyaları
+Gemini*.txt
+*Araştırma*.txt
+*Notlar*.txt
