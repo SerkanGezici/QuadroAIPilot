@@ -3322,7 +3322,7 @@
         /**
          * Hava durumu verisi mi kontrol et
          * Format 1: "19:00\n11°\n%0" (saat:dakika + derece + yagis)
-         * Format 2: "18\n14°\nAçık" (saat + derece + durum) - ChatGPT
+         * Format 2: "18\n\t\n14°\n\t\nAçık" (saat + derece + durum) - ChatGPT (TAB karakterli)
          */
         function isWeatherData(text) {
             if (!text) return false;
@@ -3333,8 +3333,9 @@
             if (matches1 && matches1.length >= 3) return true;
 
             // Format 2: saat + derece + durum (ChatGPT format)
-            // Ornek: "18\n14°\nAçık"
-            var pattern2 = /\n(\d{1,2})\n(\d+)°\n(Açık|Kapalı|Bulutlu|Güneşli|Yağmurlu|Parçalı|Sisli)/g;
+            // ChatGPT formatı: "18\n\t\n14°\n\t\nAçık" - TAB ve boşluk karakterleri içerir
+            // \s* ile tüm whitespace kombinasyonlarını yakala (tab, space, newline)
+            var pattern2 = /(\d{1,2})[\s\n\t]+(\d+)°[\s\n\t]+(Açık|Kapalı|Bulutlu|Güneşli|Yağmurlu|Parçalı|Sisli|Çoğunlukla açık|Çoğunlukla bulutlu|Az bulutlu|Çok bulutlu|Karlı|Fırtınalı)/gi;
             var matches2 = text.match(pattern2);
             if (matches2 && matches2.length >= 2) return true;
 
@@ -3358,9 +3359,10 @@
                 });
             }
 
-            // Format 1 bulamadiysa Format 2 dene: saat + derece + durum
+            // Format 1 bulamadiysa Format 2 dene: saat + derece + durum (ChatGPT TAB formatı)
             if (rows.length === 0) {
-                var pattern2 = /\n(\d{1,2})\n(\d+)°\n(Açık|Kapalı|Bulutlu|Güneşli|Yağmurlu|Parçalı|Sisli|Çok bulutlu|Az bulutlu)/gi;
+                // ChatGPT formatı: "18\n\t\n14°\n\t\nAçık" - TAB ve boşluk karakterleri içerir
+                var pattern2 = /(\d{1,2})[\s\n\t]+(\d+)°[\s\n\t]+(Açık|Kapalı|Bulutlu|Güneşli|Yağmurlu|Parçalı|Sisli|Çoğunlukla açık|Çoğunlukla bulutlu|Az bulutlu|Çok bulutlu|Karlı|Fırtınalı)/gi;
                 while ((match = pattern2.exec(text)) !== null) {
                     rows.push({
                         time: match[1] + ':00',
