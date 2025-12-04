@@ -60,7 +60,7 @@ namespace QuadroAIPilot.Dialogs
                 System.Diagnostics.Debug.WriteLine("[SettingsDialog] Event handlers registered AFTER UI load");
             });
 
-            // Dialog kapatılırken ayarları kaydet
+            // Dialog kapatılırken ayarları ve profili kaydet
             this.Closing += async (sender, args) =>
             {
                 if (args.Result == ContentDialogResult.Primary)
@@ -68,8 +68,13 @@ namespace QuadroAIPilot.Dialogs
                     // DEBUG: Kaydedilecek değeri logla
                     System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Closing: Saving DefaultAIProvider = {_tempSettings.DefaultAIProvider}");
 
-                    // Ayarları kaydet
+                    // 1. Genel ayarları kaydet
                     await _settingsManager.UpdateSettingsAsync(_tempSettings);
+
+                    // 2. Profili de kaydet
+                    System.Diagnostics.Debug.WriteLine("[SettingsDialog] Closing: Profil kaydediliyor...");
+                    var profileSaved = await ValidateAndSaveProfileAsync();
+                    System.Diagnostics.Debug.WriteLine($"[SettingsDialog] Closing: Profil kaydetme sonucu = {profileSaved}");
                 }
             };
         }
