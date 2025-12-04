@@ -3,8 +3,8 @@
 <!-- 4-parçalı versiyon: Major.Minor.Patch.Build -->
 <!-- AutoUpdater.NET bu formatı destekler ve build bazlı güncelleme yapabilir -->
 <item>
-      <version>1.2.1.69</version>
-      <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v69.exe</url>
+      <version>1.2.1.70</version>
+      <url>https://github.com/SerkanGezici/QuadroAIPilot/releases/download/v1.2.1/QuadroAIPilot_Setup_1.2.1_Win11_Final_v70.exe</url>
       <changelog>https://github.com/SerkanGezici/QuadroAIPilot/releases/tag/v1.2.1</changelog>
       <mandatory>false</mandatory>
       <mode>0</mode>
