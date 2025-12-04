@@ -15,9 +15,12 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from playwright.async_api import async_playwright
 import threading
 
-# Log klasörünü hazırla (AppData/QuadroAIPilot/Logs)
-log_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'QuadroAIPilot', 'Logs')
+# AppData klasörlerini hazırla
+appdata_base = os.path.join(os.getenv('LOCALAPPDATA'), 'QuadroAIPilot')
+log_dir = os.path.join(appdata_base, 'Logs')
+profile_dir = os.path.join(appdata_base, 'UnifiedProfile')  # Browser profil klasörü
 os.makedirs(log_dir, exist_ok=True)
+os.makedirs(profile_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'unified_ai_bridge.log')
 
 # Logging - Windows console için UTF-8 encoding
@@ -100,8 +103,7 @@ class UnifiedAIBridge:
 
             # 1. ChatGPT Context
             logger.info("📁 ChatGPT context oluşturuluyor...")
-            chatgpt_storage_path = './unified-profile/chatgpt-storage.json'
-            os.makedirs('./unified-profile', exist_ok=True)
+            chatgpt_storage_path = os.path.join(profile_dir, 'chatgpt-storage.json')
 
             chatgpt_storage = None
             if os.path.exists(chatgpt_storage_path):
@@ -119,7 +121,7 @@ class UnifiedAIBridge:
 
             # 2. Gemini Context
             logger.info("📁 Gemini context oluşturuluyor...")
-            gemini_storage_path = './unified-profile/gemini-storage.json'
+            gemini_storage_path = os.path.join(profile_dir, 'gemini-storage.json')
 
             gemini_storage = None
             if os.path.exists(gemini_storage_path):
@@ -576,7 +578,7 @@ class UnifiedAIBridge:
         """ChatGPT storage state'i kaydet"""
         try:
             storage = await self.chatgpt_context.storage_state()
-            with open('./unified-profile/chatgpt-storage.json', 'w') as f:
+            with open(os.path.join(profile_dir, 'chatgpt-storage.json'), 'w') as f:
                 json.dump(storage, f)
         except Exception as e:
             logger.warning(f"⚠️ ChatGPT storage kaydetme hatası: {e}")
@@ -585,7 +587,7 @@ class UnifiedAIBridge:
         """Gemini storage state'i kaydet"""
         try:
             storage = await self.gemini_context.storage_state()
-            with open('./unified-profile/gemini-storage.json', 'w') as f:
+            with open(os.path.join(profile_dir, 'gemini-storage.json'), 'w') as f:
                 json.dump(storage, f)
         except Exception as e:
             logger.warning(f"⚠️ Gemini storage kaydetme hatası: {e}")
