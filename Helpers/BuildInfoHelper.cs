@@ -23,22 +23,20 @@ namespace QuadroAIPilot.Helpers
             if (_cachedVersion != null)
                 return _cachedVersion;
 
-            // 1. FileVersionInfo - En güvenilir kaynak (EXE dosyasının metadata'sı)
+            // 1. FileVersionInfo - DOĞRUDAN PROCESS PATH KULLAN (WinUI 3 için en güvenilir)
             try
             {
-                var assembly = Assembly.GetExecutingAssembly();
-                var location = assembly.Location;
+                // WinUI 3'te Assembly.Location boş olabiliyor, doğrudan process path kullan
+                var exePath = Environment.ProcessPath;
 
-                // .NET 5+ single-file deployment kontrolü
-                if (string.IsNullOrEmpty(location))
-                {
-                    // Process'in executable path'ini al
-                    location = Environment.ProcessPath;
-                }
+                System.Diagnostics.Debug.WriteLine($"[BuildInfoHelper] ProcessPath: {exePath}");
 
-                if (!string.IsNullOrEmpty(location) && File.Exists(location))
+                if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                 {
-                    var fileVersionInfo = FileVersionInfo.GetVersionInfo(location);
+                    var fileVersionInfo = FileVersionInfo.GetVersionInfo(exePath);
+
+                    System.Diagnostics.Debug.WriteLine($"[BuildInfoHelper] FileVersion: {fileVersionInfo.FileVersion}");
+                    System.Diagnostics.Debug.WriteLine($"[BuildInfoHelper] ProductVersion: {fileVersionInfo.ProductVersion}");
 
                     if (!string.IsNullOrEmpty(fileVersionInfo.FileVersion))
                     {
@@ -50,6 +48,7 @@ namespace QuadroAIPilot.Helpers
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[BuildInfoHelper] FileVersionInfo HATA: {ex.Message}");
                 Log.Warning(ex, "[BuildInfoHelper] FileVersionInfo okuma hatası, fallback'e geçiliyor");
             }
 

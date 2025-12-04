@@ -43,6 +43,9 @@ namespace QuadroAIPilot.Dialogs
 
             LoadSystemInfo();
             LoadProfileDataAsync();
+            LoadUpdateInfo();
+            LoadNewsPreferences();
+            LoadNewsSourcesList();
 
             // ✅ DispatcherQueue kullan (WinUI 3 best practice)
             // UI thread'de sıralanan bu callback, ComboBox items render edildikten SONRA çalışır
